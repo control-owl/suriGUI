@@ -12,3 +12,9 @@
 ### draw.io
 
 ![](https://github.com/control-owl/qubes-sys-ips/blob/main/sys-ips.jpg)
+
+### Installation
+
+- 
+-
+-
