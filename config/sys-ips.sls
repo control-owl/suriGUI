@@ -15,7 +15,10 @@ create-sys-ips:
       - label: red
     - prefs:
       - include-in-backup: False
+      - autostart: true
       - netvm: sys-net
       - provides-network: True
+      - memory: 2048
+      - vcpus: 2
     - require:
       - sls: config.sys-ips-template
