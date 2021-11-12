@@ -4,26 +4,20 @@
 # stamp: 0.211111-jo
 
 
-# Install all necessery packets for running NFQUEUE, Suricata and Notifications
-install-suricata-packages:
+# Install all necessery packets
+suricata-install-packages:
   pkg.installed:
     - pkgs:
-      - qubes-core-agent-networking
-      - qubes-core-agent-passwordless-root
-      - libnetfilter-queue-dev
-      - suricata
-      - jq
-      - libnotify-bin
-      - zenity
+      - qubes-core-agent-networking # install network support and iptables
+      - qubes-core-agent-passwordless-root # needed to run iptables
+      - libnetfilter-queue-dev # NFQUEUE support
+      - suricata # IPS
+      - jq # for proccessing suricata's output
+      - libnotify-bin # notification daemon
+      - zenity # not sur if needed ??
 
 
-# Add custom config for NFQUEUE
-enable-ips-mode:
-  cmd.run:
-    - name: "echo include: ips.yaml >> /etc/suricata/suricata.yaml"
-
-
-# Enable NFQUEUE
+# Config to enable NFQUEUE and packet forwarding to iptables
 /etc/suricata/ips.yaml:
   file.managed:
     - makedirs: True
@@ -37,14 +31,32 @@ enable-ips-mode:
           repeat-mask: 1
 
 
-# Download latest Suricata Rules
-update-suricata:
+# Apply custom config
+suricata-enable-ips-mode:
+  cmd.run:
+    - name: "echo include: ips.yaml >> /etc/suricata/suricata.yaml"
+
+
+# Update Suricata Rules
+#
+# Use Qubes proxy to download files to no-internet template
+# All rules are saved in one file: /etc/suricata/rules/suricata.rules
+suricata-update-rules:
   cmd.run:
     - name: "export https_proxy=127.0.0.1:8082 && suricata-update --output /etc/suricata/rules/ --config /etc/suricata/suricata.yaml --data-dir /etc/suricata/ --no-test"
 
 
 # Set all Rules to rejectboth (IPS)
-reject-all:
+#
+# Possible actions are:
+#   alert - generate an alert (Default)
+#   pass - stop further inspection of the packet
+#   drop - drop packet and generate alert
+#   reject - send RST/ICMP unreach error to the sender of the matching packet.
+#   rejectsrc - same as just reject
+#   rejectdst - send RST/ICMP error packet to receiver of the matching packet.
+#   rejectboth - send RST/ICMP error packets to both sides of the conversation. (Our)
+suricata-reject-both:
   cmd.run:
     - name: "sed -i 's/alert/rejectboth/' /etc/suricata/rules/suricata.rules"
 
@@ -81,6 +93,10 @@ enable-suricata-service:
 
 
 # Create Suricata notification daemon
+#
+# This script tails eve.json (Suricata output)
+# jq is filtering all messages that has alert as event_type
+# notify-send displays those messages
 /etc/suricata/suricata-notif:
   file.managed:
     - makedirs: True
@@ -118,3 +134,5 @@ enable-suricata-service:
 make-executable:
   cmd.run:
     - name: "chmod +x /etc/suricata/suricata-notif /etc/xdg/autostart/suricata-notif.desktop"
+
+# last edit 20-11-12-22-31
