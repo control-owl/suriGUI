@@ -4,9 +4,8 @@
 
 ### Features
 
-- Block all malicious incoming and outcoming packets
+- Block all malicious incoming and outgoing packets
 - Notification daemon
-- Easily customizable (when you get used to it)
 - Qubes firewall still working, globally and per-qube
 
 ### draw.io
@@ -15,6 +14,9 @@
 
 ### Installation
 
-- 
--
--
+- Copy sys-ips.top to dom0: /srv/salt/sys-ips.top
+- Copy config/ directory to dom0: /srv/salt/config/
+- sudo qubesctl top.enable sys-ips
+- sudo qubesctl --all state.highstate
+
+### Explanation

@@ -30,7 +30,7 @@ enable-ips-mode:
     - contents: |
         %YAML 1.1
         ---
-        
+
         nfq:
           mode: repeat
           repeat-mark: 1
@@ -58,7 +58,7 @@ reject-all:
         Description=Suricata IPS daemon
         After=network.target network-online.target
         Requires=network-online.target
-        
+
         [Service]
         Type=simple
         EnvironmentFile=-/etc/default/suricata
@@ -69,7 +69,7 @@ reject-all:
         Restart=on-failure
         ProtectSystem=full
         ProtectHome=true
-        
+
         [Install]
         WantedBy=multi-user.target
 
@@ -77,7 +77,7 @@ reject-all:
 # Enable Suricata Service on boot
 enable-suricata-service:
   cmd.run:
-    - name: "systemctl enable suricata"
+    - name: "sudo systemctl enable suricata"
 
 
 # Create Suricata notification daemon
