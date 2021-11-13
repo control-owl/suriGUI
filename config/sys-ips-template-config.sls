@@ -14,7 +14,7 @@ suricata-install-packages:
       - suricata # IPS
       - jq # for proccessing suricata's output
       - libnotify-bin # notification daemon
-      - zenity # not sur if needed ??
+      - zenity # not sure if needed ??
 
 
 # Config to enable NFQUEUE and packet forwarding to iptables
@@ -44,6 +44,12 @@ suricata-enable-ips-mode:
 suricata-update-rules:
   cmd.run:
     - name: "export https_proxy=127.0.0.1:8082 && suricata-update --output /etc/suricata/rules/ --config /etc/suricata/suricata.yaml --data-dir /etc/suricata/ --no-test"
+
+
+# Get update timestamp
+suricata-update-timestamp:
+  cmd.run:
+    - name: "echo $(date +"%Y-%m-%d") >> /etc/suricata/update.timestamp"
 
 
 # Set all Rules to rejectboth (IPS)
