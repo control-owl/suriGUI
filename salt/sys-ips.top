@@ -8,3 +8,5 @@ base:
     - config.sys-ips
   'sys-ips-template':
     - config.sys-ips-template-config
+  'sys-ips':
+    - config.sys-ips-config

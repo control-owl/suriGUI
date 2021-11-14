@@ -37,30 +37,31 @@ Only 4 files are needed to configure IPS.
 3. **sys-ips-template.sls** - It tells dom0 that our system is based on debian 11 minimal
 4. **sys-ips-template-config.sls** - This is main configuration file to set up our template qube with all necessary tools and config
 
-All configs and rules are done in template qube, NOT appVM qube.
-This way if some code get foothold in our sys-ips, we only need to restart sys-ips and whole system is wiped clean.
-(Next step is to make whole system disposable... still in progress)
-
 -------------
 
 ### Installation
 
 ##### Personal qube
 ```sh
-git clone https://github.com/control-owl/qubes-sys-ips
+git clone https://github.com/control-owl/qubes-sys-ips/salt
 ```
 ##### dom0
 ```sh
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/sys-ips.top’ > /srv/salt/sys.ips.top
+sudo qvm-run --pass-io personal ’cat /home/user/salt/sys-ips.top’ > /srv/salt/sys.ips.top
 
 sudo mkdir /srv/salt/config
 
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/config/sys-ips.sls’ > /srv/salt/config/sys-ips.sls
+sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips.sls’ > /srv/salt/config/sys-ips.sls
 
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/config/sys-ips-template.sls’ > /srv/salt/config/sys-ips-template.sls
+sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips-template.sls’ > /srv/salt/config/sys-ips-template.sls
 
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/config/sys-ips-template-config.sls’ > /srv/salt/config/sys-ips-template-config.sls
+sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips-template-config.sls’ > /srv/salt/config/sys-ips-template-config.sls
+
+sudo qubesctl top.enable sys-ips
+sudo qubesctl --show-output --all state.highstate
 ```
+Then just wait for dom0 to download Debian 11.
+
 
 -------------
 
@@ -69,9 +70,10 @@ sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/config/sys-ips-t
 - [ ] Detect if debian-11-minimal is already installed
     - [ ] If not, install it
 - [ ] Create sys-ips as disposable
-- [ ] Create sys-tray app for Suricata
-    - [ ] Icon color is app status (green, red)
-    - [ ] Start, stop, reset, update rules, change action
+- [X] Create sys-tray app for Suricata
+    - [X] Icon color is app status (green, red)
+    - [ ] Start, stop, reset, update rules, change action, status
     - [ ] Log to gui
     - [ ] edit rules with gui
     - [ ] permanent log
+- [ ] Salt sys-ips-template-config upgrade to git
