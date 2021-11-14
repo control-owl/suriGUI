@@ -30,12 +30,13 @@ I will explain Step 2:
 
 Since Qubes is already using Salt, there is no need to install anything on your system.
 
-Only 4 files are needed to configure IPS.
+Only 5 files are needed to configure IPS.
 
 1. **sys-ips.top** - It tells dom0 what to install and where.
 2. **sys-ips.sls** - Configuration for sys-ips qube: memory, cpu, autostart
-3. **sys-ips-template.sls** - It tells dom0 that our system is based on debian 11 minimal
-4. **sys-ips-template-config.sls** - This is main configuration file to set up our template qube with all necessary tools and config
+3. **sys-ips-config.sls** - This is main configuration file for sys-ips qube
+4. **sys-ips-template.sls** - It tells dom0 that our system is based on debian 11 minimal
+5. **sys-ips-template-config.sls** - This is main configuration file to set up our template qube with all necessary tools and config
 
 -------------
 
@@ -43,7 +44,7 @@ Only 4 files are needed to configure IPS.
 
 ##### Personal qube
 ```sh
-git clone https://github.com/control-owl/qubes-sys-ips/salt
+git clone https://github.com/control-owl/qubes-sys-ips/
 ```
 ##### dom0
 ```sh
@@ -51,11 +52,13 @@ sudo qvm-run --pass-io personal ’cat /home/user/salt/sys-ips.top’ > /srv/sal
 
 sudo mkdir /srv/salt/config
 
-sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips.sls’ > /srv/salt/config/sys-ips.sls
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips.sls’ > /srv/salt/config/sys-ips.sls
 
-sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips-template.sls’ > /srv/salt/config/sys-ips-template.sls
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template.sls’ > /srv/salt/config/sys-ips-template.sls
 
-sudo qvm-run --pass-io personal ’cat /home/user/salt/config/sys-ips-template-config.sls’ > /srv/salt/config/sys-ips-template-config.sls
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template-config.sls’ > /srv/salt/config/sys-ips-template-config.sls
+
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-config.sls’ > /srv/salt/config/sys-ips-config.sls
 
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
