@@ -48,7 +48,7 @@ git clone https://github.com/control-owl/qubes-sys-ips/
 ```
 ##### dom0
 ```sh
-sudo qvm-run --pass-io personal ’cat /home/user/salt/sys-ips.top’ > /srv/salt/sys.ips.top
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/sys-ips.top’ > /srv/salt/sys.ips.top
 
 sudo mkdir /srv/salt/config
 
