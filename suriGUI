@@ -13,7 +13,7 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_VER="1.0"
-export _PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+export _PROJECT_DIR="/usr/share/suriGUI"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
 
