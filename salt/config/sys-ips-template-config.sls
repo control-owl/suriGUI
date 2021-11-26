@@ -64,7 +64,9 @@ enable-suricata-service:
 clone-surigui:
   cmd.run:
     - name: "git clone https://github.com/control-owl/qubes-sys-ips /usr/share/suriGUI"
+  cmd.run:
     - name: "chmod +x /usr/share/suriGUI/suriGUI"
+  cmd.run:
     - name: "ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI"
 
 /etc/xdg/autostart/suriGUI.desktop:

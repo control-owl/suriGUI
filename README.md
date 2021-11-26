@@ -63,7 +63,7 @@ sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
 ```
-Then just wait for dom0 to download Debian 11.
+Then just wait for dom0 to download Debian 11 and configure it's template.
 
 
 -------------
@@ -75,8 +75,8 @@ Then just wait for dom0 to download Debian 11.
 - [ ] Create sys-ips as disposable
 - [X] Create sys-tray app for Suricata
     - [X] Icon color is app status (green, red)
-    - [ ] Start, stop, reset, update rules, change action, status
+    - [X] Start, stop, reset, update rules, change action, status
     - [ ] Log to gui
     - [ ] edit rules with gui
     - [ ] permanent log
-- [ ] Salt sys-ips-template-config upgrade to git
+- [X] Salt sys-ips-template-config upgrade to git

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # coder: ro0t
-# stamp: 0.211114-so
+# stamp: 0.211118-joso
 
 # God Mode: On
 set -o nounset      # Exit on undefined variable
@@ -12,7 +12,7 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 
 export _PROJECT_NAME="suriGUI"
-export _PROJECT_VER="0.2"
+export _PROJECT_VER="1.0"
 export _PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
@@ -35,6 +35,8 @@ export _SURICATA_OUTDATE="14"
 
 function exitSuriGUI() {
   echo "exiting..."
+
+  # close/remove pipe
   [[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
 
   pkill -f "$_PROJECT_NAME-$_PROJECT_VER"
@@ -44,53 +46,38 @@ export -f exitSuriGUI
 trap exitSuriGUI SIGINT SIGTERM EXIT
 
 
+# Create Named Pipe (FIFO)
 [[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
 mkfifo      "$_PROJECT_PIPE"
 exec 3<>    "$_PROJECT_PIPE"
 
 
+# create yad gui window with all variables
+# not finished
+function suriGUISettings() {
+  echo "suriGUISettings"
 
+}
+export -f suriGUISettings
+
+
+# open suriGUISettings
 function suriOnClick() {
 
   echo "clicked"
   #echo "quit" >&3
   exec 3<>$_PROJECT_PIPE echo "icon:gtk-help" >&3 &
+  suriGUISettings
 
 }
 export -f suriOnClick
 
-function updateIcon() {
-  exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
-}
-export -f updateIcon
-
 
 function stopSuricataService() {
   systemctl stop suricata
-  updateIcon inactive
-  updateMenu inactive
+  updateTrayMenu inactive
 }
 export -f stopSuricataService
-
-
-function suriSettings() {
-  echo suriSettings
-
-}
-export -f suriSettings
-
-
-function updateMenu() {
-  case "$*" in
-    "active") menu="Stop!bash -c stopSuricataService|Status!bash -c checkSuricataStatus||Settings!bash -c suriSettings" ;;
-    "inactive") menu="Start!bash -c checkSuricataStatus|Status!bash -c checkSuricataStatus||Settings!bash -c suriSettings" ;;
-    *)    exit 1          ;;
-  esac
-
-  menu+="||Exit!bash -c exitSuriGUI"
-  exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
-}
-export -f updateMenu
 
 
 function updateSuricataRules() {
@@ -104,39 +91,12 @@ function updateSuricataRules() {
                   --no-test
 
   echo "$(date +"%Y-%m-%d")" > "$_SURICATA_UPDATE_TIMESTAMP"
-
-  # create timestamp
 }
 export -f updateSuricataRules
 
 
-function checkSuricataStatus() {
+function checkSuricataService() {
   export isSuricataActive=$(systemctl is-active suricata)
-
-  case "$isSuricataActive" in
-    "inactive" )
-      echo "Suricata service not running"
-      systemctl start suricata
-      echo "Starting service"
-      sleep 5 && export isSuricataActive=$(systemctl is-active suricata)
-
-      if [[ "$isSuricataActive" == "active" ]]; then
-        echo "Suricata is active"
-        updateIcon active
-        updateMenu active
-      else
-        echo "Error starting Suricata service"
-        updateIcon inactive
-        return 1
-      fi
-    ;;
-    "active" )
-      echo "Suricata is active"
-      updateIcon active
-      updateMenu active
-    ;;
-    * )  echo "unknown service status" && return 1  ;;
-  esac
 
   pgrep -f "suriNOTIF" >/dev/null 2>&1  && export isNotifActive="True" \
                                         || export isNotifActive="False"
@@ -152,13 +112,72 @@ function checkSuricataStatus() {
       [[ "$lastUpdate" -gt "$_SURICATA_OUTDATE" ]] && updateSuricataRules || echo "nothing to do"
     else
         echo "Please update rules. Update never initiated!"
-        updateSuricataRules
+        # create option in suriGUISettings
+        # or make auto update
+        #updateSuricataRules
     fi
   else
+    # auto-update
     updateSuricataRules
   fi
 }
-export -f checkSuricataStatus
+export -f checkSuricataService
+
+
+
+function startSuricataService() {
+  checkSuricataService
+
+  case "$isSuricataActive" in
+    "inactive" )
+      echo "Suricata service not running"
+      systemctl start suricata
+      echo "Starting service"
+      sleep 5 && export isSuricataActive=$(systemctl is-active suricata)
+
+      if [[ "$isSuricataActive" == "active" ]]; then
+        echo "Suricata is active"
+        updateTrayMenu active
+      else
+        echo "Error starting Suricata service"
+        updateTrayMenu inactive
+        return 1
+      fi
+    ;;
+    "active" )
+      echo "Suricata is active"
+      updateTrayMenu active
+    ;;
+    * )  echo "unknown service status" && return 1  ;;
+  esac
+
+}
+export -f startSuricataService
+
+
+
+function updateTrayIcon() {
+  exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
+}
+export -f updateTrayIcon
+
+
+function updateTrayMenu() {
+  case "$*" in
+    "active") menu="Stop!bash -c stopSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
+    "inactive") menu="Start!bash -c startSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
+    *)    exit 1          ;;
+  esac
+
+  menu+="||Exit!bash -c exitSuriGUI"
+  exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
+
+  updateTrayIcon $1
+}
+export -f updateTrayMenu
+
+
+
 
 
 function startSuriGUI() {
@@ -180,13 +199,14 @@ export -f startSuriGUI
 
 
 startSuriGUI
-checkSuricataStatus
-updateMenu active
+startSuricataService
 
 
 # no pupup notification, silent, icon blinking
 # suri notif script as part of this app
 
-while [[ true ]]; do
+while [[ "$isSuricataActive" != "active" ]]; do
   sleep 10
+  checkSuricataService
+  # make while true as while suriActive???
 done
