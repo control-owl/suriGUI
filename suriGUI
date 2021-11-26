@@ -14,8 +14,8 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_VER="1.0"
 export _PROJECT_DIR="/usr/share/suriGUI"
-export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
-export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
+export _PROJECT_DIR_RES="$_PROJECT_DIR/res" && [[ ! -d $_PROJECT_DIR_RES]] && mkdir $_PROJECT_DIR_RES
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp" && [[ ! -d $_PROJECT_DIR_RES]] && mkdir $_PROJECT_DIR_RES
 
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icon-red.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icon-green.png"
