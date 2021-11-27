@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.211114-so
+# stamp: 0.211127-so
 
 # Install all necessery packets
 suricata-install-packages:
@@ -59,12 +59,11 @@ suricata-enable-ips-mode:
 
 enable-suricata-service:
   cmd.run:
-    - name: "sudo systemctl enable suricata"
+    - name: "systemctl enable suricata"
 
 clone-surigui:
   cmd.run:
     - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/qubes-sys-ips /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI) || (cd /usr/share/suriGUI/ && git pull origin main)"
-
 
 /etc/xdg/autostart/suriGUI.desktop:
   file.managed:

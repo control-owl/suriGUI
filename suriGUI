@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # coder: ro0t
-# stamp: 0.211118-joso
+# stamp: 0.211126-blackfriday
 
 # God Mode: On
 set -o nounset      # Exit on undefined variable
@@ -93,7 +93,7 @@ function updateSuricataRules() {
 
   # qubes proxy for template qubes
   export https_proxy=127.0.0.1:8082
-  suricata-update --output "$_SURICATA_RULES" \
+  suricata-update --output "$_SURICATA_DIR_RULES" \
                   --config "$_SURICATA_CFG_DEF" \
                   --data-dir "$_SURICATA_DIR" \
                   --no-test
@@ -103,10 +103,50 @@ function updateSuricataRules() {
 export -f updateSuricataRules
 
 
+function updateTrayIcon() {
+  exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
+}
+export -f updateTrayIcon
+
+
+function updateTrayMenu() {
+  case "$*" in
+    "active") menu="Stop!bash -c stopSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
+    "inactive") menu="Start!bash -c startSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
+    *)    exit 1          ;;
+  esac
+
+  menu+="||Exit!bash -c exitSuriGUI"
+  exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
+
+  updateTrayIcon $1
+}
+export -f updateTrayMenu
+
+
+function startSuricataService() {
+  d3bug info "Starting Suricata Service"
+
+  systemctl start suricata
+  sleep 5
+
+  if [[ $(systemctl is-active suricata) == "active" ]]; then
+    echo "Suricata is active"
+    updateTrayMenu active
+  else
+    echo "Error starting Suricata service"
+    updateTrayMenu inactive
+    return 1
+  fi
+
+}
+export -f startSuricataService
+
+
 function checkSuricataService() {
   d3bug info "Checking suricata status"
 
-  export isSuricataActive=$(systemctl is-active suricata)
+  [[ $(systemctl is-active suricata) == "active" ]] && updateTrayMenu active || updateTrayMenu inactive
 
   pgrep -f "suriNOTIF" >/dev/null 2>&1  && export isNotifActive="True" \
                                         || export isNotifActive="False"
@@ -133,64 +173,14 @@ function checkSuricataService() {
 }
 export -f checkSuricataService
 
-function updateTrayIcon() {
-  exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
-}
-export -f updateTrayIcon
-
-
-function updateTrayMenu() {
-  case "$*" in
-    "active") menu="Stop!bash -c stopSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
-    "inactive") menu="Start!bash -c startSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
-    *)    exit 1          ;;
-  esac
-
-  menu+="||Exit!bash -c exitSuriGUI"
-  exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
-
-  updateTrayIcon $1
-}
-export -f updateTrayMenu
-
-
-function startSuricataService() {
-  checkSuricataService
-
-  case "$isSuricataActive" in
-    "inactive" )
-      echo "Suricata service not running"
-      systemctl start suricata
-      echo "Starting service"
-      sleep 5 && export isSuricataActive=$(systemctl is-active suricata)
-
-      if [[ "$isSuricataActive" == "active" ]]; then
-        echo "Suricata is active"
-        updateTrayMenu active
-      else
-        echo "Error starting Suricata service"
-        updateTrayMenu inactive
-        return 1
-      fi
-    ;;
-    "active" )
-      echo "Suricata is active"
-      updateTrayMenu active
-    ;;
-    * )  echo "unknown service status" && return 1  ;;
-  esac
-
-}
-export -f startSuricataService
 
 
 function startSuriGUI() {
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
+
   # Needed to show bigger icon in sys-tray
   xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
   xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
-
-  echo "Starting $_PROJECT_NAME $_PROJECT_VER"
 
   exec -a "$_PROJECT_NAME-$_PROJECT_VER" \
     yad --notification --no-middle --listen \
@@ -204,8 +194,8 @@ export -f startSuriGUI
 
 
 startSuriGUI
+checkSuricataService
 startSuricataService
-
 
 # no pupup notification, silent, icon blinking
 # suri notif script as part of this app
