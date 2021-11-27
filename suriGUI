@@ -14,8 +14,8 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_VER="1.0"
 export _PROJECT_DIR="/usr/share/suriGUI"
-export _PROJECT_DIR_RES="$_PROJECT_DIR/res" && [ ! -d $_PROJECT_DIR_RES ] && mkdir $_PROJECT_DIR_RES
-export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp" && [ ! -d $_PROJECT_DIR_TMP ] && mkdir $_PROJECT_DIR_TMP
+export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
 
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icon-red.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icon-green.png"
@@ -31,7 +31,7 @@ export _SURICATA_RULES="$_SURICATA_DIR_RULES/suricata.rules"
 export _SURICATA_EVE="$_SURICATA_DIR_LOG/eve.json"
 export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_DIR/update.timestamp"
 export _SURICATA_OUTDATE="14"
-
+export stopSuricata=False
 
 function exitSuriGUI() {
   echo "exiting..."
@@ -51,6 +51,14 @@ trap exitSuriGUI SIGINT SIGTERM EXIT
 mkfifo      "$_PROJECT_PIPE"
 exec 3<>    "$_PROJECT_PIPE"
 
+
+function d3bug() {
+  case "$1" in
+    "info" )    echo "[i] $2"    ;;
+    "error" )   echo "[X] $2"    ;;
+  esac
+}
+export -f d3bug
 
 # create yad gui window with all variables
 # not finished
@@ -96,6 +104,8 @@ export -f updateSuricataRules
 
 
 function checkSuricataService() {
+  d3bug info "Checking suricata status"
+
   export isSuricataActive=$(systemctl is-active suricata)
 
   pgrep -f "suriNOTIF" >/dev/null 2>&1  && export isNotifActive="True" \
@@ -174,14 +184,8 @@ function startSuricataService() {
 export -f startSuricataService
 
 
-
-
-
-
-
-
-
 function startSuriGUI() {
+  d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
   # Needed to show bigger icon in sys-tray
   xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
   xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
@@ -206,7 +210,8 @@ startSuricataService
 # no pupup notification, silent, icon blinking
 # suri notif script as part of this app
 
-while [[ "$isSuricataActive" != "active" ]]; do
+
+while [[ -e $_PROJECT_PIPE ]]; do
   sleep 10
   checkSuricataService
   # make while true as while suriActive???
