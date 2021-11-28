@@ -8,17 +8,18 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
+
 trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 
 export _PROJECT_NAME="suriGUI"
-export _PROJECT_VER="1.0"
+export _PROJECT_VER="0.4"
 export _PROJECT_DIR="/usr/share/suriGUI"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
 
-export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icon-red.png"
-export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icon-green.png"
+export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
+export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
 
 export _SURICATA_DIR="/etc/suricata"
@@ -32,6 +33,7 @@ export _SURICATA_EVE="$_SURICATA_DIR_LOG/eve.json"
 export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_DIR/update.timestamp"
 export _SURICATA_OUTDATE="14"
 export stopSuricata=False
+
 
 function exitSuriGUI() {
   echo "exiting..."
@@ -54,8 +56,8 @@ exec 3<>    "$_PROJECT_PIPE"
 
 function d3bug() {
   case "$1" in
-    "info" )    echo "[i] $2"    ;;
-    "error" )   echo "[X] $2"    ;;
+    "info" )   echo "[i] $2"    ;;
+    "error" )  echo "[x] $2"    ;;
   esac
 }
 export -f d3bug
@@ -72,13 +74,19 @@ export -f suriGUISettings
 # open suriGUISettings
 function suriOnClick() {
 
-  echo "clicked"
+  #echo "clicked"
   #echo "quit" >&3
-  exec 3<>$_PROJECT_PIPE echo "icon:gtk-help" >&3 &
+  #exec 3<>$_PROJECT_PIPE echo "icon:gtk-help" >&3 &
   suriGUISettings
 
 }
 export -f suriOnClick
+
+
+
+
+
+
 
 
 function stopSuricataService() {
@@ -88,19 +96,25 @@ function stopSuricataService() {
 export -f stopSuricataService
 
 
-function updateSuricataRules() {
-  echo "start updating new rules"
+function startSuricataService() {
+  d3bug info "Starting Suricata service"
 
-  # qubes proxy for template qubes
-  export https_proxy=127.0.0.1:8082
-  suricata-update --output "$_SURICATA_DIR_RULES" \
-                  --config "$_SURICATA_CFG_DEF" \
-                  --data-dir "$_SURICATA_DIR" \
-                  --no-test
-
-  echo "$(date +"%Y-%m-%d")" > "$_SURICATA_UPDATE_TIMESTAMP"
+  case $(systemctl is-active suricata) in
+    active )
+      d3bug info "Suricata service already running"
+      updateTrayMenu active
+      ;;
+    *)
+      systemctl start suricata && sleep 5
+      if [[ ! $(systemctl is-active suricata) == "active" ]]; then
+        d3bug error "Error starting Suricata service"
+        updateTrayMenu inactive
+        return 1
+      fi
+    ;;
+  esac
 }
-export -f updateSuricataRules
+export -f startSuricataService
 
 
 function updateTrayIcon() {
@@ -111,12 +125,15 @@ export -f updateTrayIcon
 
 function updateTrayMenu() {
   case "$*" in
-    "active") menu="Stop!bash -c stopSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
-    "inactive") menu="Start!bash -c startSuricataService|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings" ;;
+    "active") menu="Stop!bash -c stopSuricataService" ;;
+    "inactive") menu="Start!bash -c startSuricataService" ;;
     *)    exit 1          ;;
   esac
 
+
+  menu+="|Status!bash -c checkSuricataService||Settings!bash -c suriGUISettings"
   menu+="||Exit!bash -c exitSuriGUI"
+
   exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
 
   updateTrayIcon $1
@@ -124,55 +141,88 @@ function updateTrayMenu() {
 export -f updateTrayMenu
 
 
-function startSuricataService() {
-  d3bug info "Starting Suricata Service"
-
-  systemctl start suricata
-  sleep 5
-
-  if [[ $(systemctl is-active suricata) == "active" ]]; then
-    echo "Suricata is active"
-    updateTrayMenu active
-  else
-    echo "Error starting Suricata service"
-    updateTrayMenu inactive
-    return 1
-  fi
-
-}
-export -f startSuricataService
-
-
 function checkSuricataService() {
   d3bug info "Checking suricata status"
 
-  [[ $(systemctl is-active suricata) == "active" ]] && updateTrayMenu active || updateTrayMenu inactive
+  case $(systemctl is-active suricata) in
+    active )
+      d3bug info "Suricata service: active"
+      updateTrayMenu active
+      export suricataServiceStatus=active
+    ;;
+    * )
+      d3bug info "Suricata service: inactive"
+      updateTrayMenu inactive
+      export suricataServiceStatus=inactive
+    ;;
+  esac
+}
+export -f checkSuricataService
 
-  pgrep -f "suriNOTIF" >/dev/null 2>&1  && export isNotifActive="True" \
-                                        || export isNotifActive="False"
-  echo "Notifications are active: $isNotifActive"
 
-  [[ -f $_SURICATA_EVE ]] && export isLogActive=True || export isLogActive=False
-  echo "EVE log found: $isLogActive"
+function updateSuricataRules() {
+  d3bug info "Updating Suricata rules"
+
+  if ping -q -c 1 -W 1 github.com >/dev/null ; then
+    d3bug info "Internet connection active."
+  else
+    d3bug error "No internet connection. Trying Qubes Proxy..."
+
+    export https_proxy=127.0.0.1:8082
+    if ping -q -c 1 -W 1 github.com >/dev/null ; then
+      d3bug error "Check your internet connection. Exiting..."
+      exit 1
+    else
+      d3gub info "Internet found behing Qubes Proxy. Resuming update..."
+    fi
+  fi
+
+  d3bug info "Updating..."
+
+  if suricata-update --output "$_SURICATA_DIR_RULES" \
+                     --config "$_SURICATA_CFG_DEF" \
+                     --data-dir "$_SURICATA_DIR" \
+                     --no-test >/dev/null ; then
+    if suricatasc -c ruleset-reload-nonblocking ; then
+      d3bug info "Rules reloaded"
+    else
+      d3bug error "New rules can not be applied. Exiting..."
+      exit 1
+    fi
+
+    echo "$(date +"%Y-%m-%d")" > "$_SURICATA_UPDATE_TIMESTAMP"
+    d3bug info "Update finished."
+  else
+    d3bug error "Error updating Suricata rules. Exiting..."
+    exit 1
+  fi
+}
+export -f updateSuricataRules
+
+
+function checkSuricataRules() {
+  d3bug info "Checking Suricata rules"
 
   if [[ -f $_SURICATA_UPDATE_TIMESTAMP ]]; then
     if [[ $(cat $_SURICATA_UPDATE_TIMESTAMP) =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
       export lastUpdate="$((($(date +%s)-$(date +%s --date $(cat $_SURICATA_UPDATE_TIMESTAMP)))/(3600*24)))"
-      echo "Rules old $lastUpdate days"
-      [[ "$lastUpdate" -gt "$_SURICATA_OUTDATE" ]] && updateSuricataRules || echo "nothing to do"
+      #d3bug info "Rules old $lastUpdate days"
+      if [[ "$lastUpdate" -gt "$_SURICATA_OUTDATE" ]]; then
+        d3bug error "Rules to old"
+        updateSuricataRules
+      else
+        d3bug info "Rules old $lastUpdate days. No need to update."
+      fi
     else
-        echo "Please update rules. Update never initiated!"
-        # create option in suriGUISettings
-        # or make auto update
-        #updateSuricataRules
+        d3bug error "Rules never updated. Updating..."
+        updateSuricataRules
     fi
   else
-    # auto-update
+    d3bug error "Rules never updated. Timestamp not found."
     updateSuricataRules
   fi
 }
-export -f checkSuricataService
-
+export -f checkSuricataRules
 
 
 function startSuriGUI() {
@@ -194,11 +244,9 @@ export -f startSuriGUI
 
 
 startSuriGUI
+checkSuricataRules
 checkSuricataService
 startSuricataService
-
-# no pupup notification, silent, icon blinking
-# suri notif script as part of this app
 
 
 while [[ -e $_PROJECT_PIPE ]]; do
@@ -206,3 +254,14 @@ while [[ -e $_PROJECT_PIPE ]]; do
   checkSuricataService
   # make while true as while suriActive???
 done
+
+
+# Automatic start is working
+#1 startSuriGUI                       - OK
+#2 checkSuricataRules                 - OK
+  #3 updateSuricataRules              - OK
+#4 checkSuricataService               - OK
+  #5 updateTrayMenu active|inactive   - OK
+    #6 updateTrayIcon active|inactive - OK
+#7 startSuricataService               - OK
+#8 stopSuricataService                - OK

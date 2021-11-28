@@ -61,7 +61,7 @@ enable-suricata-service:
   cmd.run:
     - name: "systemctl enable suricata"
 
-clone-surigui:
+clone-suriGUI:
   cmd.run:
     - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/qubes-sys-ips /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI) || (cd /usr/share/suriGUI/ && git pull origin main)"
 

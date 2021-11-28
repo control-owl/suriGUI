@@ -1,3 +1,7 @@
+### Still in development
+
+-------------
+
 ### Intro
 
 - Basic concept is to create intrusion Prevention System (IPS) with Suricata, Debian 11 and Qubes 4.1
@@ -8,7 +12,7 @@
 
 - Block all malicious incoming and outgoing packets
 - Notification daemon
-- Qubes firewall still working, globally and per-qube
+- Use Suricata and Qubes Firewall
 
 -------------
 
@@ -65,18 +69,4 @@ sudo qubesctl --show-output --all state.highstate
 ```
 Then just wait for dom0 to download Debian 11 and configure it's template.
 
-
 -------------
-
-### To-do
-
-- [ ] Detect if debian-11-minimal is already installed
-    - [ ] If not, install it
-- [ ] Create sys-ips as disposable
-- [X] Create sys-tray app for Suricata
-    - [X] Icon color is app status (green, red)
-    - [X] Start, stop, reset, update rules, change action, status
-    - [ ] Log to gui
-    - [ ] edit rules with gui
-    - [ ] permanent log
-- [X] Salt sys-ips-template-config upgrade to git
