@@ -1,0 +1,7 @@
+%YAML 1.1
+---
+
+nfq: 
+  mode: repeat
+  repeat-mark: 1
+  repeat-mask: 1
