@@ -14,25 +14,23 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_VER="0.4"
+export _PROJECT_BUILD="2021-11-30"
 export _PROJECT_DIR="/usr/share/suriGUI"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
+export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
+export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"
 
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
 
-export _SURICATA_DIR="/etc/suricata"
-export _SURICATA_DIR_RULES="$_SURICATA_DIR/rules"
-export _SURICATA_DIR_LOG="/var/log/suricata"
-
-export _SURICATA_CFG_DEF="$_SURICATA_DIR/suricata.yaml"
-export _SURICATA_CFG_IPS="$_SURICATA_DIR/ips.yaml"
-export _SURICATA_RULES="$_SURICATA_DIR_RULES/suricata.rules"
-export _SURICATA_EVE="$_SURICATA_DIR_LOG/eve.json"
-export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_DIR/update.timestamp"
+export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
+export _SURICATA_CONFIG_IPS="$_PROJECT_DIR_CONF/ips.yaml"
+export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
+export _SURICATA_LOG="$_PROJECT_DIR_LOG/$_PROJECT_NAME-$(date +"%Y-%m-%d-%H-%M-%S").log"
+export _SURICATA_UPDATE_TIMESTAMP="$_PROJECT_DIR_CONF/update.timestamp"
 export _SURICATA_OUTDATE="14"
-export stopSuricata=False
 
 
 function exitSuriGUI() {
@@ -62,18 +60,101 @@ function d3bug() {
 }
 export -f d3bug
 
+
+
+
+
+
 # create yad gui window with all variables
 # not finished
 function suriGUISettings() {
-  echo "suriGUISettings"
+  d3bug info "Starting Settings"
+
+  YAD_OPTIONS="--window-icon='dialog-information' --name=IxSysinfo"
+  KEY=$RANDOM
+
+
+  # suriGUI
+  #lscpu | sed -r "s/:[ ]*/\n/" |\
+  yad --plug=$KEY --tabnum=1 --form \
+      --field=$"Title:" "${title:-Terminal}" &
+      #--field="Select jpg files:":FL 'sf.jpg' --field="Select text files:":SFL 'sf.txt' \
+      #--file-filter="Image Files (*.jpg *.jpeg)| *.jpg *.JPG *.jpeg *.JPEG" --file-filter="Text Files (*.txt)| *.txt *.TXT" \
+      #--file-filter="All Files | *.*"
+
+
+      # yad --plug=$KEY --tabnum=1 --image=cpu --text=$"suriGUI settings" \
+      #     --list --no-selection --column=$"Parameter" --column=$"Value" &
+
+
+      #Image result for ids ips difference
+      #The main difference between them is that IDS is a monitoring system, while IPS is a control system.
+      #IDS doesn't alter the network packets in any way, whereas IPS prevents the packet from delivery based
+      #on the contents of the packet, much like how a firewall prevents traffic by IP address.
+
+  yad --plug=$KEY --tabnum=2 --form  \
+      --field=":LBL" "" \
+      --field="<b>Mode</b>:LBL" "" \
+      --field="Suricata mode":CB "IDS\!^IPS" \
+      \
+      --field=":LBL" "" \
+      --field="<b>Files</b>:LBL" "" \
+      --field="Suricata config file:":FL "$_SURICATA_CONFIG" \
+      --field="IPS config file:":FL "$_SURICATA_CONFIG_IPS" \
+      --field="Suricata rules:":FL "$_SURICATA_RULES" \
+      \
+      --field=":LBL" "" \
+      --field="<b>Actions</b>:LBL" "" \
+      --field="Default rule action":CB "alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!^rejectboth" \
+      --field="alert      \\t\\t generate an alert:LBL" "" \
+      --field="pass       \\t\\t stop further inspection of the packet:LBL" "" \
+      --field="drop       \\t\\t drop packet and generate alert:LBL" "" \
+      --field="reject     \\t\\t send RST/ICMP unreach error to the sender of the matching packet.:LBL" "" \
+      --field="rejectsrc  \\t same as just reject:LBL" "" \
+      --field="rejectdst  \\t send RST/ICMP error packet to receiver of the matching packet.:LBL" "" \
+      --field="rejectboth \\t send RST/ICMP error packets to both sides of the conversation.:LBL" "" \
+      \
+      --field=":LBL" "" \
+      --field="<b>Log</b>:LBL" "" \
+      --field="Log directory:":dir "$_PROJECT_DIR_LOG" \
+      --field="Persistant log":chk "TRUE" \
+      \
+      --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
+      --file-filter="All Files | *.*" &
+
+
+
+  # Suricata
+  #df -T | tail -n +2 | awk '{printf "%s\n%s\n%s\n%s\n%s\n%s\n", $1,$7, $2, $3, $4, $6}' |\
+      # yad --plug=$KEY --tabnum=2 --image=drive-harddisk --text=$"Suricata settings" \
+      #     --list --no-selection --column=$"Device" --column=$"Mountpoint" --column=$"Type" \
+      #     --column=$"Total:sz" --column=$"Free:sz" --column=$"Usage:bar" &
+
+  TXT=$"  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
+  TXT+=$"  OS: $(lsb_release -ds) on $(hostname)\\n"
+  TXT+=$"  Kernel: $(uname -sr)\\n\\n"
+  TXT+="  <i>$(uptime)</i>"
+
+  yad --notebook --width=600 --height=450 --center  \
+      --title=$"suriGUI Settings" --text="$TXT" \
+      --window-icon="utilities-terminal" --image="utilities-terminal" --image-on-top \
+      --button="Cancel" --button="Save":"bash -c suricataSaveSettings" \
+      --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --active-tab=${1:-1}
+
+#      --button="Cancel":"firefox" --button="Save":"bash -c announce" \
+
+
 
 }
 export -f suriGUISettings
 
 
+
+
+
 # open suriGUISettings
 function suriOnClick() {
-
+  d3bug info "Click on icon"
   #echo "clicked"
   #echo "quit" >&3
   #exec 3<>$_PROJECT_PIPE echo "icon:gtk-help" >&3 &
@@ -83,13 +164,9 @@ function suriOnClick() {
 export -f suriOnClick
 
 
-
-
-
-
-
-
 function stopSuricataService() {
+  d3bug info "Stopping Suricata service"
+
   systemctl stop suricata
   updateTrayMenu inactive
 }
@@ -98,6 +175,23 @@ export -f stopSuricataService
 
 function startSuricataService() {
   d3bug info "Starting Suricata service"
+#
+#
+#
+#
+#
+#
+#
+#
+  #start suricata service based on my Settings
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+
 
   case $(systemctl is-active suricata) in
     active )
@@ -179,9 +273,9 @@ function updateSuricataRules() {
 
   d3bug info "Updating..."
 
-  if suricata-update --output "$_SURICATA_DIR_RULES" \
-                     --config "$_SURICATA_CFG_DEF" \
-                     --data-dir "$_SURICATA_DIR" \
+  if suricata-update --output "$_PROJECT_DIR_CONF" \
+                     --config "$_SURICATA_CONFIG" \
+                     --data-dir "$_PROJECT_DIR_CONF" \
                      --no-test >/dev/null ; then
     if suricatasc -c ruleset-reload-nonblocking ; then
       d3bug info "Rules reloaded"
