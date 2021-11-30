@@ -1,1 +1,4 @@
 todo
+tmp/
+*.log
+update.timestamp

@@ -52,21 +52,17 @@ git clone https://github.com/control-owl/qubes-sys-ips/
 ```
 ##### dom0
 ```sh
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/sys-ips.top’ > /srv/salt/sys.ips.top
-
 sudo mkdir /srv/salt/config
 
+sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/sys-ips.top’ > /srv/salt/sys.ips.top
 sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips.sls’ > /srv/salt/config/sys-ips.sls
-
 sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template.sls’ > /srv/salt/config/sys-ips-template.sls
-
 sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template-config.sls’ > /srv/salt/config/sys-ips-template-config.sls
-
 sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-config.sls’ > /srv/salt/config/sys-ips-config.sls
 
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
 ```
-Then just wait for dom0 to download Debian 11 and configure it's template.
+Then just wait for dom0 to download and configure it all.
 
 -------------
