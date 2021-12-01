@@ -8,18 +8,27 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-
 trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 
-export _PROJECT_NAME="suriGUI"
+function createDir() {
+  [[ ! -d "$1" ]] && mkdir -p "$1" || return 0
+}
+export -f createDir
+
+export dateShort=$(date +"%H:%M:%S")
+export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
+
+
+export _PROJECT_NAME="suriGUI" && echo -e "$dateShort \e[42;30m$_PROJECT_NAME\e[0m"
+
 export _PROJECT_VER="0.4"
 export _PROJECT_BUILD="2021-11-30"
-export _PROJECT_DIR="/usr/share/suriGUI"
-export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
-export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
-export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
-export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"
+export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
+export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"     && createDir "${_##*=}"
+export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"   && createDir "${_##*=}"
+export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
 
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
@@ -28,34 +37,51 @@ export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
 export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
 export _SURICATA_CONFIG_IPS="$_PROJECT_DIR_CONF/ips.yaml"
 export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
-export _SURICATA_LOG="$_PROJECT_DIR_LOG/$_PROJECT_NAME-$(date +"%Y-%m-%d-%H-%M-%S").log"
-export _SURICATA_UPDATE_TIMESTAMP="$_PROJECT_DIR_CONF/update.timestamp"
+export _SURICATA_LOG="$_PROJECT_DIR_LOG/$_PROJECT_NAME-$dateLong.log"
+export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
 export _SURICATA_OUTDATE="14"
 
 
-function exitSuriGUI() {
-  echo "exiting..."
 
-  # close/remove pipe
+function exitSuriGUI() {
   [[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
 
+  echo -e "$dateShort \e[41;30mEXIT\e[0m"
   pkill -f "$_PROJECT_NAME-$_PROJECT_VER"
-  exit 0
 }
 export -f exitSuriGUI
 trap exitSuriGUI SIGINT SIGTERM EXIT
 
 
-# Create Named Pipe (FIFO)
-[[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
-mkfifo      "$_PROJECT_PIPE"
-exec 3<>    "$_PROJECT_PIPE"
+function createProjectPipe() {
+  d3bug
+
+  [[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
+
+  if mkfifo "$_PROJECT_PIPE" ; then
+    d3bug info "Pipe created"
+  else
+    d3bug error "Can't create pipe"
+    exit 1
+  fi
+
+  exec 3<> "$_PROJECT_PIPE" && d3bug info "Pipe started"
+}
+export -f createProjectPipe
 
 
 function d3bug() {
-  case "$1" in
-    "info" )   echo "[i] $2"    ;;
-    "error" )  echo "[x] $2"    ;;
+  d=$(date +"%H:%M:%S")
+
+  case "${3:-*}" in
+    "next" )    level="|    |__" ;;
+    *)          level="|__" ;;
+  esac
+
+  case "${1:-*}" in
+    "info" )    echo "$dateShort |   $level $2" ;;
+    "error" )   echo -e "$dateShort $level \e[41;30m$2\e[0m" ;;
+    *)          echo "$dateShort $level ${FUNCNAME[1]}" ;;
   esac
 }
 export -f d3bug
@@ -63,34 +89,13 @@ export -f d3bug
 
 
 
-
-
-# create yad gui window with all variables
-# not finished
 function suriGUISettings() {
-  d3bug info "Starting Settings"
+  d3bug
 
-  YAD_OPTIONS="--window-icon='dialog-information' --name=IxSysinfo"
   KEY=$RANDOM
 
-
-  # suriGUI
-  #lscpu | sed -r "s/:[ ]*/\n/" |\
   yad --plug=$KEY --tabnum=1 --form \
       --field=$"Title:" "${title:-Terminal}" &
-      #--field="Select jpg files:":FL 'sf.jpg' --field="Select text files:":SFL 'sf.txt' \
-      #--file-filter="Image Files (*.jpg *.jpeg)| *.jpg *.JPG *.jpeg *.JPEG" --file-filter="Text Files (*.txt)| *.txt *.TXT" \
-      #--file-filter="All Files | *.*"
-
-
-      # yad --plug=$KEY --tabnum=1 --image=cpu --text=$"suriGUI settings" \
-      #     --list --no-selection --column=$"Parameter" --column=$"Value" &
-
-
-      #Image result for ids ips difference
-      #The main difference between them is that IDS is a monitoring system, while IPS is a control system.
-      #IDS doesn't alter the network packets in any way, whereas IPS prevents the packet from delivery based
-      #on the contents of the packet, much like how a firewall prevents traffic by IP address.
 
   yad --plug=$KEY --tabnum=2 --form  \
       --field=":LBL" "" \
@@ -106,12 +111,7 @@ function suriGUISettings() {
       --field=":LBL" "" \
       --field="<b>Actions</b>:LBL" "" \
       --field="Default rule action":CB "alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!^rejectboth" \
-      --field="alert      \\t\\t generate an alert:LBL" "" \
-      --field="pass       \\t\\t stop further inspection of the packet:LBL" "" \
-      --field="drop       \\t\\t drop packet and generate alert:LBL" "" \
-      --field="reject     \\t\\t send RST/ICMP unreach error to the sender of the matching packet.:LBL" "" \
-      --field="rejectsrc  \\t same as just reject:LBL" "" \
-      --field="rejectdst  \\t send RST/ICMP error packet to receiver of the matching packet.:LBL" "" \
+      \ #backup rules files
       --field="rejectboth \\t send RST/ICMP error packets to both sides of the conversation.:LBL" "" \
       \
       --field=":LBL" "" \
@@ -122,13 +122,6 @@ function suriGUISettings() {
       --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
       --file-filter="All Files | *.*" &
 
-
-
-  # Suricata
-  #df -T | tail -n +2 | awk '{printf "%s\n%s\n%s\n%s\n%s\n%s\n", $1,$7, $2, $3, $4, $6}' |\
-      # yad --plug=$KEY --tabnum=2 --image=drive-harddisk --text=$"Suricata settings" \
-      #     --list --no-selection --column=$"Device" --column=$"Mountpoint" --column=$"Type" \
-      #     --column=$"Total:sz" --column=$"Free:sz" --column=$"Usage:bar" &
 
   TXT=$"  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
   TXT+=$"  OS: $(lsb_release -ds) on $(hostname)\\n"
@@ -143,18 +136,13 @@ function suriGUISettings() {
 
 #      --button="Cancel":"firefox" --button="Save":"bash -c announce" \
 
-
-
 }
 export -f suriGUISettings
 
 
-
-
-
-# open suriGUISettings
 function suriOnClick() {
-  d3bug info "Click on icon"
+  d3bug
+
   #echo "clicked"
   #echo "quit" >&3
   #exec 3<>$_PROJECT_PIPE echo "icon:gtk-help" >&3 &
@@ -165,16 +153,23 @@ export -f suriOnClick
 
 
 function stopSuricataService() {
-  d3bug info "Stopping Suricata service"
+  d3bug
 
-  systemctl stop suricata
+  if systemctl stop suricata ; then
+    d3bug info "Suricata service stopped"
+  else
+    d3bug error "Can't stop Suricata service"
+    exit 1
+  fi
+
   updateTrayMenu inactive
+
 }
 export -f stopSuricataService
 
 
 function startSuricataService() {
-  d3bug info "Starting Suricata service"
+  d3bug
 #
 #
 #
@@ -203,21 +198,28 @@ function startSuricataService() {
       if [[ ! $(systemctl is-active suricata) == "active" ]]; then
         d3bug error "Error starting Suricata service"
         updateTrayMenu inactive
-        return 1
       fi
     ;;
   esac
+
 }
 export -f startSuricataService
 
 
 function updateTrayIcon() {
+  d3bug
+
   exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
+
+  d3bug info "Tray icon updated"
+
 }
 export -f updateTrayIcon
 
 
 function updateTrayMenu() {
+  d3bug
+
   case "$*" in
     "active") menu="Stop!bash -c stopSuricataService" ;;
     "inactive") menu="Start!bash -c startSuricataService" ;;
@@ -230,17 +232,19 @@ function updateTrayMenu() {
 
   exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
 
+  d3bug info "Menu updated"
+
   updateTrayIcon $1
 }
 export -f updateTrayMenu
 
 
 function checkSuricataService() {
-  d3bug info "Checking suricata status"
+  d3bug
 
   case $(systemctl is-active suricata) in
     active )
-      d3bug info "Suricata service: active"
+      d3bug info "Suricata service is active"
       updateTrayMenu active
       export suricataServiceStatus=active
     ;;
@@ -250,12 +254,15 @@ function checkSuricataService() {
       export suricataServiceStatus=inactive
     ;;
   esac
+
 }
 export -f checkSuricataService
 
 
 function updateSuricataRules() {
-  d3bug info "Updating Suricata rules"
+  d3bug
+
+  # create gui window which asks user do they want to update
 
   if ping -q -c 1 -W 1 github.com >/dev/null ; then
     d3bug info "Internet connection active."
@@ -290,12 +297,13 @@ function updateSuricataRules() {
     d3bug error "Error updating Suricata rules. Exiting..."
     exit 1
   fi
+
 }
 export -f updateSuricataRules
 
 
 function checkSuricataRules() {
-  d3bug info "Checking Suricata rules"
+  d3bug
 
   if [[ -f $_SURICATA_UPDATE_TIMESTAMP ]]; then
     if [[ $(cat $_SURICATA_UPDATE_TIMESTAMP) =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
@@ -312,19 +320,31 @@ function checkSuricataRules() {
         updateSuricataRules
     fi
   else
-    d3bug error "Rules never updated. Timestamp not found."
+    d3bug error "Timestamp not found. Updating..."
     updateSuricataRules
   fi
+
 }
 export -f checkSuricataRules
 
 
-function startSuriGUI() {
+function startSuriDaemon() {
+  d3bug
+
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
 
-  # Needed to show bigger icon in sys-tray
-  xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
-  xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
+  xdg-icon-resource install --context mimetypes \
+                            --size 48 \
+                            "$_PROJECT_ICON_ACTIVE" \
+                            "$_PROJECT_NAME-active"
+
+
+  xdg-icon-resource install --context mimetypes \
+                            --size 48 \
+                            "$_PROJECT_ICON_INACTIVE" \
+                            "$_PROJECT_NAME-inactive"
+
+  d3bug info "Icons created"
 
   exec -a "$_PROJECT_NAME-$_PROJECT_VER" \
     yad --notification --no-middle --listen \
@@ -333,29 +353,23 @@ function startSuriGUI() {
       --separator="|" \
       --menu="${suriTrayMenuList:-Exit!bash -c exitSuriGUI}" \
       --command="bash -c suriOnClick" <&3 &
+
+  d3bug info "Daemon started"
 }
-export -f startSuriGUI
+export -f startSuriDaemon
 
 
-startSuriGUI
+createProjectPipe
+
 checkSuricataRules
 checkSuricataService
-startSuricataService
+[[ $suricataServiceStatus != "active" ]] && startSuricataService
+startSuriDaemon
 
+sleep 7
 
 while [[ -e $_PROJECT_PIPE ]]; do
   sleep 10
   checkSuricataService
   # make while true as while suriActive???
 done
-
-
-# Automatic start is working
-#1 startSuriGUI                       - OK
-#2 checkSuricataRules                 - OK
-  #3 updateSuricataRules              - OK
-#4 checkSuricataService               - OK
-  #5 updateTrayMenu active|inactive   - OK
-    #6 updateTrayIcon active|inactive - OK
-#7 startSuricataService               - OK
-#8 stopSuricataService                - OK
