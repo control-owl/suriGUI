@@ -111,7 +111,6 @@ function suriGUISettings() {
       --field=":LBL" "" \
       --field="<b>Actions</b>:LBL" "" \
       --field="Default rule action":CB "alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!^rejectboth" \
-      \ #backup rules files
       --field="rejectboth \\t send RST/ICMP error packets to both sides of the conversation.:LBL" "" \
       \
       --field=":LBL" "" \
