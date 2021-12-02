@@ -66,3 +66,23 @@ sudo qubesctl --show-output --all state.highstate
 Then just wait for dom0 to download and configure it all.
 
 -------------
+
+This project is still in heavy development.
+I am writing peaces of code every day.
+In theory basic stuff is working.
+I will try to update as much as I can.
+But, before this peaces are not done, I am calling this not even a beta.
+
+- [ ] Transfer all variables to suriGUISettings
+- [ ] Create setting file for suriGUISettings
+    - [ ] Load setting file if exists
+    - [x] If not load default values
+- [ ] Option to switch mode: IPS and IDS
+- [ ] Apply new rules with suriGUISettings
+- [ ] Notification daemon
+    - [ ] exec as suriGUINotifications
+- [ ] try to avoid sudo ...
+- [ ] run suricata as program, not service
+    - [ ] apply 2 yaml files per run (default and IPS)
+- [ ] new notebook: suricata-update
+    - [ ] control rule sources with suriGUISettings
