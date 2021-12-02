@@ -30,6 +30,9 @@ export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"     && createDir "${_##*=}"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"   && createDir "${_##*=}"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
 
+export _PROJECT_CONFIG="$_PROJECT_DIR_CONF/suri.conf"
+
+
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
@@ -47,6 +50,9 @@ function exitSuriGUI() {
   [[ -e $_PROJECT_PIPE ]] && rm "$_PROJECT_PIPE"
 
   echo -e "$dateShort \e[41;30mEXIT\e[0m"
+  #
+  #better exit. kill parent and all children :D
+  #
   pkill -f "$_PROJECT_NAME-$_PROJECT_VER"
 }
 export -f exitSuriGUI
@@ -87,39 +93,92 @@ function d3bug() {
 export -f d3bug
 
 
+function updateSuriGUISettings(){
+  d3bug
+  sed -i "s/^\($1\s*=\s*\).*\$/\1$2/" "$_PROJECT_CONFIG"
+}
+export -f updateSuriGUISettings
+
+
+
+function loadSuriGUIConfig() {
+  source $_PROJECT_CONFIG
+
+  case $1 in
+    action )
+      defaultActions="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
+      makeDefault="^"
+      export newMenu=$(echo "$defaultActions" | sed "s/$action/$makeDefault$action/g")
+    ;;
+  esac
+}
+export -f loadSuriGUIConfig
+
+
+
+function updateSuricataAction() {
+  d3bug
+# call old action
+  loadSuriGUIConfig action
+
+  echo "old action: $action"
+  echo "new action: $1"
+  sed -i "s/$action/$1/" "$_SURICATA_RULES"
+  updateSuriGUISettings "action" $1
+}
+export -f updateSuricataAction
+
+
+
+
+
+
+
+
+
+
+
 
 
 function suriGUISettings() {
   d3bug
 
   KEY=$RANDOM
-
+loadSuriGUIConfig action
   yad --plug=$KEY --tabnum=1 --form \
       --field=$"Title:" "${title:-Terminal}" &
 
+
   yad --plug=$KEY --tabnum=2 --form  \
-      --field=":LBL" "" \
-      --field="<b>Mode</b>:LBL" "" \
+      --field="":LBL "" \
+      --field="<b>Mode</b>":LBL "" \
       --field="Suricata mode":CB "IDS\!^IPS" \
       \
-      --field=":LBL" "" \
-      --field="<b>Files</b>:LBL" "" \
+      --field="":LBL "" \
+      --field="<b>Files</b>":LBL "" \
       --field="Suricata config file:":FL "$_SURICATA_CONFIG" \
       --field="IPS config file:":FL "$_SURICATA_CONFIG_IPS" \
       --field="Suricata rules:":FL "$_SURICATA_RULES" \
       \
-      --field=":LBL" "" \
-      --field="<b>Actions</b>:LBL" "" \
-      --field="Default rule action":CB "alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!^rejectboth" \
-      --field="rejectboth \\t send RST/ICMP error packets to both sides of the conversation.:LBL" "" \
-      \
-      --field=":LBL" "" \
-      --field="<b>Log</b>:LBL" "" \
+      --field="":LBL "" \
+      --field="<b>Log</b>":LBL "" \
       --field="Log directory:":dir "$_PROJECT_DIR_LOG" \
       --field="Persistant log":chk "TRUE" \
       \
       --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
       --file-filter="All Files | *.*" &
+
+
+  yad --plug=$KEY --tabnum=3 --form \
+      --field="Default rule action":CB "$newMenu" \
+      --field="<b>alert</b> - generate an alert":LBL "" \
+      --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
+      --field="<b>drop</b> - drop packet and generate alert":LBL "" \
+      --field="<b>reject</b> - send RST/ICMP unreach error to the sender of the matching packet.":LBL "" \
+      --field="<b>rejectsrc</b> - same as just reject":LBL "" \
+      --field="<b>rejectdst</b> - send RST/ICMP error packet to receiver of the matching packet.":LBL "" \
+      --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
+      --field="Apply":fbtn 'bash -c "updateSuricataAction %1"' &
 
 
   TXT=$"  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
@@ -131,9 +190,7 @@ function suriGUISettings() {
       --title=$"suriGUI Settings" --text="$TXT" \
       --window-icon="utilities-terminal" --image="utilities-terminal" --image-on-top \
       --button="Cancel" --button="Save":"bash -c suricataSaveSettings" \
-      --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --active-tab=${1:-1}
-
-#      --button="Cancel":"firefox" --button="Save":"bash -c announce" \
+      --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --tab=$"Rules"
 
 }
 export -f suriGUISettings
@@ -193,8 +250,11 @@ function startSuricataService() {
       updateTrayMenu active
       ;;
     *)
-      systemctl start suricata && sleep 5
-      if [[ ! $(systemctl is-active suricata) == "active" ]]; then
+
+      if systemctl start suricata ; then
+        d3bug info "Suricata service started"
+        updateTrayMenu active
+      else
         d3bug error "Error starting Suricata service"
         updateTrayMenu inactive
       fi
@@ -365,10 +425,11 @@ checkSuricataService
 [[ $suricataServiceStatus != "active" ]] && startSuricataService
 startSuriDaemon
 
-sleep 7
 
 while [[ -e $_PROJECT_PIPE ]]; do
   sleep 10
   checkSuricataService
   # make while true as while suriActive???
 done
+
+exit 0
