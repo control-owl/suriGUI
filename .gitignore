@@ -1,4 +1,2 @@
-todo
 tmp/
-*.log
-update.timestamp
+log/
