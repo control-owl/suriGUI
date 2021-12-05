@@ -7,5 +7,4 @@
   file.managed:
     - makedirs: True
     - contents: |
-        binds+=( '/etc/suricata/rules/' )
         binds+=( '/usr/share/suriGUI' )
