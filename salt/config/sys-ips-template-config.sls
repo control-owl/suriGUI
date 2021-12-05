@@ -1,65 +1,65 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.211127-so
+# stamp: 0.211204-jo
 
 # Install all necessery packets
 suricata-install-packages:
   pkg.installed:
     - pkgs:
-      - qubes-core-agent-networking
-      - qubes-core-agent-passwordless-root
-      - libnetfilter-queue-dev # NFQUEUE support
-      - suricata
-      - jq # for proccessing suricata's output
-      - libnotify-bin # notification daemon
-      - zenity # not sure if needed ??
-      - yad
-      - git
+      - qubes-core-agent-networking # Qubes
+      - qubes-core-agent-passwordless-root # Qubes
+      - libnetfilter-queue-dev # NFQUEUE support suriGUI
+      - suricata # suriGUI
+      - jq # for proccessing suricata's output suriGUI
+      - libnotify-bin # notification daemon suriGUI
+      - zenity # not sure if needed ?? maybe Qubes need it
+      - yad # suriGUI
+      - git # suriGUI
 
 stop-suricata-service:
   cmd.run:
     - name: "systemctl stop suricata"
 
-/lib/systemd/system/suricata.service:
-  file.managed:
-    - makedirs: True
-    - contents: |
-        [Unit]
-        Description=Suricata IPS daemon
-        After=network.target network-online.target
-        Requires=network-online.target
-        [Service]
-        Type=simple
-        EnvironmentFile=-/etc/default/suricata
-        ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-        ExecStart=/usr/bin/suricata -c /etc/suricata/suricata.yaml -q 0
-        ExecReload=/bin/kill -HUP $MAINPID
-        ExecStop=/usr/bin/suricatasc -c shutdown
-        Restart=on-failure
-        ProtectSystem=full
-        ProtectHome=true
-        [Install]
-        WantedBy=multi-user.target
+# /lib/systemd/system/suricata.service:
+#   file.managed:
+#     - makedirs: True
+#     - contents: |
+#         [Unit]
+#         Description=Suricata IPS daemon
+#         After=network.target network-online.target
+#         Requires=network-online.target
+#         [Service]
+#         Type=simple
+#         EnvironmentFile=-/etc/default/suricata
+#         ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
+#         ExecStart=/usr/bin/suricata -c /etc/suricata/suricata.yaml -q 0
+#         ExecReload=/bin/kill -HUP $MAINPID
+#         ExecStop=/usr/bin/suricatasc -c shutdown
+#         Restart=on-failure
+#         ProtectSystem=full
+#         ProtectHome=true
+#         [Install]
+#         WantedBy=multi-user.target
 
-suricata-enable-ips-mode:
+# suricata-enable-ips-mode:
+#   cmd.run:
+#     - name: "echo include: ips.yaml >> /etc/suricata/suricata.yaml"
+
+# /etc/suricata/ips.yaml:
+#   file.managed:
+#     - makedirs: True
+#     - contents: |
+#         %YAML 1.1
+#         ---
+#         nfq:
+#           mode: repeat
+#           repeat-mark: 1
+#           repeat-mask: 1
+
+disable-suricata-service:
   cmd.run:
-    - name: "echo include: ips.yaml >> /etc/suricata/suricata.yaml"
-
-/etc/suricata/ips.yaml:
-  file.managed:
-    - makedirs: True
-    - contents: |
-        %YAML 1.1
-        ---
-        nfq:
-          mode: repeat
-          repeat-mark: 1
-          repeat-mask: 1
-
-enable-suricata-service:
-  cmd.run:
-    - name: "systemctl enable suricata"
+    - name: "systemctl disable suricata"
 
 clone-suriGUI:
   cmd.run:
