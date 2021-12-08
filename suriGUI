@@ -54,6 +54,7 @@ export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
 export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
 export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
 
+export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 
@@ -67,17 +68,14 @@ export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 
 
 function exitSuriGUI() {
-  echo -e "$dateShort \e[41;30m  EXITING  \e[0m"
-
-  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "quit" >&3 &
-  exec 3<&-
-  rm $_PROJECT_PIPE 1>&- 2>&-
+  echo -e "$dateShort \e[41;30mEXITING...\e[0m"
 
   for f in $(ls -1 $_PROJECT_DIR_TMP/*.pid) ; do
     d3bug info "Closing $f with PID $(cat $f)"
     kill -9 $(cat $f) 1>&- 2>&-
-    rm $f
   done
+
+  rm "$_PROJECT_DIR_TMP" -R
   stopSuricataService exit
 
   #[[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
@@ -85,7 +83,7 @@ function exitSuriGUI() {
 }
 export -f exitSuriGUI
 trap exitSuriGUI SIGINT SIGHUP SIGTERM SIGUSR1 SIGUSR2
-trap "rm $_PROJECT_DIR_TMP -R" EXIT
+# trap "rm $_PROJECT_DIR_TMP -R" EXIT
 
 function checkRequirements () {
   d3bug
@@ -166,6 +164,9 @@ function readConfigFile() {
       makeDefault="^"
       export newMode=$(echo "$defaultMode" | sed "s/$mode/$makeDefault$mode/g")
     ;;
+    "update" )
+      updateRules="$update"
+    ;;
   esac
 
 
@@ -197,7 +198,6 @@ function updateSuricataMode() {
   readConfigFile action
   d3bug info "Suricata old mode: $mode"
   d3bug info "Suricata new mode: $1"
-
   updateConfigFile "mode" $1
   startSuricataService
 
@@ -251,6 +251,7 @@ function suriGUISettings() {
   #echo $! > "$_PROJECT_DIR_TMP/tab2.pid"
 
   readConfigFile action
+  readConfigFile update
 
   yad --plug=$KEY --tabnum=3 --form \
       --field="Default rule action":CB "$newMenu" \
@@ -264,8 +265,9 @@ function suriGUISettings() {
       --field="Apply":fbtn 'bash -c "updateSuricataAction %1"' \
       --field="":LBL "" \
       --field="<b>Update</b>":LBL "" \
-      --field="Number:NUM" "0\!10..60\!1\!1" \
-      --field="Apply":fbtn 'bash -c "updateSuricataAction %12"' &
+      --field="Update rules every x days:NUM" "$updateRules\!1..365\!1\!0" \
+      --field="Apply":fbtn 'bash -c "updateConfigFile update %12"' \
+      --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' &
   #echo $! > "$_PROJECT_DIR_TMP/tab3.pid"
 
 
@@ -276,7 +278,7 @@ function suriGUISettings() {
 
   yad --notebook --width=600 --height=350 --center --auto-kill \
       --title=$"suriGUI Settings" --text="$TXT" \
-      --window-icon="utilities-terminal" --image="utilities-terminal" --image-on-top \
+      --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
       --no-buttons --auto-kill \
       --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --tab=$"Rules" &
   #echo $! > "$_PROJECT_DIR_TMP/notebook.pid"
@@ -301,17 +303,9 @@ function stopSuricataService() {
   d3bug
 
   suricatasc -c shutdown 1>&- 2>&-
-
-  # case $1 in
-  #   exit ) : ;;
-  #   *)
-  #     sleep 5
-  #     d3bug info "Suricata stopped"
-  #     updateTrayMenu inactive
-      # [[ -f $_SURICATA_PID ]] && rm $_SURICATA_PID
-  #   ;;
-  # esac
-
+  d3bug info "Suricata stopped"
+  updateTrayMenu inactive
+  [[ -f $_SURICATA_PID ]] && rm $_SURICATA_PID
 
 
 }
@@ -334,6 +328,7 @@ function startSuricataService() {
   esac
   d3bug info "Starting Suricata in $mode mode"
 
+  [[ -f $_SURICATA_PID ]] && rm $_SURICATA_PID
   /usr/bin/suricata $config --pidfile $_SURICATA_PID -S $_SURICATA_RULES  -l $_PROJECT_DIR_LOG  1>&- 2>&- &
 }
 export -f startSuricataService
@@ -342,9 +337,21 @@ export -f startSuricataService
 function updateTrayIcon() {
   d3bug
 
-  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
+  case "$1" in
+    starting )
+      until  [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; do
+        exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-active" >&3 &
+        sleep 1
+        exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-inactive" >&3 &
+        sleep 1
+      done
+      ;;
+    * )
+      [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$1" >&3 &
 
-  d3bug info "Tray icon updated: $1"
+      d3bug info "Tray icon updated: $1"
+    ;;
+  esac
 
 }
 export -f updateTrayIcon
@@ -356,6 +363,7 @@ function updateTrayMenu() {
   case "$1" in
     "active") menu="Stop!bash -c stopSuricataService" ;;
     "inactive") menu="Start!bash -c startSuricataService" ;;
+    "starting") menu="" ;;
     *)    exit 1          ;;
   esac
 
@@ -375,11 +383,19 @@ export -f updateTrayMenu
 function checkSuricataStatus() {
   d3bug
 
+
+
   # if [[ -f $_SURICATA_PID ]] ; then
     if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
+      if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
         d3bug info "Suricata is active"
         updateTrayMenu active
         export suricataStatus=active
+      else
+        d3bug info "Suricata is starting"
+        updateTrayMenu starting
+        export suricataStatus=starting
+      fi
     else
       #rm $_SURICATA_PID
       d3bug info "Suricata is inactive"
@@ -414,10 +430,6 @@ function updateSuricataRules() {
       d3gub info "Internet found behing Qubes Proxy. Resuming update..."
     fi
   fi
-
-#check for mode
-
-
 
   if command -v suricata-update ; then
     if suricata-update --output "$_PROJECT_DIR_CONF" \
@@ -478,19 +490,6 @@ function startSuriGUIDaemon() {
 
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
 
-  xdg-icon-resource install --context mimetypes \
-                            --size 48 \
-                            "$_PROJECT_ICON_ACTIVE" \
-                            "$_PROJECT_NAME-active"
-
-
-  xdg-icon-resource install --context mimetypes \
-                            --size 48 \
-                            "$_PROJECT_ICON_INACTIVE" \
-                            "$_PROJECT_NAME-inactive"
-
-  d3bug info "Icons created"
-
   yad --notification --no-middle --listen \
     --text="$_PROJECT_NAME v$_PROJECT_VER" \
     --image="$_PROJECT_NAME-inactive" \
@@ -520,8 +519,9 @@ startSuriGUIDaemon
 
 while : ; do
     [[ ! -f "$_PROJECT_DIR_TMP/suriGUIDaemon.pid" ]] && break
-    echo "Pausing until file exists."
     checkSuricataStatus
-    sleep 10
+    sleep 3
 done >/dev/null 2>&1
+
+echo -e "$dateShort \e[41;30m  EXIT 0  \e[0m"
 exit 0
