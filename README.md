@@ -12,12 +12,12 @@ But, before this peaces are not done, I am calling this not even a beta.
     - [x] If not load default values
 - [X] Option to switch mode: IPS and IDS
 - [ ] Notification daemon
-- [ ] try to avoid sudo
 - [X] run suricata as program, not service
 - [X] new notebook: rules
     - [X] change rule mode with suriGUISettings
     - [ ] control rule sources
     - [ ] update rules
+- [ ] only one instance
 
 -------------
 
