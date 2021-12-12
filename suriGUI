@@ -58,7 +58,6 @@ export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
 export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/inactive-icon.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
-export _PROJECT_LOCK="$_PROJECT_DIR_TMP/$_PROJECT_NAME.lock"
 
 export _SURICATA_CONFIG_IDS="$_PROJECT_DIR_CONF/suricataIDS.yaml"
 export _SURICATA_CONFIG_IPS="$_PROJECT_DIR_CONF/suricataIPS.yaml"
@@ -69,10 +68,11 @@ export _SURICATA_OUTDATE="14"
 
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"
+export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
 
 
 function exitSuriGUI() {
-  echo -e "$timeShort \e[41;30mEXITING...\e[0m"
+  echo -e "$timeShort \e[41;30m EXITING... \e[0m"
 
   for f in $(ls -1 $_PROJECT_DIR_TMP/*.pid) ; do
     d3bug info "Closing $f with PID $(cat $f)"
@@ -81,11 +81,10 @@ function exitSuriGUI() {
 
   rm "$_PROJECT_DIR_TMP" -R
   stopSuricataService exit
-
-
 }
 export -f exitSuriGUI
 trap exitSuriGUI SIGINT SIGHUP SIGTERM SIGUSR1 SIGUSR2 EXIT
+
 
 function checkRequirements () {
   d3bug
@@ -429,6 +428,16 @@ export -f updateTrayIcon
 function updateTrayMenu() {
   d3bug
 
+  # get old state
+
+  if [[ ${suricataStatus:-inactive} == $1 ]]
+  then
+    echo "same"
+  else
+    echo "new state"
+  fi
+  # if old=new do nothing
+
   case "$1" in
     "active") menu="Stop!bash -c stopSuricataService" ;;
     "inactive") menu="Start!bash -c startSuricataService" ;;
@@ -452,31 +461,21 @@ export -f updateTrayMenu
 function checkSuricataStatus() {
   d3bug
 
-
-
-  # if [[ -f $_SURICATA_PID ]] ; then
-    if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
-      if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
-        d3bug info "Suricata is active"
-        updateTrayMenu active
-        export suricataStatus=active
-      else
-        d3bug info "Suricata is starting"
-        updateTrayMenu starting
-        export suricataStatus=starting
-      fi
+  if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
+    if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
+      d3bug info "Suricata is active"
+      updateTrayMenu active
+      export suricataStatus=active
     else
-      #rm $_SURICATA_PID
-      d3bug info "Suricata is inactive"
-      updateTrayMenu inactive
-      export suricataStatus=inactive
+      d3bug info "Suricata is starting"
+      updateTrayMenu starting
+      export suricataStatus=starting
     fi
-  # else
-  #   #rm $_SURICATA_PID
-  #   d3bug info "Suricata is inactive"
-  #   updateTrayMenu inactive
-  #   export suricataStatus=inactive
-  # fi
+  else
+    d3bug info "Suricata is inactive"
+    updateTrayMenu inactive
+    export suricataStatus=inactive
+  fi
 }
 export -f checkSuricataStatus
 
@@ -592,7 +591,7 @@ while : ; do
     [[ ! -f "$_PROJECT_PID" ]] && break
     checkSuricataStatus
     sleep 3
-done >/dev/null 2>&1
+done #>/dev/null 2>&1
 
 echo -e "$timeShort \e[41;30m  EXIT 0  \e[0m"
 exit 0
