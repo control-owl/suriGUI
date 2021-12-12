@@ -1,2 +1,4 @@
 tmp/
 log/
+conf/suricata.rules
+conf/suricata.rules.timestamp
