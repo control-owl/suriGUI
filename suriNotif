@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+
+echo "$!" > "$_NOTIF_PID"
+readConfigFile timeout
+
+
+while [[ ! -f "$_PROJECT_DIR_LOG/eve.json" ]] ; do
+    [[ -f "$_PROJECT_DIR_LOG/eve.json" ]] && break
+    sleep 10
+done >/dev/null 2>&1
+
+
+tail -f "$_PROJECT_DIR_LOG/eve.json" \
+ | jq --unbuffered -r -c 'select(.event_type=="alert")' \
+ | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category)  signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
+ | while read -r line; do \
+     eval "$line" ; \
+     notify-send  "$category"  "$(echo -e "Signature: $signature \nSID: $sid \nSource: $SRC \nDestination: $DEST  \nAction: $action")" -t ${newTimeout:-$_NOTIF_TIMEOUT} ; \
+   done &
