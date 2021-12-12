@@ -1,29 +1,24 @@
 ### Still in development
 
-This project is still in heavy development.
-I am writing peaces of code every day.
-In theory basic stuff is working.
-I will try to update as much as I can.
-But, before this peaces are not done, I am calling this not even a beta.
+This project is still in development and it is almost finished.
 
 - [X] Transfer all variables to suriGUISettings
 - [X] Create setting file for suriGUISettings
     - [X] Load setting file if exists
     - [x] If not load default values
-- [X] Option to switch mode: IPS and IDS
-- [ ] Notification daemon
+- [X] Notification daemon
 - [X] run suricata as program, not service
 - [X] new notebook: rules
     - [X] change rule mode with suriGUISettings
     - [ ] control rule sources
-    - [ ] update rules
+    - [X] update rules
 - [ ] only one instance
 
 -------------
 
 ### Intro
 
-- Basic concept is to create intrusion Detection or Prevention System (IDS/IPS) with Suricata, Debian 11 and Qubes 4.1
+- Basic concept is to create Intrusion Prevention System (IPS) with Suricata, Debian 11 and Qubes 4.1
 
 -------------
 
@@ -31,10 +26,10 @@ But, before this peaces are not done, I am calling this not even a beta.
 
 - Block all malicious incoming and outgoing packets
 - Get alerts with notifications
-- Qubes Firewall per qube is working
+- Firewall per qube is working
 - Control Suricata with GUI
-- Switch modes with click
-- ...
+- Sys-Tray Icon
+- 
 
 -------------
 
