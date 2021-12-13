@@ -16,7 +16,7 @@ trap "kill 0" EXIT
 function exitSuriGUI() {
   echo -e "$timeShort \e[41;30m EXITING... \e[0m"
 
-  rm "$_PROJECT_DIR_TMP" -R
+  rm -r "$_PROJECT_DIR_TMP/*"
 
   source $_PROJECT_CONFIG_FILE
   [[ $keep != "TRUE" ]] && echo "delete log"
@@ -195,13 +195,21 @@ function suriGUISettings() {
   KEY=$RANDOM
 
   yad --plug=$KEY --tabnum=1 --form \
-      --field="<b>In developement</b>":LBL "" \
+      --field="<b>\t\t\t\t\t\tIn developement</b>":LBL "" \
+      \
+      --field="<b>Status</b>":LBL "" \
+      --field="IPS = $suricataStatus":LBL "" \
       \
       --field="<b>Notifications</b>":LBL "" \
       --field="":LBL "" \
       --field="Enable":chk "TRUE" \
       --field="Timeout in seconds:NUM" "$timeout\!1..60\!1\!0" \
-      --field="Apply":fbtn 'bash -c "updateConfigFile notifications %4 %5"' &
+      --field="Apply settings":fbtn 'bash -c "updateConfigFile notifications %4 %5"' \
+      \
+      --field="":LBL "" \
+      --field="Start IPS":fbtn 'bash -c "startSuricataService"' \
+      --field="Stop":fbtn 'bash -c "stopSuricataService"' \
+      &
 
 
   yad --plug=$KEY --tabnum=2 --form \
@@ -383,7 +391,7 @@ function updateTrayMenu() {
       *)    exit 1          ;;
     esac
 
-    menu+="|Status!bash -c checkSuricataStatus||Settings!bash -c suriGUISettings"
+    menu+="||Settings!bash -c suriGUISettings"
     menu+="||Exit!bash -c exitSuriGUI"
 
     [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
