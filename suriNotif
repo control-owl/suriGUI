@@ -1,20 +1,31 @@
 #!/usr/bin/env bash
 
 
-echo "$!" > "$_NOTIF_PID"
-readConfigFile timeout
 
-
-while [[ ! -f "$_PROJECT_DIR_LOG/eve.json" ]] ; do
-    [[ -f "$_PROJECT_DIR_LOG/eve.json" ]] && break
-    sleep 10
+while [[ ! -f "$_SURICATA_LOG/eve.json" ]] ; do
+    [[ -f "$_SURICATA_LOG/eve.json" ]] && break
+    sleep 5
 done >/dev/null 2>&1
 
+readConfigFile timeout
 
-tail -f "$_PROJECT_DIR_LOG/eve.json" \
- | jq --unbuffered -r -c 'select(.event_type=="alert")' \
+tail -f "$_SURICATA_LOG/eve.json" > >( \
+ jq --unbuffered -r -c 'select(.event_type=="alert")' \
  | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category)  signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
  | while read -r line; do \
-     eval "$line" ; \
-     notify-send  "$category"  "$(echo -e "Signature: $signature \nSID: $sid \nSource: $SRC \nDestination: $DEST  \nAction: $action")" -t ${newTimeout:-$_NOTIF_TIMEOUT} ; \
-   done &
+  eval "$line" ; \
+  notify-send -i $_PROJECT_ICON \
+              -t $(($configTimeout * 1000 )) \
+              "$category" \
+              "$(echo -e "Signature: $signature \nSID: $sid \nSource: $SRC \nDestination: $DEST  \nAction: $action")" ; \
+   done ) & 
+echo "$!" > "$_NOTIF_PID"
+
+
+
+   # yad --image=$_PROJECT_ICON  --timeout=$configTimeout --form --no-buttons --undecorated --splash --no-focus --fixed --width=500 --height=200 \
+   # --field="Signature: $signature":LBL \
+   # --field="SID: $sid":LBL \
+   # --field="Source: $SRC":LBL \
+   # --field="Destination: $DEST":LBL \
+   # --field="Action: $action":LBL ; \

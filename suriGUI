@@ -16,14 +16,13 @@ trap "kill 0" EXIT
 function exitSuriGUI() {
   echo -e "$timeShort \e[41;30m EXITING... \e[0m"
 
-  rm -r "$_PROJECT_DIR_TMP/*"
+  # rm  "$_PROJECT_DIR_TMP/*.pid"  #&& rm *.pid
+  find $_PROJECT_DIR_TMP -maxdepth 1 -type f -name "*.pid" -delete
 
   source $_PROJECT_CONFIG_FILE
   [[ $keep != "TRUE" ]] && echo "delete log"
 
   stopSuricataService exit
-
-  exit 0
 }
 export -f exitSuriGUI
 trap exitSuriGUI SIGINT SIGHUP SIGTERM SIGUSR1 SIGUSR2
@@ -80,7 +79,7 @@ export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
 export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
 export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
-export _SURICATA_LOG="$_PROJECT_DIR_LOG/$_PROJECT_NAME-$dateLong.log"
+export _SURICATA_LOG="$_PROJECT_DIR_LOG/$dateShort"
 
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"  && echo "$$" > "$_PROJECT_PID"
@@ -89,6 +88,26 @@ export _DAEMON_PID="$_PROJECT_DIR_TMP/notification-daemon.pid"
 
 export _NOTIF_TIMEOUT="2000"
 export _SURICATA_OUTDATE="7"
+
+function checkConfig () {
+  d3bug
+
+  if [[ ! -f "$_PROJECT_CONFIG_FILE" ]] ; then
+    if [[ ! -f "$_PROJECT_CONFIG_FILE.default" ]] ; then
+      d3bug info "Creating new config file"
+      echo -e "notifications=TRUE\ntimeout=5\naction=rejectboth\nupdate=7\nkeep=TRUE\nduration=30" > $_PROJECT_CONFIG_FILE.1
+    else
+      d3bug info "Creating new config file"
+      cp "$_PROJECT_CONFIG_FILE.default" "$_PROJECT_CONFIG_FILE"
+    fi
+
+  else
+    d3bug info "Config found"
+  fi
+
+
+}
+export -f checkConfig
 
 
 function checkRequirements () {
@@ -142,14 +161,13 @@ function readConfigFile() {
     "action" )
       defaultActions="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
       makeDefault="^"
-      export newMenu=$(echo "$defaultActions" | sed "s/$action/$makeDefault$action/g")
+      export configAction=$(echo "$defaultActions" | sed "s/$action/$makeDefault$action/g")
     ;;
-    "update" )
-      export updateRules="$update"
-    ;;
-    "timeout" )
-    export newTimeout=$(( $timeout * 1000 ))
-    ;;
+    "update" ) export configUpdate="$update" ;;
+    "timeout" ) export configTimeout="$timeout" ;;
+    "duration" ) export configDuration="$duration" ;;
+    "notifications" ) export configNotifications="$notifications" ;;
+    "keep" ) export configKeep="$keep" ;;
   esac
 }
 export -f readConfigFile
@@ -159,12 +177,19 @@ function updateConfigFile() {
   d3bug
 
   case "$1" in
-    "notifications" )
+    "tab1" )
             sed -i "s/^\(notifications\s*=\s*\).*\$/\1$2/" "$_PROJECT_CONFIG_FILE"
             sed -i "s/^\(timeout\s*=\s*\).*\$/\1$3/" "$_PROJECT_CONFIG_FILE"
+            sed -i "s/^\(keep\s*=\s*\).*\$/\1$4/" "$_PROJECT_CONFIG_FILE"
+            sed -i "s/^\(duration\s*=\s*\).*\$/\1$5/" "$_PROJECT_CONFIG_FILE"
 
             d3bug info "Notifications: $2"
             d3bug info "Timeout: $3 second(s)"
+            d3bug info "Keep log: $4"
+            d3bug info "Log duration: $5"
+
+            [[ $2 == "TRUE" ]] && startNotifDaemon || stopNotifDaemon
+
       ;;
     "rules" )
             source "$_PROJECT_CONFIG_FILE"
@@ -194,19 +219,20 @@ function suriGUISettings() {
 
   KEY=$RANDOM
 
+  readConfigFile notifications
+  readConfigFile timeout
+  readConfigFile keep
+  readConfigFile duration
+
   yad --plug=$KEY --tabnum=1 --form \
       --field="<b>\t\t\t\t\t\tIn developement</b>":LBL "" \
-      \
-      --field="<b>Status</b>":LBL "" \
-      --field="IPS = $suricataStatus":LBL "" \
-      \
-      --field="<b>Notifications</b>":LBL "" \
+      --field="Notifications":chk "$configNotifications" \
+      --field="Timeout in seconds:NUM" "$configTimeout\!1..60\!1\!0" \
       --field="":LBL "" \
-      --field="Enable":chk "TRUE" \
-      --field="Timeout in seconds:NUM" "$timeout\!1..60\!1\!0" \
-      --field="Apply settings":fbtn 'bash -c "updateConfigFile notifications %4 %5"' \
-      \
+      --field="Keep log":chk "$configKeep" \
+      --field="Log in days:NUM" "$configDuration\!1..60\!1\!0" \
       --field="":LBL "" \
+      --field="Apply settings":fbtn 'bash -c "updateConfigFile tab1 %2 %3 %5 %6"' \
       --field="Start IPS":fbtn 'bash -c "startSuricataService"' \
       --field="Stop":fbtn 'bash -c "stopSuricataService"' \
       &
@@ -221,7 +247,6 @@ function suriGUISettings() {
       --field="":LBL "" \
       --field="<b>Log</b>":LBL "" \
       --field="Log directory:":dir "$_PROJECT_DIR_LOG" \
-      --field="Persistant log":chk "TRUE" \
       \
       --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
       --file-filter="All Files | *.*" &
@@ -230,7 +255,7 @@ function suriGUISettings() {
   readConfigFile update
 
   yad --plug=$KEY --tabnum=3 --form \
-      --field="Default rule action":CB "$newMenu" \
+      --field="Default rule action":CB "$configAction" \
       --field="<b>alert</b> - generate an alert":LBL "" \
       --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
       --field="<b>drop</b> - drop packet and generate alert":LBL "" \
@@ -240,7 +265,7 @@ function suriGUISettings() {
       --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
       --field="":LBL "" \
       --field="<b>Update</b>":LBL "" \
-      --field="Update rules (days):NUM" "$updateRules\!1..365\!1\!0" \
+      --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
       --field="Apply":fbtn 'bash -c "updateConfigFile rules %1 %11"' \
       --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' &
 
@@ -253,8 +278,19 @@ function suriGUISettings() {
   yad --notebook --width=600 --height=350 --center --auto-kill \
       --title=$"suriGUI Settings" --text="$TXT" \
       --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
-      --no-buttons --auto-kill \
-      --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --tab=$"Rules" &
+      --auto-kill \
+      --key=$KEY --tab=$"suriGUI" --tab=$"Suricata" --tab=$"Rules"
+      # --button="<b>Start</b>!gtk-yes:1"  \
+      # --button="Stop!gtk-no:2"
+
+  # if [ $? = 1 ]; then
+  #   startSuricataService
+  # elif [ $? = 2 ]; then
+  #   stopSuricataService
+  # else
+  #   :
+  # fi
+
 
 }
 export -f suriGUISettings
@@ -294,45 +330,61 @@ export -f checkIptables
 
 function isProcessAlive() {
   if [[ -f "$_PROJECT_DIR_TMP/$1.pid" ]] ; then
-    if ps aux | grep $(cat $_PROJECT_DIR_TMP/$1.pid) >/dev/null ; then
-       #d3bug info "$1 already running"
+    if ps aux | grep "$(cat $_PROJECT_DIR_TMP/$1.pid)" >/dev/null ; then
        export processIs="Alive"
      else
-       #d3bug info "$1 is not running"
        export processIs="Dead"
      fi
    else
-     #d3bug info "$1 is not running"
      export processIs="Dead"
    fi
 }
 export -f isProcessAlive
 
 
+
+function stopNotifDaemon() {
+  d3bug
+
+  d3bug info "Stopping notifications"
+  [[ -f "$_NOTIF_PID" ]] && kill -9 "$(cat $_NOTIF_PID)" && rm "$_NOTIF_PID"
+  #[[ -f "$_DAEMON_PID" ]] && kill -9 "$(cat $_DAEMON_PID)" && rm "$_DAEMON_PID"
+
+}
+export -f stopNotifDaemon
+
+
+
 function startNotifDaemon() {
   d3bug
 
-  isProcessAlive "notification-daemon"
+  #check config file first
+  readConfigFile notifications
 
-  if [[ $processIs == "Dead" ]] ; then
-    /usr/lib/notification-daemon/notification-daemon &
-    echo "$!" > "$_DAEMON_PID"
-    d3bug info "notification-daemon started with PID: $(cat $_DAEMON_PID)"
-   else
-     d3bug info "Nothing to do"
-   fi
-   unset processIs
+  if [[ $configNotifications == "TRUE" ]] ; then
+    isProcessAlive "notification-daemon"
 
-
-   isProcessAlive "suriNotif"
-
-   if [[ $processIs == "Dead" ]] ; then
-     source suriNotif &
-     d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
+    if [[ $processIs == "Dead" ]] ; then
+      /usr/lib/notification-daemon/notification-daemon &
+      echo "$!" > "$_DAEMON_PID"
+      d3bug info "notification-daemon started with PID: $(cat $_DAEMON_PID)"
     else
-      d3bug info "Nothing to do"
+      d3bug info "notification-daemon already running"
+    fi
+
+    unset processIs
+    isProcessAlive "suriNotif"
+
+    if [[ $processIs == "Dead" ]] ; then
+      bash suriNotif
+      d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
+    else
+      d3bug info "suriNotif already running"
     fi
     unset processIs
+  else
+    d3bug info "Notifications are disabled"
+  fi
 }
 export -f startNotifDaemon
 
@@ -343,7 +395,7 @@ function startSuricataService() {
   isProcessAlive "suricata"
 
   if [[ $processIs == "Dead" ]] ; then
-     /usr/bin/suricata -c $_SURICATA_CONFIG -q 0 --pidfile $_SURICATA_PID -S $_SURICATA_RULES -l $_PROJECT_DIR_LOG  1>&- 2>&- &
+     /usr/bin/suricata -c $_SURICATA_CONFIG -q 0 --pidfile $_SURICATA_PID -S $_SURICATA_RULES -l $_SURICATA_LOG  1>&- 2>&- &
    else
      d3bug info "Nothing to do"
    fi
@@ -361,9 +413,10 @@ function updateTrayIcon() {
     starting )
       until  [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; do
         exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-active" >&3 &
-        sleep 1
+        sleep 0.5
         exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-inactive" >&3 &
-        sleep 1
+        sleep 0.5
+        #exec 3<>$_PROJECT_PIPE echo "visible:blink" >&3 &
       done
       ;;
     * )
@@ -518,6 +571,7 @@ export -f startSuriGUIDaemon
 
 
 checkRequirements
+checkConfig
 createProjectPipe
 checkSuricataRules
 checkSuricataStatus
@@ -526,6 +580,7 @@ startSuriGUIDaemon
 
 
 while : ; do
-    checkSuricataStatus
-    sleep 3
+  [[ ! -f "$_PROJECT_PID" ]] && break
+  checkSuricataStatus
+  sleep 3
 done >/dev/null 2>&1
