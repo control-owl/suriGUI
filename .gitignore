@@ -4,4 +4,4 @@ conf/suriGUI.conf
 conf/suricata.rules
 conf/suricata.rules.timestamp
 conf/classification.config
-conf/update/*
+conf/update

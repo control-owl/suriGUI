@@ -71,6 +71,7 @@ export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"     && createDir "${_##*=}"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"   && createDir "${_##*=}"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
+export _SURICATA_LOG="$_PROJECT_DIR_LOG/$dateShort" && createDir "${_##*=}"
 
 export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
 export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suri.pipe"
@@ -82,7 +83,6 @@ export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/active-icon.png"
 export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
 export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
 export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
-export _SURICATA_LOG="$_PROJECT_DIR_LOG/$dateShort"
 
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"  && echo "$$" > "$_PROJECT_PID"
@@ -110,8 +110,12 @@ function checkConfig () {
 
   readConfigFile keep
 
-  [[ $configKeep == "TRUE" ]] && mkdir "$_SURICATA_LOG" || d3bug info "Logging disabled"
-
+  if [[ $configKeep == "TRUE" ]]; then
+    mkdir "$_SURICATA_LOG"
+    d3bug info "Suricata log directory: $_SURICATA_LOG"
+  else
+    d3bug info "Logging disabled"
+  fi
 }
 export -f checkConfig
 
@@ -404,6 +408,7 @@ function startSuricataService() {
 
   if [[ $processIs == "Dead" ]] ; then
     echo "starting"
+    readConfigFile keep
      /usr/bin/suricata -c $_SURICATA_CONFIG -q 0 --pidfile $_SURICATA_PID -S $_SURICATA_RULES -l $_SURICATA_LOG  & #1>&- 2>&- &
    else
      d3bug info "Nothing to do"
