@@ -17,15 +17,18 @@ function exitSuriGUI() {
   echo -e "$timeShort \e[41;30m EXITING... \e[0m"
 
   # rm  "$_PROJECT_DIR_TMP/*.pid"  #&& rm *.pid
-  find $_PROJECT_DIR_TMP -maxdepth 1 -type f -name "*.pid" -delete
+  for f in $(find $_PROJECT_DIR_TMP -maxdepth 1 -type f -name "*.pid") ; do
+    # kill $(cat $f)
+    echo "PID to kill $f : $(cat $f)"
+    rm $f
+  done
 
-  source $_PROJECT_CONFIG_FILE
-  [[ $keep != "TRUE" ]] && echo "delete log"
+  source $_PROJECT_CONFIG_FILE && [ $keep != "TRUE" ] && rm "$_PROJECT_DIR_LOG" -R
 
-  stopSuricataService exit
+  stopSuricataService #>/dev/null
 }
 export -f exitSuriGUI
-trap exitSuriGUI SIGINT SIGHUP SIGTERM SIGUSR1 SIGUSR2
+#trap exitSuriGUI EXIT
 
 
 if [ "$EUID" -ne 0 ]
@@ -105,10 +108,12 @@ function checkConfig () {
     d3bug info "Config found"
   fi
 
+  readConfigFile keep
+
+  [[ $configKeep == "TRUE" ]] && mkdir "$_SURICATA_LOG" || d3bug info "Logging disabled"
 
 }
 export -f checkConfig
-
 
 function checkRequirements () {
   d3bug
@@ -398,7 +403,8 @@ function startSuricataService() {
   isProcessAlive "suricata"
 
   if [[ $processIs == "Dead" ]] ; then
-     /usr/bin/suricata -c $_SURICATA_CONFIG -q 0 --pidfile $_SURICATA_PID -S $_SURICATA_RULES -l $_SURICATA_LOG  1>&- 2>&- &
+    echo "starting"
+     /usr/bin/suricata -c $_SURICATA_CONFIG -q 0 --pidfile $_SURICATA_PID -S $_SURICATA_RULES -l $_SURICATA_LOG  & #1>&- 2>&- &
    else
      d3bug info "Nothing to do"
    fi
