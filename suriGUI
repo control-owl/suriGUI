@@ -331,13 +331,15 @@ export -f checkIptables
 function isProcessAlive() {
   if [[ -f "$_PROJECT_DIR_TMP/$1.pid" ]] ; then
     if ps aux | grep "$(cat $_PROJECT_DIR_TMP/$1.pid)" >/dev/null ; then
-       export processIs="Alive"
+      export processIs="Alive"
      else
        export processIs="Dead"
      fi
    else
      export processIs="Dead"
    fi
+
+   d3bug info "$1 is $processIs"
 }
 export -f isProcessAlive
 
@@ -376,7 +378,8 @@ function startNotifDaemon() {
     isProcessAlive "suriNotif"
 
     if [[ $processIs == "Dead" ]] ; then
-      bash suriNotif
+      bash suriNotif &
+      echo "$!" > "$_NOTIF_PID"
       d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
     else
       d3bug info "suriNotif already running"

@@ -18,8 +18,8 @@ tail -f "$_SURICATA_LOG/eve.json" > >( \
               -t $(($configTimeout * 1000 )) \
               "$category" \
               "$(echo -e "Signature: $signature \nSID: $sid \nSource: $SRC \nDestination: $DEST  \nAction: $action")" ; \
-   done ) & 
-echo "$!" > "$_NOTIF_PID"
+   done ) &
+#echo "$!" > "$_NOTIF_PID"
 
 
 
