@@ -16,6 +16,8 @@ trap "kill 0" EXIT
 function exitSuriGUI() {
   echo -e "$timeShort \e[41;30m EXITING... \e[0m"
 
+  # close pipe
+
   # rm  "$_PROJECT_DIR_TMP/*.pid"  #&& rm *.pid
   for f in $(find $_PROJECT_DIR_TMP -maxdepth 1 -type f -name "*.pid") ; do
     # kill $(cat $f)
@@ -111,7 +113,7 @@ function checkConfig () {
   readConfigFile keep
 
   if [[ $configKeep == "TRUE" ]]; then
-    mkdir "$_SURICATA_LOG"
+    #mkdir "$_SURICATA_LOG"
     d3bug info "Suricata log directory: $_SURICATA_LOG"
   else
     d3bug info "Logging disabled"
@@ -130,7 +132,7 @@ function checkRequirements () {
     else
       d3bug error "$i not found"
 
-      yad --title="$_PROJECT_NAME" --text="$i is not installed.\nDo you want to install it now?" --button="Yes" --button="No"
+      yad --image="$_PROJECT_ICON" --image-on-top --title="$_PROJECT_NAME" --text="$i is not installed.\nDo you want to install it now?" --button="Yes" --button="No"
       ret=$?
       if [ $ret = 0 ] ; then
        apt-get install $i -y
@@ -284,7 +286,7 @@ function suriGUISettings() {
   TXT+=$"  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
 
-  yad --notebook --width=600 --height=350 --center --auto-kill \
+  yad --notebook --width=600 --height=350 --center --auto-kill --no-buttons \
       --title=$"suriGUI Settings" --text="$TXT" \
       --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
       --auto-kill \

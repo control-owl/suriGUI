@@ -4,8 +4,9 @@
 
 while [[ ! -f "$_SURICATA_LOG/eve.json" ]] ; do
     [[ -f "$_SURICATA_LOG/eve.json" ]] && break
+    d3bug info "Waiting for a log output"
     sleep 5
-done >/dev/null 2>&1
+done #>/dev/null 2>&1
 
 readConfigFile timeout
 
