@@ -25,7 +25,7 @@ function exitSuriGUI() {
     rm $f
   done
 
-  source $_PROJECT_CONFIG_FILE && [ $keep != "TRUE" ] #&& rm "$_PROJECT_ACTIVE_LOG" -R
+  source $_PROJECT_CONFIG_FILE && [ $keep != "TRUE" ] && rm "$_PROJECT_ACTIVE_LOG" -R
 
   stopSuricataService #>/dev/null
 }
@@ -95,7 +95,8 @@ export _DAEMON_PID="$_PROJECT_DIR_TMP/notification-daemon.pid"
 export _NOTIF_TIMEOUT="2000"
 export _SURICATA_OUTDATE="7"
 
-
+xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
+xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
 
 
 function checkRequirements () {
@@ -224,16 +225,9 @@ function checkConfig () {
   d3bug
 
   if [[ ! -f "$_PROJECT_CONFIG_FILE" ]] ; then
-    if [[ ! -f "$_PROJECT_CONFIG_FILE.default" ]] ; then
-      d3bug info "Creating new config file"
-      echo -e "notifications=TRUE\ntimeout=5\naction=rejectboth\nupdate=7\nkeep=TRUE\nduration=30" > $_PROJECT_CONFIG_FILE.1
-    else
-      d3bug info "Creating new config file"
-      cp "$_PROJECT_CONFIG_FILE.default" "$_PROJECT_CONFIG_FILE"
-    fi
-
-  else
-    d3bug info "Config found"
+    d3bug error "Default config not found"
+    cp "$_PROJECT_CONFIG_FILE.default" "$_PROJECT_CONFIG_FILE"
+    d3bug info "Config created"
   fi
 
   readConfigFile keep
@@ -643,9 +637,6 @@ function startSuriGUIDaemon() {
   d3bug
 
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
-
-  xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
-  xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
 
   yad --notification --no-middle --listen \
     --text="$_PROJECT_NAME v$_PROJECT_VER" \
