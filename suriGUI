@@ -25,7 +25,7 @@ function exitSuriGUI() {
     rm $f
   done
 
-  source $_PROJECT_CONFIG_FILE && [ $keep != "TRUE" ] && rm "$_PROJECT_ACTIVE_LOG" -R
+  source $_PROJECT_CONFIG_FILE && [ $keep != "TRUE" ] #&& rm "$_PROJECT_ACTIVE_LOG" -R
 
   stopSuricataService #>/dev/null
 }
