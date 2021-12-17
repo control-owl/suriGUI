@@ -2,15 +2,15 @@
 
 
 
-while [[ ! -f "$_SURICATA_LOG/eve.json" ]] ; do
-    [[ -f "$_SURICATA_LOG/eve.json" ]] && break
+while [[ ! -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] ; do
+    [[ -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] && break
     d3bug info "Waiting for a log output"
     sleep 5
 done #>/dev/null 2>&1
 
 readConfigFile timeout
 
-tail -f "$_SURICATA_LOG/eve.json" > >( \
+tail -f "$_PROJECT_ACTIVE_LOG/eve.json" > >( \
  jq --unbuffered -r -c 'select(.event_type=="alert")' \
  | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category)  signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
  | while read -r line; do \

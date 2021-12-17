@@ -1855,8 +1855,9 @@ napatech:
 ##
 ## Configure Suricata to load Suricata-Update managed rules.
 ##
-
-default-rule-path: /etc/suricata/rules
+# suriGUI
+# Reloading rules is not working when starting suricata with "-S /path/to/file"
+default-rule-path: /usr/share/suriGUI/conf
 
 rule-files:
   - suricata.rules
