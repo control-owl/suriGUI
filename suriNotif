@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-
+# God Mode: On
+set -o nounset      # Exit on undefined variable
+set -o errexit      # Exit on non-zero status
+set -o pipefail     # Pipe return exit status
 
 while [[ ! -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] ; do
     [[ -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] && break

@@ -66,11 +66,11 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 
 export _PROJECT_NAME="suriGUI" && echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER="0.6"
-export _PROJECT_BUILD="2021-12-12"
+export _PROJECT_VER="0.7"
+export _PROJECT_BUILD="2021-12-17"
 export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
-export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"     && createDir "${_##*=}" && rm $_PROJECT_DIR_TMP/* -R
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"     && createDir "${_##*=}" #&& rm $_PROJECT_DIR_TMP/* -R
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"   && createDir "${_##*=}"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
 export _PROJECT_LOG_FILE="$_PROJECT_DIR_LOG/$dateShort" && createDir "${_##*=}"
@@ -267,6 +267,14 @@ function checkConfig () {
 export -f checkConfig
 
 
+function updateSuriGUI() {
+  d3bug
+
+  d3bug info "Checking for update"
+  bash suriUpdate &
+}
+export -f updateSuriGUI
+
 
 function suriGUISettings() {
   d3bug
@@ -280,6 +288,8 @@ function suriGUISettings() {
 
   yad --plug=$KEY --tabnum=1 --form \
       --field="<b>\t\t\t\t\t\tIn developement</b>":LBL "" \
+      --field="":LBL "" \
+      --field="Update suriGUI":fbtn 'bash -c "updateSuriGUI"' \
       --field="Notifications":chk "$configNotifications" \
       --field="Duration (seconds):NUM" "$configTimeout\!1..60\!1\!0" \
       --field="":LBL "" \
