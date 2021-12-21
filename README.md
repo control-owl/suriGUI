@@ -1,4 +1,4 @@
-![](![](https://github.com/control-owl/qubes-sys-ips/blob/main/sys-ips.jpg))
+![](https://github.com/control-owl/suriGUI/blob/main/res/suriGUI.png)
 
 ### Still in development
 
