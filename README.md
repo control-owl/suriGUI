@@ -1,3 +1,5 @@
+![](![](https://github.com/control-owl/qubes-sys-ips/blob/main/sys-ips.jpg))
+
 ### Still in development
 
 This project is still in development and it is almost finished.
@@ -29,7 +31,7 @@ This project is still in development and it is almost finished.
 - Firewall per qube is working
 - Control Suricata with GUI
 - Sys-Tray Icon
-- 
+-
 
 -------------
 
@@ -39,7 +41,7 @@ This project is still in development and it is almost finished.
 
 -------------
 
-### Process
+### Process for Qubes 4
 
 1. dom0: Install debian-11-minimal
 2. dom0: Clone debian-11-minimal as sys-ips-template
@@ -50,9 +52,10 @@ This project is still in development and it is almost finished.
 7. sys-ips: bind-dir /usr/share/suriGUI
 8. sys-ips: start suriGUI
 
+
 -------------
 
-### Installation
+### Installation for Qubes 4.1 (Tested)
 
 ##### Personal qube
 ```sh
@@ -71,5 +74,14 @@ sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
 ```
+
+-------------
+
+### Installation for Debian 11/Ubuntu (Not tested)
+
+1. git clone https://github.com/control-owl/suriGUI
+2. ln -s suriGUI/ /usr/share/suriGUI
+2. ln -s /usr/share/suriGUI/suriGUI /bin/suriGUI
+3. sudo suriGUI
 
 -------------
