@@ -4,18 +4,6 @@
 
 This project is still in development and it is almost finished.
 
-- [X] Transfer all variables to suriGUISettings
-- [X] Create setting file for suriGUISettings
-    - [X] Load setting file if exists
-    - [x] If not load default values
-- [X] Notification daemon
-- [X] run suricata as program, not service
-- [X] new notebook: rules
-    - [X] change rule mode with suriGUISettings
-    - [ ] control rule sources
-    - [X] update rules
-- [ ] only one instance
-
 -------------
 
 ### Intro
@@ -27,8 +15,8 @@ This project is still in development and it is almost finished.
 ### Features
 
 - Block all malicious incoming and outgoing packets
-- Get alerts with notifications
-- Firewall per qube is working
+- Get alerts with notifications (send-notify)
+- Qubes Firewall is working, you can still block hosts per qube
 - Control Suricata with GUI
 - Sys-Tray Icon
 -
@@ -37,43 +25,42 @@ This project is still in development and it is almost finished.
 
 ### draw.io
 
-![](https://github.com/control-owl/qubes-sys-ips/blob/main/sys-ips.jpg)
-
--------------
-
-### Process for Qubes 4
-
-1. dom0: Install debian-11-minimal
-2. dom0: Clone debian-11-minimal as sys-ips-template
-3. sys-ips-template: Install required apps
-4. sys-ips-template: Install qubes-sys-ips in /usr/share/suriGUI
-5. sys-ips-template: create autostart script for suriGUI
-6. dom0: Create qube sys-ips based on sys-ips-template
-7. sys-ips: bind-dir /usr/share/suriGUI
-8. sys-ips: start suriGUI
-
+![](https://github.com/control-owl/suriGUI/blob/main/sys-ips.jpg)
 
 -------------
 
 ### Installation for Qubes 4.1 (Tested)
 
-##### Personal qube
+##### sys-firewall qube
 ```sh
-git clone https://github.com/control-owl/qubes-sys-ips/
+git clone https://github.com/control-owl/suriGUI/
 ```
 ##### dom0
 ```sh
 sudo mkdir /srv/salt/config
 
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/sys-ips.top’ | sudo tee /srv/salt/sys-ips.top
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips.sls’ | sudo tee /srv/salt/config/sys-ips.sls
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template.sls’ | sudo tee /srv/salt/config/sys-ips-template.sls
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-template-config.sls’ | sudo tee /srv/salt/config/sys-ips-template-config.sls
-sudo qvm-run --pass-io personal ’cat /home/user/qubes-sys-ips/salt/config/sys-ips-config.sls’ | sudo tee /srv/salt/config/sys-ips-config.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/sys-ips.top’ | sudo tee /srv/salt/sys-ips.top
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips.sls’ | sudo tee /srv/salt/config/sys-ips.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-template.sls’ | sudo tee /srv/salt/config/sys-ips-template.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-template-config.sls’ | sudo tee /srv/salt/config/sys-ips-template-config.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-config.sls’ | sudo tee /srv/salt/config/sys-ips-config.sls
 
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
 ```
+
+-------------
+
+### Process for Qubes 4 explained
+
+1. dom0: Install debian-11-minimal
+2. dom0: Clone debian-11-minimal as sys-ips-template
+3. sys-ips-template: Install required apps
+4. sys-ips-template: Install suriGUI in /usr/share/suriGUI
+5. sys-ips-template: create autostart script for suriGUI
+6. dom0: Create qube sys-ips based on sys-ips-template
+7. sys-ips: bind-dir /usr/share/suriGUI
+8. sys-ips: start suriGUI
 
 -------------
 
@@ -85,3 +72,8 @@ sudo qubesctl --show-output --all state.highstate
 3. sudo suriGUI
 
 -------------
+
+Project is free.
+Donation are welcome.
+Motivation even more.
+BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa

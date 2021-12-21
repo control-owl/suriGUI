@@ -188,8 +188,6 @@ function updateConfigFile() {
         d3bug info "Rules updated"
       fi
 
-      d3bug info "New Rules: $new"
-
     ;;
       "interval" )
         sed -i "s/^\(update\s*=\s*\).*\$/\1$2/" "$_PROJECT_CONFIG_FILE"
