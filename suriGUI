@@ -18,7 +18,7 @@ function exitSuriGUI() {
   stopNotifDaemon
 
   d3bug info "Deleting temp files"
-  #[[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
+  [[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
 
   source $_PROJECT_CONFIG_FILE
   if [[ $keep != "TRUE" ]]; then
