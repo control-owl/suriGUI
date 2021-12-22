@@ -8,11 +8,17 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
+
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root"
+  exit 1
+fi
+
+
 trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
-
 function exitSuriGUI() {
-  echo -e "$timeShort \e[41;30m EXITING... \e[0m"
+  echo "EXITING..."
 
   stopSuricataService
   stopNotifDaemon
@@ -32,10 +38,7 @@ export -f exitSuriGUI
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root"
-  exit 1
-fi
+
 
 
 function d3bug() {
@@ -177,13 +180,13 @@ function updateConfigFile() {
 
 
     "rules" )
+      sed -i "s/\<$oldAction\>/$newAction/" "$_SURICATA_RULES"
+      checkSuricataStatus >/dev/null
 
-
-
-      checkSuricataStatus
       if [[ $suricataStatus == "active" ]] ; then
         suricatasc -c ruleset-reload-nonblocking
         d3bug info "Rules updated & reloaded"
+
       else
         d3bug info "Rules updated"
       fi
@@ -472,26 +475,7 @@ function updateTrayMenu() {
 export -f updateTrayMenu
 
 
-function checkSuricataStatus() {
-  d3bug
 
-  if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
-    if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
-      d3bug info "Suricata is active"
-      updateTrayMenu active
-      export suricataStatus=active
-    else
-      d3bug info "Suricata is starting"
-      updateTrayMenu starting
-      export suricataStatus=starting
-    fi
-  else
-    d3bug info "Suricata is inactive"
-    updateTrayMenu inactive
-    export suricataStatus=inactive
-  fi
-}
-export -f checkSuricataStatus
 
 
 function checkInternetConnection() {
@@ -552,6 +536,47 @@ function updateSuricataRules() {
 export -f updateSuricataRules
 
 
+
+
+function startSuriGUIDaemon() {
+  d3bug
+
+  d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER with PID: $(cat $_PROJECT_PID)"
+
+  yad --notification --no-middle --listen \
+    --text="$_PROJECT_NAME v$_PROJECT_VER" \
+    --image="$_PROJECT_NAME-inactive" \
+    --separator="|" \
+    --menu="${suriTrayMenuList:-Exit!quit}" \
+    --command="bash -c suriGUISettings" <&3 &>/dev/null #&
+
+    rm "$_PROJECT_PID"
+}
+export -f startSuriGUIDaemon
+
+
+function checkSuricataStatus() {
+  d3bug
+
+  if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
+    if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
+      d3bug info "Suricata is active"
+      updateTrayMenu active
+      export suricataStatus=active
+    else
+      d3bug info "Suricata is starting"
+      updateTrayMenu starting
+      export suricataStatus=starting
+    fi
+  else
+    d3bug info "Suricata is inactive"
+    updateTrayMenu inactive
+    export suricataStatus=inactive
+  fi
+}
+# export -f checkSuricataStatus
+
+
 function checkSuricataRules() {
   d3bug
 
@@ -574,24 +599,7 @@ function checkSuricataRules() {
   fi
 
 }
-export -f checkSuricataRules
-
-
-function startSuriGUIDaemon() {
-  d3bug
-
-  d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER with PID: $(cat $_PROJECT_PID)"
-
-  yad --notification --no-middle --listen \
-    --text="$_PROJECT_NAME v$_PROJECT_VER" \
-    --image="$_PROJECT_NAME-inactive" \
-    --separator="|" \
-    --menu="${suriTrayMenuList:-Exit!quit}" \
-    --command="bash -c suriGUISettings" <&3 &>/dev/null #&
-
-    rm "$_PROJECT_PID"
-}
-export -f startSuriGUIDaemon
+# export -f checkSuricataRules
 
 
 function checkConfig () {
@@ -616,7 +624,6 @@ function checkConfig () {
   #
   [[ ! -f $_SURICATA_RULES ]] && updateSuricataRules
 
-  unset old new
   old=$(awk '{print $1; exit}' "$_SURICATA_RULES")
   d3bug info "Suricata rule action: $old"
   readConfigFile action
@@ -632,7 +639,7 @@ function checkConfig () {
   fi
 
 }
-export -f checkConfig
+# export -f checkConfig
 
 
 function checkRequirements () {
@@ -668,13 +675,23 @@ function checkRequirements () {
   fi
 
 }
-export -f checkRequirements
+# export -f checkRequirements
 
-checkRequirements
-checkConfig
+
+function stage1() {
+  checkRequirements && \
+  checkConfig && \
+  checkSuricataRules && \
+  checkSuricataStatus || d3bug error "Stage1"
+
+  export stage1_Status="OK"
+}
+
+
+
+stage1
+echo "${stage1_Status:-Stage1 not finished}"
 createProjectPipe
-checkSuricataRules
-checkSuricataStatus
 
 readConfigFile notifications
 [[ $configNotifications == "TRUE" ]] && startNotifDaemon
@@ -691,6 +708,3 @@ while : ; do
   checkSuricataStatus
   sleep 3
 done >/dev/null 2>&1
-
-
-exit 0
