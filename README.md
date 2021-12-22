@@ -22,7 +22,7 @@ This project is still in development and it is almost finished.
 ![](https://github.com/control-owl/suriGUI/blob/main/res/status.png)
 -------------
 
-### Installation for Qubes 4.1 (Tested)
+### Installation for Qubes 4.1 (Tested on my PC only)
 
 ##### sys-firewall qube
 ```sh
@@ -32,11 +32,11 @@ git clone https://github.com/control-owl/suriGUI/
 ```sh
 sudo mkdir /srv/salt/config
 
-sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/sys-ips.top’ | sudo tee /srv/salt/sys-ips.top
-sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips.sls’ | sudo tee /srv/salt/config/sys-ips.sls
-sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-template.sls’ | sudo tee /srv/salt/config/sys-ips-template.sls
-sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-template-config.sls’ | sudo tee /srv/salt/config/sys-ips-template-config.sls
-sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/salt/config/sys-ips-config.sls’ | sudo tee /srv/salt/config/sys-ips-config.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/qubes-salt/sys-ips.top’ | sudo tee /srv/salt/sys-ips.top
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/qubes-salt/config/sys-ips.sls’ | sudo tee /srv/salt/config/sys-ips.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/qubes-salt/config/sys-ips-template.sls’ | sudo tee /srv/salt/config/sys-ips-template.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/qubes-salt/config/sys-ips-template-config.sls’ | sudo tee /srv/salt/config/sys-ips-template-config.sls
+sudo qvm-run --pass-io sys-firewall ’cat /home/user/suriGUI/qubes-salt/config/sys-ips-config.sls’ | sudo tee /srv/salt/config/sys-ips-config.sls
 
 sudo qubesctl top.enable sys-ips
 sudo qubesctl --show-output --all state.highstate
@@ -76,5 +76,5 @@ BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 ### NEXT STEPS:
 
-* d3bug to log
-* program parameters --debug --output --silent
+- [ ] d3bug to log
+- [ ] program parameters --debug --output --silent
