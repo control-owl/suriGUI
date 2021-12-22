@@ -180,7 +180,7 @@ function updateConfigFile() {
 
 
     "rules" )
-      sed -i "s/\<$1\>/$2/" "$_SURICATA_RULES"
+      sed -i "s/\<$3\>/$2/" "$_SURICATA_RULES"
       checkSuricataStatus >/dev/null
 
       if [[ $suricataStatus == "active" ]] ; then
