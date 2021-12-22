@@ -15,10 +15,9 @@ This project is still in development and it is almost finished.
 
 ### QUBES draw.io
 
-![](https://github.com/control-owl/suriGUI/blob/main/sys-ips.jpg)
+![](https://github.com/control-owl/suriGUI/blob/main/res/sys-ips.jpg))
 
-
-![](https://github.com/control-owl/suriGUI/blob/res/status.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/status.png)
 -------------
 
 ### Installation for Qubes 4.1 (Tested)
