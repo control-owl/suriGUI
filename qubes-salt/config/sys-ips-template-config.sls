@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.211218
+# stamp: 0.211222
 
 # Install all necessery packets
 suricata-install-packages:
