@@ -5,15 +5,36 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
+d3bug info "Stage 0"
 
+while [[ $suricataStatus != "active" ]] ; do
+  checkSuricataStatus >/dev/null
+  [[ $suricataStatus == "active" ]] && break
+  d3bug info "Waiting for Suricata"
+  sleep 5
+done #>/dev/null 2>&1
+
+echo "stage 1"
 while [[ ! -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] ; do
-    [[ -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] && break
-    d3bug info "Waiting for a log output"
+  # echo  $suricataStatus
+  [[ -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] && break
+    d3bug info "Waiting for log file"
     sleep 5
-done >/dev/null 2>&1
+done #>/dev/null 2>&1
 
+
+echo "stage 2"
+
+
+# && [[ $suricataStatus != "active" ]]
 readConfigFile timeout
 
+notify-send -i $_PROJECT_ICON -t $(( $configTimeout * 1000 )) "$dateShort  suriNotif started"
+
+echo "stage 3"
+
+/usr/lib/notification-daemon/notification-daemon &#>/dev/null
+#echo "$!" > "$_DAEMON_PID"
 
 tail -f "$_PROJECT_ACTIVE_LOG/eve.json" > >( \
   jq --unbuffered -r -c 'select(.event_type=="alert")' \

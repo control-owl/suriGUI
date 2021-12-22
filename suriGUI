@@ -24,7 +24,7 @@ function exitSuriGUI() {
   stopNotifDaemon
 
   d3bug info "Deleting temp files"
-  [[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
+  #[[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
 
   source $_PROJECT_CONFIG_FILE
   if [[ $keep != "TRUE" ]]; then
@@ -35,7 +35,7 @@ function exitSuriGUI() {
   d3bug info "EXIT 0"
 }
 export -f exitSuriGUI
-trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
+trap exitSuriGUI EXIT SIGUSR1 SIGUSR2 SIGINT
 
 
 
@@ -95,7 +95,7 @@ export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"  && echo "$$" > "$_PROJECT_PID"
 export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
-export _DAEMON_PID="$_PROJECT_DIR_TMP/notification-daemon.pid"
+#export _DAEMON_PID="$_PROJECT_DIR_TMP/notification-daemon.pid"
 
 export _NOTIF_TIMEOUT="2000"
 export _SURICATA_OUTDATE="7"
@@ -360,48 +360,38 @@ export -f isProcessAlive
 function stopNotifDaemon() {
   d3bug
 
+    pkill -P "$(cat $_NOTIF_PID)" # kill process and all children
+    d3bug info "PID: $(cat $_NOTIF_PID)  $_NOTIF_PID stopped"
+    rm $_NOTIF_PID
 
-  if [[ -f "$_DAEMON_PID" ]] ; then
-    pid=$(cat $_DAEMON_PID)
-    d3bug info "Stopping PID: $pid"
-    pkill -P "$pid" #>/dev/null
-    rm "$_DAEMON_PID"
-  else
-    d3bug info "Nothing to do"
-  fi
 }
 export -f stopNotifDaemon
+
+
+function executeProcess() {
+  case $1 in
+    daemon )
+      ;;
+    suriNotif )
+      ;;
+  esac
+}
+
 
 
 function startNotifDaemon() {
   d3bug
 
-  if [[ $configNotifications == "TRUE" ]] ; then
-    isProcessAlive "notification-daemon" #>/dev/null 2>&1
+  isProcessAlive "suriNotif" >/dev/null
 
-    if [[ $processIs == "Dead" ]] ; then
-      # d3bug info "Starting"
-      /usr/lib/notification-daemon/notification-daemon &>/dev/null &
-      echo "$!" > "$_DAEMON_PID"
-      d3bug info "notification-daemon started with PID: $(cat $_DAEMON_PID)"
-    else
-      d3bug info "notification-daemon already running"
-    fi
-
-    unset processIs
-    isProcessAlive "suriNotif" >/dev/null 2>&1
-
-    if [[ $processIs == "Dead" ]] ; then
-      bash suriNotif &
-      echo "$!" > "$_NOTIF_PID"
-      d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
-    else
-      d3bug info "suriNotif already running"
-    fi
-    unset processIs
+  if [[ $processIs == "Dead" ]] ; then
+    bash suriNotif &
+    echo "$!" > "$_NOTIF_PID"
+    d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
   else
-    d3bug info "Notifications are disabled"
+    d3bug info "suriNotif already running"
   fi
+
 }
 export -f startNotifDaemon
 
