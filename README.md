@@ -78,3 +78,7 @@ BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 - [ ] d3bug to log
 - [ ] program parameters --debug --output --silent
+- [ ] Version file for qubes-salt
+- [ ] Salt can check if new salt file is created
+  - [ ] request has to go trough disp-qube with network
+- [ ]
