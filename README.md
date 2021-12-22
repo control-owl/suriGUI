@@ -8,25 +8,17 @@ This project is still in development and it is almost finished.
 
 ### Intro
 
-- Basic concept is to create Intrusion Prevention System (IPS) with Suricata, Debian 11 and Qubes 4.1
+- Basic concept is to create GUI Interface for Suricata IPS
+- Option to show Desktop notifications on every alert
 
 -------------
 
-### Features
-
-- Block all malicious incoming and outgoing packets
-- Get alerts with notifications (send-notify)
-- Qubes Firewall is working, you can still block hosts per qube
-- Control Suricata with GUI
-- Sys-Tray Icon
--
-
--------------
-
-### draw.io
+### QUBES draw.io
 
 ![](https://github.com/control-owl/suriGUI/blob/main/sys-ips.jpg)
 
+
+![](https://github.com/control-owl/suriGUI/blob/res/status.png)
 -------------
 
 ### Installation for Qubes 4.1 (Tested)
@@ -77,3 +69,11 @@ Project is free.
 Donation are welcome.
 Motivation even more.
 BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
+
+
+-------------
+
+### NEXT STEPS:
+
+* d3bug to log
+* program parameters --debug --output --silent

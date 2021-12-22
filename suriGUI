@@ -698,3 +698,8 @@ while : ; do
   checkSuricataStatus
   sleep 3
 done >/dev/null 2>&1
+
+
+# NEXT STEPS:
+# d3bug to log
+# program parameters --debug --output --silent
