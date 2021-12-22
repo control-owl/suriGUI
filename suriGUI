@@ -574,7 +574,7 @@ function checkSuricataStatus() {
     export suricataStatus=inactive
   fi
 }
-# export -f checkSuricataStatus
+export -f checkSuricataStatus
 
 
 function checkSuricataRules() {
@@ -599,7 +599,7 @@ function checkSuricataRules() {
   fi
 
 }
-# export -f checkSuricataRules
+export -f checkSuricataRules
 
 
 function checkConfig () {
@@ -639,7 +639,7 @@ function checkConfig () {
   fi
 
 }
-# export -f checkConfig
+export -f checkConfig
 
 
 function checkRequirements () {
@@ -675,12 +675,13 @@ function checkRequirements () {
   fi
 
 }
-# export -f checkRequirements
+export -f checkRequirements
 
 
 function stage1() {
   checkRequirements && \
   checkConfig && \
+  createProjectPipe && \
   checkSuricataRules && \
   checkSuricataStatus || d3bug error "Stage1"
 
@@ -691,7 +692,6 @@ function stage1() {
 
 stage1
 echo "${stage1_Status:-Stage1 not finished}"
-createProjectPipe
 
 readConfigFile notifications
 [[ $configNotifications == "TRUE" ]] && startNotifDaemon
