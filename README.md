@@ -15,8 +15,10 @@ This project is still in development and it is almost finished.
 
 ### QUBES draw.io
 
-![](https://github.com/control-owl/suriGUI/blob/main/res/sys-ips.jpg))
+![](https://github.com/control-owl/suriGUI/blob/main/res/sys-ips.jpg)
 
+
+#### System Tray statuses: Active and Inactive icon
 ![](https://github.com/control-owl/suriGUI/blob/main/res/status.png)
 -------------
 
