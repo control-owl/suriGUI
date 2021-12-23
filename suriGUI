@@ -155,7 +155,7 @@ function updateConfigFile() {
       d3bug info "Notifications: $3"
       d3bug info "Timeout: $4 second(s)"
 
-      [[ $2 == "TRUE" ]] && startNotifDaemon || stopNotifDaemon
+      #[[ $2 == "TRUE" ]] && startNotifDaemon || stopNotifDaemon
     ;;
     "tab2" )
       sed -i "s/^\(keep\s*=\s*\).*\$/\1$2/" "$_PROJECT_CONFIG_FILE"
@@ -211,7 +211,7 @@ function updateSuriGUI() {
   d3bug
 
   d3bug info "Checking for update"
-  bash suriUpdate &
+  bash suriUpdate
 }
 export -f updateSuriGUI
 
@@ -305,9 +305,10 @@ export -f suriGUISettings
 function stopSuricataService() {
   d3bug
 
-  suricatasc -c shutdown 1>&- 2>&- &
+  suricatasc -c shutdown &>/dev/null &
   d3bug info "Suricata stopped"
   updateTrayMenu inactive
+  [[ -f $_SURICATA_PID ]] && rm $_SURICATA_PID
 }
 export -f stopSuricataService
 
@@ -338,20 +339,14 @@ function isProcessAlive() {
     if ps -p $proID > /dev/null ; then
       export processIs="Alive"
       d3bug info "Process is $processIs"
-
-      pkill -P $(cat "$file")
-
-      rm $file
      else
        export processIs="Dead"
        d3bug info "Process is $processIs"
-
        rm $file
-       # exit 0
      fi
    else
      export processIs="Dead"
-     d3bug info "$processIs"
+     d3bug info "Process is $processIs"
    fi
 }
 export -f isProcessAlive
@@ -360,9 +355,9 @@ export -f isProcessAlive
 function stopNotifDaemon() {
   d3bug
 
-    pkill -P "$(cat $_NOTIF_PID)" # kill process and all children
-    d3bug info "PID: $(cat $_NOTIF_PID)  $_NOTIF_PID stopped"
-    rm $_NOTIF_PID
+  pkill -P "$(cat $_NOTIF_PID)" # kill process and all children
+  d3bug info "PID: $(cat $_NOTIF_PID)  $_NOTIF_PID stopped"
+  rm $_NOTIF_PID
 
 }
 export -f stopNotifDaemon
@@ -385,8 +380,10 @@ function startNotifDaemon() {
   isProcessAlive "suriNotif" >/dev/null
 
   if [[ $processIs == "Dead" ]] ; then
+
     bash suriNotif &
     echo "$!" > "$_NOTIF_PID"
+
     d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
   else
     d3bug info "suriNotif already running"
@@ -399,10 +396,10 @@ export -f startNotifDaemon
 function startSuricataService() {
   d3bug
 
-  isProcessAlive "suricata"
+  isProcessAlive "suricata" >/dev/null
 
   if [[ $processIs == "Dead" ]] ; then
-    /usr/bin/suricata -c $_SURICATA_CONFIG --pidfile $_SURICATA_PID -l $_PROJECT_ACTIVE_LOG -q 0 1>&- 2>&- &
+    /usr/bin/suricata -c $_SURICATA_CONFIG --pidfile $_SURICATA_PID -l $_PROJECT_ACTIVE_LOG -q 0 &>/dev/null &
     updateTrayMenu starting
   else
     d3bug info "Nothing to do"
@@ -528,7 +525,7 @@ export -f updateSuricataRules
 
 
 
-function startSuriGUIDaemon() {
+function startSuriGUI() {
   d3bug
 
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER with PID: $(cat $_PROJECT_PID)"
@@ -538,11 +535,11 @@ function startSuriGUIDaemon() {
     --image="$_PROJECT_NAME-inactive" \
     --separator="|" \
     --menu="${suriTrayMenuList:-Exit!quit}" \
-    --command="bash -c suriGUISettings" <&3 &>/dev/null #&
+    --command="bash -c suriGUISettings" <&3 &>/dev/null
 
     rm "$_PROJECT_PID"
 }
-export -f startSuriGUIDaemon
+export -f startSuriGUI
 
 
 function checkSuricataStatus() {
@@ -668,33 +665,24 @@ function checkRequirements () {
 export -f checkRequirements
 
 
-function stage1() {
-  checkRequirements && \
-  checkConfig && \
-  createProjectPipe && \
-  checkSuricataRules && \
-  checkSuricataStatus || d3bug error "Stage1"
 
-  export stage1_Status="OK"
-}
+checkRequirements
+checkConfig
+createProjectPipe
+checkSuricataRules
+checkSuricataStatus
 
-
-
-stage1
-echo "${stage1_Status:-Stage1 not finished}"
 
 readConfigFile notifications
 [[ $configNotifications == "TRUE" ]] && startNotifDaemon
 
-startSuriGUIDaemon &
-
 readConfigFile autostart
 [[ $configAutostart == "TRUE" ]] && startSuricataService
 
-
+startSuriGUI &
 
 while : ; do
   [[ ! -f "$_PROJECT_PID" ]] && break
   checkSuricataStatus
   sleep 3
-done >/dev/null 2>&1
+done >/dev/null
