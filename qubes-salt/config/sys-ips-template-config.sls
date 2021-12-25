@@ -38,6 +38,14 @@ disable-suricata-service:
         [Install]
         WantedBy=multi-user.target
 
+enable-system-notifications:
+  cmd.run:
+    - name: "systemctl disable notifications"
+
+start-system-notifications:
+  cmd.run:
+    - name: "systemctl start notifications"
+
 suriGUI-install:
   cmd.run:
     - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI) || (cd /usr/share/suriGUI && export https_proxy=127.0.0.1:8082 && git fetch)"
