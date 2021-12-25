@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.211222
+# stamp: 0.211225
 
 # Install all necessery packets
 suricata-install-packages:
@@ -25,13 +25,9 @@ disable-suricata-service:
   cmd.run:
     - name: "systemctl disable suricata"
 
-# check for update
-# better solution needed????
-
-
 suriGUI-install:
   cmd.run:
-    - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI)"
+    - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI) || (cd /usr/share/suriGUI && git fetch)"
 
 /etc/xdg/autostart/suriGUI.desktop:
   file.managed:
