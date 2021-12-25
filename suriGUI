@@ -67,8 +67,8 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 
 export _PROJECT_NAME="suriGUI" && echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER=$(head -n 1 version)
-export _PROJECT_BUILD=$(awk -F: 'NR==2 {print $1}' version)
+export _PROJECT_VER="0.9-1"
+export _PROJECT_BUILD="2021-12-25"
 export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
 
@@ -670,6 +670,7 @@ checkRequirements
 checkConfig
 createProjectPipe
 checkSuricataRules
+updateTrayMenu inactive
 checkSuricataStatus
 
 
