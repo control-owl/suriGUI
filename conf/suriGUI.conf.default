@@ -1,10 +1,10 @@
 # suriGUI default config file
-# 2021-12-18
+# 2021-12-25
 
 # suriGUI Notifications
 notifications=TRUE
 timeout=5
-autostart=FALSE
+autostart=TRUE
 
 # Suricata rules
 action=rejectboth
