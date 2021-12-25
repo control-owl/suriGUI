@@ -380,7 +380,7 @@ function startNotifDaemon() {
   isProcessAlive "suriNotif" >/dev/null
 
   if [[ $processIs == "Dead" ]] ; then
-    ( /usr/lib/notification-daemon/notification-daemon &>/dev/null & )
+    #/usr/lib/notification-daemon/notification-daemon &>/dev/null &
     bash suriNotif &
     echo "$!" > "$_NOTIF_PID"
 
