@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.211225
+# stamp: 0.211226
 
 # Install all necessery packets
 suricata-install-packages:
@@ -9,11 +9,9 @@ suricata-install-packages:
     - pkgs:
       - qubes-core-agent-networking # Qubes
       - qubes-core-agent-passwordless-root # Qubes
-      - libnetfilter-queue-dev # NFQUEUE support suriGUI
+      - libnetfilter-queue-dev # Suricata NFQUEUE
       - suricata # IPS
-      - jq # for proccessing suriNotif
-      - libnotify-bin # suriNotif
-      - zenity # not sure if needed ?? maybe Qubes need it
+      - jq # for proccessing output
       - yad # suriGUI
       - git # suriGUI
 

@@ -67,8 +67,8 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 
 export _PROJECT_NAME="suriGUI" && echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER="0.9-1"
-export _PROJECT_BUILD="2021-12-25"
+export _PROJECT_VER="0.9-2"
+export _PROJECT_BUILD="2021-12-30"
 export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
 
@@ -95,7 +95,12 @@ export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"  && echo "$$" > "$_PROJECT_PID"
 export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
-#export _DAEMON_PID="$_PROJECT_DIR_TMP/notification-daemon.pid"
+
+export _NOTIF_POS_TL="--posx=1 --posy=1"
+export _NOTIF_POS_TR="--posx=-1 --posy=1"
+export _NOTIF_POS_BL="--posx=1 --posy=-1"
+export _NOTIF_POS_BR="--posx=-1 --posy=-1"
+
 
 export _NOTIF_TIMEOUT="2000"
 export _SURICATA_OUTDATE="7"
@@ -137,6 +142,14 @@ function readConfigFile() {
     "keep" ) export configKeep="$keep" ;;
     "action" ) export configAction="$action" ;;
     "autostart" ) export configAutostart="$autostart" ;;
+    "snooze" ) export configSnooze="$snooze" ;;
+    "notificationPositionMenu" )
+    defaultPositions="Top_left\!Top_right\!Bottom_left\!Bottom_right"
+    makeDefault="^"
+    export configNotificationPositionMenu=$(echo "$defaultPositions" | sed "s/$position/$makeDefault$position/g")
+    ;;
+    "notificationPosition" ) export configNotificationPosition="$position" ;;
+
   esac
 }
 export -f readConfigFile
@@ -150,10 +163,14 @@ function updateConfigFile() {
       sed -i "s/^\(autostart\s*=\s*\).*\$/\1$2/" "$_PROJECT_CONFIG_FILE"
       sed -i "s/^\(notifications\s*=\s*\).*\$/\1$3/" "$_PROJECT_CONFIG_FILE"
       sed -i "s/^\(timeout\s*=\s*\).*\$/\1$4/" "$_PROJECT_CONFIG_FILE"
+      sed -i "s/^\(position\s*=\s*\).*\$/\1$5/" "$_PROJECT_CONFIG_FILE"
+      sed -i "s/^\(snooze\s*=\s*\).*\$/\1$6/" "$_PROJECT_CONFIG_FILE"
 
       d3bug info "Autostart: $2"
       d3bug info "Notifications: $3"
       d3bug info "Timeout: $4 second(s)"
+      d3bug info "Position: $5"
+      d3bug info "Snooze: $5 second(s)"
 
       #[[ $2 == "TRUE" ]] && startNotifDaemon || stopNotifDaemon
     ;;
@@ -216,6 +233,44 @@ function updateSuriGUI() {
 export -f updateSuriGUI
 
 
+function testNotification() {
+  d3bug
+
+  d3bug info "Notification test: $1"
+
+
+  case "${1:-*}" in
+    "Top_left" )      pos="$_NOTIF_POS_TL"  ;;
+    "Top_right" )     pos="$_NOTIF_POS_TR"  ;;
+    "Bottom_left" )   pos="$_NOTIF_POS_BL"  ;;
+    "Bottom_right" )  pos="$_NOTIF_POS_BR"  ;;
+    * ) echo "error"   ;;
+  esac
+
+  TXT=$"Date: $dateShort Time: $timeShort\n"
+  TXT+=$"Test 1 Test 2"
+
+yad \
+--title="Test notification" \
+--text="<span size=\"xx-large\">$dateShort $timeShort</span>\n" \
+--form --no-focus --splash --timeout=$2 --on-top  --skip-taskbar  ${pos:-}  \
+--width=350 \
+--columns=2 \
+--align=right \
+--field="Signature ID:RO" "1000000" \
+--field="Source IP:RO" "192.168.1.10" \
+--field=".:LBL" "." \
+\
+--field="Category:RO" "Some category" \
+--field="Destination IP:RO" "123.456.789.123" \
+--field=".:LBL" "." \
+--dialog-sep \
+--button="Quit!gtk-quit:0" &
+}
+export -f testNotification
+
+
+
 function suriGUISettings() {
   d3bug
 
@@ -226,6 +281,8 @@ function suriGUISettings() {
   readConfigFile keep
   readConfigFile duration
   readConfigFile autostart
+  readConfigFile notificationPositionMenu
+  readConfigFile snooze
 
 
   yad --plug=$KEY --tabnum=1 --form \
@@ -235,8 +292,11 @@ function suriGUISettings() {
       --field="":LBL "" \
       --field="Notifications":chk "$configNotifications" \
       --field="Duration (seconds):NUM" "$configTimeout\!1..60\!1\!0" \
+      --field="Position":CB "$configNotificationPositionMenu" \
+      --field="Snooze duration (seconds):NUM" "$configSnooze\!1..60\!1\!0" \
+      --field="Test notification":fbtn 'bash -c "testNotification %7 %6"' \
       --field="":LBL "" \
-      --field="Apply settings":fbtn 'bash -c "updateConfigFile tab1 %3 %5 %6"' \
+      --field="Apply settings":fbtn 'bash -c "updateConfigFile tab1 %3 %5 %6 %7 %8"' \
       --field="":LBL "" \
       --field="Start IPS":fbtn 'bash -c "startSuricataService"' \
       --field="Stop IPS":fbtn 'bash -c "stopSuricataService"'  \
@@ -380,7 +440,6 @@ function startNotifDaemon() {
   isProcessAlive "suriNotif" >/dev/null
 
   if [[ $processIs == "Dead" ]] ; then
-    #/usr/lib/notification-daemon/notification-daemon &>/dev/null &
     bash suriNotif &
     echo "$!" > "$_NOTIF_PID"
 
@@ -632,7 +691,7 @@ export -f checkConfig
 function checkRequirements () {
   d3bug
 
-  apps=( libnetfilter-queue-dev suricata jq libnotify-bin )
+  apps=( libnetfilter-queue-dev suricata jq yad )
 
   for i in "${apps[@]}" ; do
     if dpkg -s $i &>/dev/null; then

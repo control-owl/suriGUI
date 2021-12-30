@@ -4,9 +4,9 @@
 # stamp: 0.211217-new-try
 
 # God Mode: On
-set -o nounset      # Exit on undefined variable
-set -o errexit      # Exit on non-zero status
-set -o pipefail     # Pipe return exit status
+# set -o nounset      # Exit on undefined variable
+# set -o errexit      # Exit on non-zero status
+# set -o pipefail     # Pipe return exit status
 
 #notify_cmd='notify-send -t $(( $configTimeout * 1000 ))  "$1" "$2"'
 notify_cmd=$(zenity --info --text "$1 $2")
@@ -41,7 +41,6 @@ if [[ -d "$_PROJECT_DIR" && $(cd "$_PROJECT_DIR"; git rev-parse --git-dir) ]]; t
       esac
     done <<< "$changes"
   else
-    notify_cmd info "No update found. You are using latest version."
+    notify_cmd info "No update found." "You are using latest version."
   fi
 fi
-notify-send "Done"

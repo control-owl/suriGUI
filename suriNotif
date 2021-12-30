@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # God Mode: On
-set -o nounset      # Exit on undefined variable
-set -o errexit      # Exit on non-zero status
-set -o pipefail     # Pipe return exit status
+# set -o nounset      # Exit on undefined variable
+# set -o errexit      # Exit on non-zero status
+# set -o pipefail     # Pipe return exit status
 
 
 while [[ $suricataStatus != "active" ]] ; do
@@ -23,21 +23,66 @@ done #&>/dev/null
 d3bug info "Log has been found"
 
 
-/usr/lib/notification-daemon/notification-daemon &>/dev/null &
-d3bug info "System notifications are active"
+function send_notif() {
+
+  readConfigFile timeout
+  readConfigFile snooze
+
+  readConfigFile notificationPosition
+  case "${configNotificationPosition:-*}" in
+    "Top_left" )      pos="--posx=1"  ;;
+    "Top_right" )     pos="--posx=-1"  ;;
+    "Bottom_left" )   pos="--posy=-1"  ;;
+    "Bottom_right" )  pos="--posx=-1"  ;;
+    * ) echo "error"   ;;
+  esac
+
+  # $1 - $category +
+  # $2 - $signature
+  # $3 - $sid +
+  # $4 - $SRC +
+  # $5 - $DEST +
+  # $6 - $action +
+
+  case "$configNotificationPosition" in
+    "Top_left" )      pos="$_NOTIF_POS_TL"  ;;
+    "Top_right" )     pos="$_NOTIF_POS_TR"  ;;
+    "Bottom_left" )   pos="$_NOTIF_POS_BL"  ;;
+    "Bottom_right" )  pos="$_NOTIF_POS_BR"  ;;
+    * ) echo "error"   ;;
+  esac
+
+  # --form --no-focus --splash --timeout=$configTimeout --on-top  --skip-taskbar  ${pos:-}  \
+  yad \
+  --title="suriNotif" \
+  --text="$2 $6" \
+  --form --no-focus --timeout=$configTimeout ${pos:-}  \
+  --width=350 \
+  --columns=2 \
+  --align=right \
+  --field="Date:RO" "$dateShort" \
+  --field="Signature ID:RO" "$3" \
+  --field="Source IP:RO" "$4" \
+  --field=".:LBL" "." \
+  \
+  --field="Time:RO" "$timeShort" \
+  --field="Category:RO" "$1" \
+  --field="Destination IP:RO" "$5" \
+  --field=".:LBL" "." \
+  --button="Snooze ($configSnooze sec)!pause:2" \
+  --button="Edit!gtk-edit:1" \
+  --button="Close!gtk-quit:0" &>/dev/null
+
+}
+export -f send_notif
 
 
-readConfigFile timeout
-notify-send -i $_PROJECT_ICON -t $(( $configTimeout * 1000 )) "suriNotif started" &>/dev/null
-
+d3bug info "System notifications are starting..."
 
 tail -f "$_PROJECT_ACTIVE_LOG/eve.json" > >( \
   jq --unbuffered -r -c 'select(.event_type=="alert")' \
     | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category) signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
       | while read -r line; do \
         eval "$line" ; \
-        notify-send -i $_PROJECT_ICON \
-          -t $(($configTimeout * 1000 )) \
-          "$category" \
-          "$(echo -e "Signature: $signature \nSID: $sid \nSource: $SRC \nDestination: $DEST  \nAction: $action")" ; \
+        send_notif "$category" "$signature" "$sid" "$SRC" "$DEST" "$action" ; \
       done )
