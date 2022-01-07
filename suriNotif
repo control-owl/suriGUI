@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
+#
+# coder: ro0t
+# stamp: 0.220101-amadeus
 
 # God Mode: On
-# set -o nounset      # Exit on undefined variable
-# set -o errexit      # Exit on non-zero status
-# set -o pipefail     # Pipe return exit status
+set -o nounset      # Exit on undefined variable
+set -o errexit      # Exit on non-zero status
+set -o pipefail     # Pipe return exit status
 
+trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 while [[ $suricataStatus != "active" ]] ; do
   checkSuricataStatus >/dev/null
@@ -12,7 +16,7 @@ while [[ $suricataStatus != "active" ]] ; do
   d3bug info "Waiting for Suricata"
   sleep 5
 done #&>/dev/null
-d3bug info "Suricata is activ."
+d3bug info "Suricata is now activ."
 
 
 while [[ ! -f "$_PROJECT_ACTIVE_LOG/eve.json" ]] ; do
@@ -23,66 +27,181 @@ done #&>/dev/null
 d3bug info "Log has been found"
 
 
+function editRule() {
+echo "editRule"
+
+}
+export -f editRule
+
+
+function ignoreSID() {
+  d3bug
+
+  local sid="$1"
+  local TXT="Do you want to disable notifications for SID $sid ?\n"
+  local TXT+="Doing this you will no longer see any info when SID is blocked.\n"
+
+  yad --image="$_PROJECT_ICON" --image-on-top \
+      --title="$_PROJECT_NAME" \
+      --button="Yes" --button="No" \
+      --text="$TXT" &>/dev/null
+  ret=$?
+
+  if [ $ret = 0 ] ; then
+    if ! grep -q $sid "$_NOTIF_IGNORE_LIST"; then
+      d3bug info "Writing SID $sid in ignore list"
+      echo "$sid" >> $_NOTIF_IGNORE_LIST
+    else
+      d3bug info "SID already in ignore list"
+    fi
+  else
+    d3bug info "Nothing done"
+  fi
+
+}
+export -f ignoreSID
+
+
+function snoozeNotification() {
+  d3bug
+
+  local sid="$1"
+
+  readConfigFile snooze
+  snoozedUntil=$(date --date="+$configSnooze seconds" '+%Y-%m-%d-%H-%M-%S')
+  echo "$snoozedUntil" > $_PROJECT_DIR_TMP/$sid
+}
+export -f snoozeNotification
+
+
+function checkSnoozeStatus() {
+  d3bug
+
+  local sid="$1"
+
+  if [[ -f "$_PROJECT_DIR_TMP/$sid" ]] ; then
+    local snoozedUntil=$(cat $_PROJECT_DIR_TMP/$sid)
+    local todayDate=$(date +"%Y-%m-%d-%H-%M-%S")
+
+    d3bug info "Snoozed until: $snoozedUntil"
+    d3bug info "Now is:        $todayDate"
+
+    if [[ "$snoozedUntil" -ge "$todayDate" ]] ; then
+      export snoozeStatus="Snoozed"
+      d3bug info "Ignoring SID: $sid"
+      else
+        d3bug info "Time out. Showing SID: $sid"
+        [[ -f "$_PROJECT_DIR_TMP/$sid" ]] && rm "$_PROJECT_DIR_TMP/$sid"
+        export snoozeStatus="OK"
+    fi
+  else
+    export snoozeStatus="OK"
+    d3bug info "Showing SID: $sid"
+  fi
+}
+export -f checkSnoozeStatus
+
+
+function checkIgnoreStatus() {
+  d3bug
+
+  local sid="$1"
+
+  if grep -q "$sid" "$_NOTIF_IGNORE_LIST" ; then
+    export ignoreStatus="Ignore"
+    d3bug info "Ignoring SID: $sid"
+  else
+    export ignoreStatus="OK"
+    d3bug info "Showing SID: $sid"
+  fi
+}
+
+
+
+
+
 function send_notif() {
+  d3bug
+
+  local cat=${1:-Category}
+  local sig=${2:-Signature}
+  local sid=${3:-SID}
+  local src=${4:-SRC}
+  local dest=${5:-DEST}
+  local action=${6:-Action}
 
   readConfigFile timeout
   readConfigFile snooze
 
   readConfigFile notificationPosition
-  case "${configNotificationPosition:-*}" in
-    "Top_left" )      pos="--posx=1"  ;;
-    "Top_right" )     pos="--posx=-1"  ;;
-    "Bottom_left" )   pos="--posy=-1"  ;;
-    "Bottom_right" )  pos="--posx=-1"  ;;
-    * ) echo "error"   ;;
-  esac
-
-  # $1 - $category +
-  # $2 - $signature
-  # $3 - $sid +
-  # $4 - $SRC +
-  # $5 - $DEST +
-  # $6 - $action +
-
   case "$configNotificationPosition" in
     "Top_left" )      pos="$_NOTIF_POS_TL"  ;;
     "Top_right" )     pos="$_NOTIF_POS_TR"  ;;
     "Bottom_left" )   pos="$_NOTIF_POS_BL"  ;;
-    "Bottom_right" )  pos="$_NOTIF_POS_BR"  ;;
-    * ) echo "error"   ;;
+    * )               pos="$_NOTIF_POS_BR"  ;;
   esac
 
-  # --form --no-focus --splash --timeout=$configTimeout --on-top  --skip-taskbar  ${pos:-}  \
-  yad \
-  --title="suriNotif" \
-  --text="$2 $6" \
-  --form --no-focus --timeout=$configTimeout ${pos:-}  \
-  --width=350 \
-  --columns=2 \
-  --align=right \
-  --field="Date:RO" "$dateShort" \
-  --field="Signature ID:RO" "$3" \
-  --field="Source IP:RO" "$4" \
-  --field=".:LBL" "." \
-  \
-  --field="Time:RO" "$timeShort" \
-  --field="Category:RO" "$1" \
-  --field="Destination IP:RO" "$5" \
-  --field=".:LBL" "." \
-  --button="Snooze ($configSnooze sec)!pause:2" \
-  --button="Edit!gtk-edit:1" \
-  --button="Close!gtk-quit:0" &>/dev/null
+  local currentSID="$_PROJECT_DIR_TMP/$sid.lock"
+  if [[ ! -f "$currentSID" ]]; then
+    touch "$currentSID"
 
+exec -a "suriNotif" \
+    yad \
+      --title="suriNotif" \
+      --window-icon="$_PROJECT_NAME-active" \
+      --timeout-indicator="top" \
+      --text="$sig" \
+      --form  --on-top --timeout=$configTimeout --skip-taskbar ${pos:-}  \
+      --width=350 \
+      --columns=2 \
+      --align=right \
+      --field="Date:RO" "$dateShort" \
+      --field="Signature ID:RO" "$sid" \
+      --field="Source IP:RO" "$src" \
+      --field="Action:RO" "$action" \
+      --field=".:LBL" "." \
+      \
+      --field="Time:RO" "$timeShort" \
+      --field="Category:RO" "$cat" \
+      --field="Destination IP:RO" "$dest" \
+      --field=".:LBL" "." \
+      \
+      --button="Ignore SID!gtk-cancel":"bash -c 'ignoreSID $sid'" \
+      --button="Snooze ($configSnooze sec)!pause":"bash -c 'snoozeNotification $sid'" \
+      --button="Edit!gtk-edit":"bash -c editRule $sid" &>/dev/null &
+      wait
+      rm "$currentSID"
+    fi
 }
 export -f send_notif
 
 
+function prepareNotif() {
+  local category=$1
+  local signature=$2
+  local sid=$3
+  local SRC=$4
+  local DEST=$5
+  local action=$6
+
+  checkIgnoreStatus $3
+  if [[ $ignoreStatus == "OK" ]] ; then
+    checkSnoozeStatus $3
+    if [[ $snoozeStatus == "OK" ]] ; then
+      send_notif "$category" "$signature" "$sid" "$SRC" "$DEST" "$action"
+    fi
+  fi
+
+  unset ignoreStatus snoozeStatus
+}
+
 d3bug info "System notifications are starting..."
 
-tail -f "$_PROJECT_ACTIVE_LOG/eve.json" > >( \
-  jq --unbuffered -r -c 'select(.event_type=="alert")' \
-    | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category) signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
-      | while read -r line; do \
-        eval "$line" ; \
-        send_notif "$category" "$signature" "$sid" "$SRC" "$DEST" "$action" ; \
-      done )
+exec -a "suriNotif" \
+  tail -f "$_PROJECT_ACTIVE_LOG/eve.json" > >( \
+    jq --unbuffered -r -c 'select(.event_type=="alert")' \
+      | jq --unbuffered -r '@sh  "sid=\(.alert.signature_id) category=\(.alert.category) signature=\(.alert.signature) SRC=\(.src_ip) DEST=\(.dest_ip)  action=\(.alert.action)"' \
+        | while read -r line; do \
+          eval "$line" ; \
+          prepareNotif "$category" "$signature" "$sid" "$SRC" "$DEST" "$action" ; \
+        done )
