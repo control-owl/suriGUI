@@ -42,7 +42,7 @@ function exitSuriGUI() {
   pkill -f suriGUI
 }
 export -f exitSuriGUI
-trap exitSuriGUI EXIT
+trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
 function d3bug() {
@@ -313,6 +313,7 @@ function suriGUISettings() {
 
   KEY="$RANDOM"
 
+################################################################################
   readConfigFile notifications
   readConfigFile timeout
   readConfigFile keep
@@ -321,8 +322,7 @@ function suriGUISettings() {
   readConfigFile notificationPositionMenu
   readConfigFile snooze
 
-  exec -a "suriGUI-notebook-1" \
-    yad --plug="$KEY" --tabnum=1 --form \
+  yad --plug="$KEY" --tabnum=1 --form \
       --field="Autostart":chk "$configAutostart" \
       --field="Start Suricata with suriGUI":LBL "" \
       --field="":LBL "" \
@@ -344,11 +344,12 @@ function suriGUISettings() {
       --field="Stop IPS":fbtn 'bash -c "stopSuricataService"'  \
       --field="":LBL "" \
       --field="Update suriGUI":fbtn 'bash -c "updateSuriGUI"' \
-      &
-  # echo $! > tmp/notebook1.pid
+      > tmp/res1 &
+################################################################################
 
-  exec -a "suriGUI-notebook-2" \
-    yad --plug="$KEY" --tabnum=2 --form \
+
+################################################################################
+  yad --plug="$KEY" --tabnum=2 --form \
       --field="":LBL "" \
       --field="<b>Config files</b>":LBL "" \
       --field="IPS config file:":FL "$_SURICATA_CONFIG" \
@@ -365,15 +366,16 @@ function suriGUISettings() {
       \
       --field="":LBL "" \
       --field="Apply settings":fbtn 'bash -c "updateConfigFile tab2 %7 %9"' \
-      &
+      > tmp/res2 &
+################################################################################
 
 
+################################################################################
   readConfigFile actionMenu
   readConfigFile update
   readConfigFile action
 
-  exec -a "suriGUI-notebook-3" \
-    yad --plug="$KEY" --tabnum=3 --form \
+  yad --plug="$KEY" --tabnum=3 --form \
       --field="Default rule action":CB "$configActionMenu" \
       --field="<b>alert</b> - generate an alert":LBL "" \
       --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
@@ -388,40 +390,52 @@ function suriGUISettings() {
       --field="Apply settings":fbtn 'bash -c "updateConfigFile tab3 %1 %11"' \
       --field="":LBL "" \
       --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' \
-      &
+      > tmp/res3 &
+################################################################################
+
 
 ################################################################################
   local ignoredSIDS=( $(cat $_NOTIF_IGNORE_LIST) )
   descIgnore="List of SIDs not shown with suriNotif\\n"
   descIgnore+="Double click on SID to remove it."
 
-exec 4<> "$_SID_PIPE"
+  exec 4<> "$_SID_PIPE"
 
-  exec -a "suriGUI-notebook-4" \
-    yad --plug="$KEY" --tabnum=4 --list --listen --cycle-read \
+  yad --plug="$KEY" --tabnum=4 --list --listen --cycle-read \
       --text="$descIgnore" \
       --dclick-action='bash -c "deleteIgnoredSID %s"' \
       --column="SID" "${ignoredSIDS[@]}" <&4 &
+      > tmp/res4 &
 ################################################################################
 
-  exec -a "suriGUI-notebook-5" \
+
+################################################################################
     yad --plug="$KEY" --tabnum=5 --form \
       --field="":LBL "" \
       &
+################################################################################
 
 
+################################################################################
   TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
   TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
   TXT+="  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
 
-  exec -a "suriGUI-notebook-0" \
-    yad --notebook --width=600 --height=350 --center --no-buttons \
+  yad --notebook --width=600 --height=350 --center  \
       --title="suriGUI Settings" --text="$TXT" \
       --auto-kill --auto-close \
       --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
-      --key="$KEY" --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Backup/Restore"
+      --key="$KEY" --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Backup/Restore" \
+      --button="Close":1 --button="Save!gtk-save":0
+    ret=$?
 
+    case $ret in
+      0 ) echo "1111111111"  ;;
+      1 ) exitSuriGUI ;;
+      * ) exit 0  ;;
+    esac
+################################################################################
 }
 export -f suriGUISettings
 
@@ -661,9 +675,9 @@ function startSuriGUI() {
     --image="$_PROJECT_NAME-inactive" \
     --separator="|" \
     --menu="${suriTrayMenuList:-Exit!quit}" \
-    --command="bash -c suriGUISettings" <&3 &>/dev/null &
+    --command="bash -c suriGUISettings" <&3 &>/dev/null
 
-    #[[ -f $_PROJECT_PID ]] && rm "$_PROJECT_PID"
+    [[ -f $_PROJECT_PID ]] && rm "$_PROJECT_PID"
 }
 export -f startSuriGUI
 
