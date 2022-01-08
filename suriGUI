@@ -308,6 +308,32 @@ function deleteIgnoredSID() {
 export -f deleteIgnoredSID
 
 
+function saveSettings() {
+  d3bug
+
+  readarray -d '|' -t tab1 <<< $(cat tmp/res1)
+  sed -i "s/^\(autostart\s*=\s*\).*\$/\1${tab1[0]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(notifications\s*=\s*\).*\$/\1${tab1[3]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(timeout\s*=\s*\).*\$/\1${tab1[6]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(position\s*=\s*\).*\$/\1${tab1[9]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(snooze\s*=\s*\).*\$/\1${tab1[12]}/" "$_PROJECT_CONFIG_FILE"
+
+  readarray -d '|' -t tab2 <<< $(cat tmp/res2)
+  sed -i "s/^\(IPS\s*=\s*\).*\$/\1${tab2[2]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(rules\s*=\s*\).*\$/\1${tab2[3]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(keep\s*=\s*\).*\$/\1${tab2[6]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(log\s*=\s*\).*\$/\1${tab2[7]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(duration\s*=\s*\).*\$/\1${tab2[8]}/" "$_PROJECT_CONFIG_FILE"
+
+  readarray -d '|' -t tab3 <<< $(cat tmp/res3)
+  sed -i "s/^\(action\s*=\s*\).*\$/\1${tab3[0]}/" "$_PROJECT_CONFIG_FILE"
+  sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
+
+
+
+}
+export -f saveSettings
+
 function suriGUISettings() {
   d3bug
 
@@ -337,13 +363,6 @@ function suriGUISettings() {
       --field="":LBL "" \
       --field="Snooze:NUM" "$configSnooze\!1..60\!1\!0" \
       --field="Duration of snoozed notification in seconds":LBL "" \
-      --field="":LBL "" \
-      --field="Save":fbtn 'bash -c "updateConfigFile tab1 %1 %4 %7 %10 %13"' \
-      --field="":LBL "" \
-      --field="Start IPS":fbtn 'bash -c "startSuricataService"' \
-      --field="Stop IPS":fbtn 'bash -c "stopSuricataService"'  \
-      --field="":LBL "" \
-      --field="Update suriGUI":fbtn 'bash -c "updateSuriGUI"' \
       > tmp/res1 &
 ################################################################################
 
@@ -352,7 +371,7 @@ function suriGUISettings() {
   yad --plug="$KEY" --tabnum=2 --form \
       --field="":LBL "" \
       --field="<b>Config files</b>":LBL "" \
-      --field="IPS config file:":FL "$_SURICATA_CONFIG" \
+      --field="Suricata config:":FL "$_SURICATA_CONFIG" \
       --field="Suricata rules:":FL "$_SURICATA_RULES" \
       \
       --field="":LBL "" \
@@ -363,9 +382,6 @@ function suriGUISettings() {
       \
       --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
       --file-filter="All Files | *.*" \
-      \
-      --field="":LBL "" \
-      --field="Apply settings":fbtn 'bash -c "updateConfigFile tab2 %7 %9"' \
       > tmp/res2 &
 ################################################################################
 
@@ -387,7 +403,6 @@ function suriGUISettings() {
       --field="":LBL "" \
       --field="<b>Update</b>":LBL "" \
       --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
-      --field="Apply settings":fbtn 'bash -c "updateConfigFile tab3 %1 %11"' \
       --field="":LBL "" \
       --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' \
       > tmp/res3 &
@@ -405,7 +420,6 @@ function suriGUISettings() {
       --text="$descIgnore" \
       --dclick-action='bash -c "deleteIgnoredSID %s"' \
       --column="SID" "${ignoredSIDS[@]}" <&4 &
-      > tmp/res4 &
 ################################################################################
 
 
@@ -422,7 +436,8 @@ function suriGUISettings() {
   TXT+="  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
 
-  yad --notebook --width=600 --height=350 --center  \
+  # yad --notebook --width=600 --height=350 --center  \
+  yad --notebook  --center  \
       --title="suriGUI Settings" --text="$TXT" \
       --auto-kill --auto-close \
       --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
@@ -431,8 +446,8 @@ function suriGUISettings() {
     ret=$?
 
     case $ret in
-      0 ) echo "1111111111"  ;;
-      1 ) exitSuriGUI ;;
+      0 ) saveSettings  ;;
+      1 ) : ;;
       * ) exit 0  ;;
     esac
 ################################################################################
