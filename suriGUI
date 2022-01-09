@@ -311,26 +311,23 @@ export -f deleteIgnoredSID
 function saveSettings() {
   d3bug
 
-  readarray -d '|' -t tab1 <<< $(cat tmp/res1)
+  readarray -d '|' -t tab1 <<< $(cat $_PROJECT_DIR_TMP/res1)
   sed -i "s/^\(autostart\s*=\s*\).*\$/\1${tab1[0]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(notifications\s*=\s*\).*\$/\1${tab1[3]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(timeout\s*=\s*\).*\$/\1${tab1[6]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(position\s*=\s*\).*\$/\1${tab1[9]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(snooze\s*=\s*\).*\$/\1${tab1[12]}/" "$_PROJECT_CONFIG_FILE"
 
-  readarray -d '|' -t tab2 <<< $(cat tmp/res2)
+  readarray -d '|' -t tab2 <<< $(cat $_PROJECT_DIR_TMP/res2)
   sed -i "s/^\(IPS\s*=\s*\).*\$/\1${tab2[2]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(rules\s*=\s*\).*\$/\1${tab2[3]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(keep\s*=\s*\).*\$/\1${tab2[6]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(log\s*=\s*\).*\$/\1${tab2[7]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(duration\s*=\s*\).*\$/\1${tab2[8]}/" "$_PROJECT_CONFIG_FILE"
 
-  readarray -d '|' -t tab3 <<< $(cat tmp/res3)
+  readarray -d '|' -t tab3 <<< $(cat $_PROJECT_DIR_TMP/res3)
   sed -i "s/^\(action\s*=\s*\).*\$/\1${tab3[0]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
-
-
-
 }
 export -f saveSettings
 
