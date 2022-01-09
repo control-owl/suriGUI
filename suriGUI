@@ -72,8 +72,8 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 export _PROJECT_NAME="suriGUI"
 echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER="0.9-5"
-export _PROJECT_BUILD="2022-01-07"
+export _PROJECT_VER="0.9-6"
+export _PROJECT_BUILD="2022-01-09"
 export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
 
@@ -401,7 +401,7 @@ function suriGUISettings() {
       --field="<b>Update</b>":LBL "" \
       --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
       --field="":LBL "" \
-      --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' \
+      --field="Update rules now":fbtn "bash -c updateSuricataRules" \
       > "$_PROJECT_DIR_TMP/res3" &
 ################################################################################
 
@@ -415,7 +415,7 @@ function suriGUISettings() {
 
   yad --plug="$KEY" --tabnum=4 --list --listen --cycle-read \
       --text="$descIgnore" \
-      --dclick-action='bash -c "deleteIgnoredSID %s"' \
+      --dclick-action="bash -c deleteIgnoredSID %s" \
       --column="SID" "${ignoredSIDS[@]}" <&4 &
 ################################################################################
 
