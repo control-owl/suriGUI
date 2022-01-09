@@ -239,7 +239,7 @@ function updateSuriGUI() {
   d3bug
 
   d3bug info "Checking for update"
-  bash suriUpdate
+  bash "$_PROJECT_DIR/suriUpdate" &
 }
 export -f updateSuriGUI
 
@@ -363,7 +363,7 @@ function suriGUISettings() {
       --field="":LBL "" \
       --field="Snooze:NUM" "$configSnooze\!1..60\!1\!0" \
       --field="Duration of snoozed notification in seconds":LBL "" \
-      > tmp/res1 &
+      > "$_PROJECT_DIR_TMP/res1" &
 ################################################################################
 
 
@@ -382,7 +382,7 @@ function suriGUISettings() {
       \
       --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
       --file-filter="All Files | *.*" \
-      > tmp/res2 &
+      > "$_PROJECT_DIR_TMP/res2" &
 ################################################################################
 
 
@@ -405,7 +405,7 @@ function suriGUISettings() {
       --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
       --field="":LBL "" \
       --field="Update rules now":fbtn 'bash -c "updateSuricataRules"' \
-      > tmp/res3 &
+      > "$_PROJECT_DIR_TMP/res3" &
 ################################################################################
 
 
@@ -436,8 +436,8 @@ function suriGUISettings() {
   TXT+="  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
 
-  # yad --notebook --width=600 --height=350 --center  \
-  yad --notebook  --center  \
+  # yad --notebook  --center  \
+  yad --notebook --width=600 --center  \
       --title="suriGUI Settings" --text="$TXT" \
       --auto-kill --auto-close \
       --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
@@ -536,7 +536,7 @@ function startNotifDaemon() {
   isProcessAlive "suriNotif" >/dev/null
 
   if [[ $processIs == "Dead" ]] ; then
-    bash suriNotif &
+    bash "$_PROJECT_DIR/suriNotif" &
     echo "$!" > "$_NOTIF_PID"
 
     d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
