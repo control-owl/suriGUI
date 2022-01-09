@@ -415,7 +415,7 @@ function suriGUISettings() {
 
   yad --plug="$KEY" --tabnum=4 --list --listen --cycle-read \
       --text="$descIgnore" \
-      --dclick-action="bash -c deleteIgnoredSID %s" \
+      --dclick-action="bash -c 'deleteIgnoredSID %s'" \
       --column="SID" "${ignoredSIDS[@]}" <&4 &
 ################################################################################
 

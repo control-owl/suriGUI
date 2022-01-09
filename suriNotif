@@ -166,9 +166,9 @@ function send_notif() {
       --field="Destination IP:RO" "$dest" \
       --field=".:LBL" "." \
       \
-      --button="Ignore SID!gtk-cancel":"bash -c ignoreSID $sid" \
-      --button="Snooze ($configSnooze sec)!pause":"bash -c snoozeNotification $sid" \
-      --button="Edit!gtk-edit":"bash -c editRule $sid" &>/dev/null &
+      --button="Ignore SID!gtk-cancel":"bash -c 'ignoreSID $sid'" \
+      --button="Snooze ($configSnooze sec)!pause":"bash -c 'snoozeNotification $sid'" \
+      --button="Edit!gtk-edit":"bash -c 'editRule $sid'" &>/dev/null &
       wait
       rm "$currentSID"
     fi
