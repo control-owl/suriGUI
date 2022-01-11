@@ -1,4 +1,4 @@
-tmp/
+tmp/*
 log/
 conf/suriGUI.conf
 conf/suricata.rules

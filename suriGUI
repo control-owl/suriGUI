@@ -457,6 +457,7 @@ function stopSuricataService() {
 
   if [[ $suricataStatus == "active" ]]; then
     suricatasc -c shutdown &>/dev/null
+    wait
     d3bug info "Suricata stopped"
   else
     d3bug info "Suricata was not active."
