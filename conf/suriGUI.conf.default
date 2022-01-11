@@ -5,7 +5,7 @@
 notifications=TRUE
 
 # Notification timeout after ... seconds
-timeout=5
+timeout=30
 
 # Autostart Suricata with suriGUI
 autostart=TRUE

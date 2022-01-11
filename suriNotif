@@ -10,7 +10,7 @@ set -o pipefail     # Pipe return exit status
 
 trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
-while [[ $suricataStatus != "active" ]] ; do
+while [[ ! -f "$_SURICATA_PID" ]] ; do
   checkSuricataStatus >/dev/null
   [[ $suricataStatus == "active" ]] && break
   d3bug info "Waiting for Suricata"

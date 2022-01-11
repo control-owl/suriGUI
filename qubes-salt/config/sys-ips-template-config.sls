@@ -25,9 +25,7 @@ suriGUI-install:
   cmd.run:
     - name: "[ ! -d /usr/share/suriGUI ] && ( export https_proxy=127.0.0.1:8082 && git clone -b systemctl https://github.com/control-owl/suriGUI.git /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI )"
 
-
 # Modify default Suricata service
-# EnvironmentFile=-/etc/default/suricata
 /lib/systemd/system/suricata.service:
   file.managed:
     - makedirs: True
