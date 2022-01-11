@@ -73,17 +73,14 @@ echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
 export _PROJECT_VER="1.0"
 export _PROJECT_BUILD="2022-01-11"
-export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
-export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
+export _PROJECT_DIR="/usr/share/suriGUI"                && createDir "${_##*=}"
+export _PROJECT_DIR_RES="$_PROJECT_DIR/res"             && createDir "${_##*=}"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"             && createDir "${_##*=}"
+export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$dateShort"  && createDir "${_##*=}"
+export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"           && createDir "${_##*=}"
 
-export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
-[[ -d $_PROJECT_DIR_TMP ]] && rm "$_PROJECT_DIR_TMP" -R
-createDir "$_PROJECT_DIR_TMP"
-
-export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"   && createDir "${_##*=}"
-export _PROJECT_DIR_LOG="$_PROJECT_DIR/log"     && createDir "${_##*=}"
-export _PROJECT_LOG_FILE="$_PROJECT_DIR_LOG/$dateShort" && createDir "${_##*=}"
-export _PROJECT_LOG_FILE_TMP="$_PROJECT_DIR_LOG/tmp" && createDir "${_##*=}"
+# export _PROJECT_LOG_FILE="$_PROJECT_DIR_LOG/$dateShort" && createDir "${_##*=}"
+# export _PROJECT_LOG_FILE_TMP="$_PROJECT_DIR_LOG/tmp" && createDir "${_##*=}"
 
 export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
 
@@ -656,6 +653,7 @@ function checkSuricataStatus() {
     #fi
   else
     d3bug info "Suricata is inactive"
+    export suricataStatus=inactive
     updateTrayMenu inactive
   fi
 }
@@ -700,13 +698,6 @@ function checkConfig () {
 
   readConfigFile keep
 
-  if [[ $configKeep == "TRUE" ]]; then
-    export _PROJECT_ACTIVE_LOG="$_PROJECT_LOG_FILE"
-    d3bug info "Log directory: $_PROJECT_ACTIVE_LOG"
-  else
-    export _PROJECT_ACTIVE_LOG="$_PROJECT_LOG_FILE_TMP"
-    d3bug info "Logging disabled"
-  fi
 
   if [[ ! -f $_SURICATA_RULES ]] ; then
     updateSuricataRules
