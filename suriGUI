@@ -465,12 +465,12 @@ function stopSuricataService() {
 
   updateTrayMenu inactive
 
-  if [[ -f "$_SURICATA_PID" ]] ; then
-    rm "$_SURICATA_PID"
-    d3bug info "Suricata PID removed"
-  else
-    d3bug info "PID not found"
-  fi
+  # if [[ -f "$_SURICATA_PID" ]] ; then
+  #   rm "$_SURICATA_PID"
+  #   d3bug info "Suricata PID removed"
+  # else
+  #   d3bug info "PID not found"
+  # fi
 }
 export -f stopSuricataService
 

@@ -1,8 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 0.220111
-
+# stamp: 2022-01-11
 
 # Install all necessery packets
 suricata-install-packages:
@@ -16,18 +15,15 @@ suricata-install-packages:
       - yad # suriGUI
       - git # suriGUI
 
-
 # Stop default Suricata service
 stop-suricata-service:
   cmd.run:
     - name: "systemctl stop suricata"
 
-
 # Install suriGUI
-    suriGUI-install:
-      cmd.run:
-        - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI)"
-
+suriGUI-install:
+  cmd.run:
+    - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI)"
 
 # Modify default Suricata service
 /lib/systemd/system/suricata.service:
@@ -51,11 +47,9 @@ stop-suricata-service:
         [Install]
         WantedBy=multi-user.target
 
-
 enable-suricata-service:
   cmd.run:
     - name: "systemctl enable suricata"
-
 
 /etc/xdg/autostart/suriGUI.desktop:
   file.managed:
