@@ -72,8 +72,8 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 export _PROJECT_NAME="suriGUI"
 echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER="0.9-6"
-export _PROJECT_BUILD="2022-01-09"
+export _PROJECT_VER="1.0"
+export _PROJECT_BUILD="2022-01-11"
 export _PROJECT_DIR="/usr/share/suriGUI"        && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"     && createDir "${_##*=}"
 
@@ -455,22 +455,14 @@ export -f suriGUISettings
 function stopSuricataService() {
   d3bug
 
-  if [[ $suricataStatus == "active" ]]; then
-    suricatasc -c shutdown &>/dev/null
-    wait
+  if systemctl is-active --quiet suricata; then
+    systemctl stop suricata &>/dev/null
     d3bug info "Suricata stopped"
   else
-    d3bug info "Suricata was not active."
+    d3bug info "Suricata service is not active"
   fi
 
   updateTrayMenu inactive
-
-  # if [[ -f "$_SURICATA_PID" ]] ; then
-  #   rm "$_SURICATA_PID"
-  #   d3bug info "Suricata PID removed"
-  # else
-  #   d3bug info "PID not found"
-  # fi
 }
 export -f stopSuricataService
 
@@ -549,15 +541,13 @@ export -f startNotifDaemon
 function startSuricataService() {
   d3bug
 
-  isProcessAlive "suricata" >/dev/null
-
-  if [[ $processIs == "Dead" ]] ; then
-    /usr/bin/suricata -c $_SURICATA_CONFIG --pidfile $_SURICATA_PID -l $_PROJECT_ACTIVE_LOG -q 0 &>/dev/null &
-    updateTrayMenu starting
+  if systemctl is-active --quiet suricata; then
+    d3bug info "Suricata service is already active"
   else
-    d3bug info "Nothing to do"
+    systemctl start suricata &>/dev/null
+    d3bug info "Suricata starting"
+    updateTrayMenu starting
   fi
-   unset processIs
 
   checkIptables
 }
@@ -698,20 +688,17 @@ export -f startSuriGUI
 function checkSuricataStatus() {
   d3bug
 
-  if ps -p $(cat $_SURICATA_PID 2>/dev/null) &>/dev/null; then
+  if systemctl is-active --quiet suricata; then
     if [[ $(pstree -p $(cat $_SURICATA_PID) | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; then
       d3bug info "Suricata is active"
       updateTrayMenu active
       export suricataStatus=active
     else
-      d3bug info "Suricata is starting"
-      updateTrayMenu starting
-      export suricataStatus=starting
+      export suricataStatus=inactive
     fi
   else
     d3bug info "Suricata is inactive"
     updateTrayMenu inactive
-    export suricataStatus=inactive
   fi
 }
 export -f checkSuricataStatus
@@ -763,7 +750,6 @@ function checkConfig () {
     d3bug info "Logging disabled"
   fi
 
-  #
   if [[ ! -f $_SURICATA_RULES ]] ; then
     updateSuricataRules
   else
@@ -814,15 +800,6 @@ function checkRequirements () {
       fi
     fi
   done
-
-  if systemctl is-active --quiet suricata; then
-    d3bug info "Disabling default Suricata service file"
-    systemctl disable suricata &>/dev/null
-    systemctl stop suricata &>/dev/null
-  else
-    d3bug info "Suricata service is not active"
-  fi
-
 }
 export -f checkRequirements
 

@@ -36,9 +36,9 @@ suriGUI-install:
         Requires=network-online.target
         [Service]
         Type=simple
-        EnvironmentFile=-/usr/share/suriGUI/conf/suricata.env
+        EnvironmentFile=-/etc/default/suricata
         ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-        ExecStart=/usr/bin/suricata
+        ExecStart=/usr/bin/suricata -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0
         ExecReload=/bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
         Restart=on-failure
