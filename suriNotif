@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # coder: ro0t
-# stamp: 0.220101-amadeus
-
+# stamp: 2022-01-11
+#
 # God Mode: On
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status

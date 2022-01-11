@@ -7,13 +7,13 @@
 suricata-install-packages:
   pkg.installed:
     - pkgs:
-      - qubes-core-agent-networking # Qubes
-      - qubes-core-agent-passwordless-root # Qubes
-      - libnetfilter-queue-dev # Suricata NFQUEUE
-      - suricata # IPS
-      - jq # for proccessing output
-      - yad # suriGUI
-      - git # suriGUI
+      - qubes-core-agent-networking
+      - qubes-core-agent-passwordless-root
+      - libnetfilter-queue-dev
+      - suricata
+      - jq
+      - yad
+      - git
 
 # Stop default Suricata service
 stop-suricata-service:
@@ -23,10 +23,11 @@ stop-suricata-service:
 # Install suriGUI
 suriGUI-install:
   cmd.run:
-    - name: "[ ! -d /usr/share/suriGUI ] && (export https_proxy=127.0.0.1:8082 && git clone -b systemctl git@github.com:control-owl/suriGUI.git /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI)"
+    - name: "[ ! -d /usr/share/suriGUI ] && ( export https_proxy=127.0.0.1:8082 && git clone -b systemctl https://github.com/control-owl/suriGUI.git /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI )"
 
 
 # Modify default Suricata service
+# EnvironmentFile=-/etc/default/suricata
 /lib/systemd/system/suricata.service:
   file.managed:
     - makedirs: True
@@ -37,12 +38,10 @@ suriGUI-install:
         Requires=network-online.target
         [Service]
         Type=simple
-        EnvironmentFile=-/etc/default/suricata
         ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-        ExecStart=/usr/bin/suricata -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0
+        ExecStart=/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0'
         ExecReload=/bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
-        Restart=on-failure
         ProtectSystem=full
         ProtectHome=true
         [Install]

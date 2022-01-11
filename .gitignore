@@ -1,5 +1,5 @@
 tmp/*
-log/
+log/*
 conf/suriGUI.conf
 conf/suricata.rules
 conf/suricata.rules.timestamp
