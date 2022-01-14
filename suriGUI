@@ -38,7 +38,7 @@ function exitSuriGUI() {
   [[ -f $_NOTIF_PID ]] && rm "$_NOTIF_PID"
 
   # Remove notebook resources
-  # [[ -f $_NOTIF_PID ]] && rm "$_NOTIF_PID"
+  for tab in $_PROJECT_DIR_TMP/*.tab ; do rm "$tab" ; done
 
   d3bug info "EXIT 0"
   pkill -f suriGUI
@@ -380,8 +380,6 @@ function suriGUISettings() {
 
     for tab in $_PROJECT_DIR_TMP/*.tab ; do
       rm $tab
-
-
     done
 ################################################################################
 }
