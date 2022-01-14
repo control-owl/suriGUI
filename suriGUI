@@ -156,7 +156,7 @@ function updateConfigFile() {
       checkSuricataStatus &>/dev/null
 
       if [[ "$suricataStatus" == "active" ]] ; then
-        sudo suricatasc -c ruleset-reload-nonblocking &>/dev/null
+        sudo systemctl reload suricata &>/dev/null
         d3bug info "Rules updated & reloaded"
       else
         d3bug info "Rules updated"
@@ -390,7 +390,7 @@ export -f suriGUISettings
 function stopSuricataService() {
   d3bug
 
-  if systemctl is-active --quiet suricata; then
+  if [[ "$suricataStatus" == "active" ]] ; then
     sudo systemctl stop suricata &>/dev/null
     d3bug info "Suricata stopped"
   else
@@ -479,15 +479,13 @@ export -f startNotifDaemon
 function startSuricataService() {
   d3bug
 
-  if systemctl is-active --quiet suricata; then
+  if [[ "$suricataStatus" == "active" ]] ; then
     d3bug info "Suricata service is already active"
   else
     sudo systemctl start suricata &>/dev/null
     d3bug info "Suricata starting"
     updateTrayMenu starting
   fi
-
-  #checkIptables
 }
 export -f startSuricataService
 
@@ -643,7 +641,7 @@ function createProjectPipes() {
 
   for pipe in "${pipes[@]}" ; do
     # remove old pipe if exists
-    [[ -f $pipe ]] && rm $pipe
+    [[ -e $pipe ]] && rm $pipe
 
     # create a new one
     if mkfifo "$pipe" ; then
@@ -661,6 +659,8 @@ export -f createProjectPipes
 
 
 function checkRules () {
+  d3bug
+
   if [[ ! -f "$_SURICATA_RULES" ]] ; then
     updateSuricataRules
   else
@@ -704,13 +704,19 @@ function checkRules () {
 function checkConfig () {
   d3bug
 
-  if [[ ! -f "$_PROJECT_CONFIG_FILE" ]] ; then
-    d3bug error "Default config not found"
-    cp "$_PROJECT_CONFIG_FILE.default" "$_PROJECT_CONFIG_FILE"
-    d3bug info "Config created"
-  else
-    d3bug info "Local config found"
-  fi
+  files=( "$_NOTIF_IGNORE_LIST" "$_PROJECT_CONFIG_FILE" )
+
+  for file in $files ; do
+    if [[ ! -f "$file" ]] ; then
+      d3bug error "Config not found: $file"
+      fileName=$(basename $file)
+      cp "$_PROJECT_DIR_CONF/default/$fileName.default" "$_PROJECT_DIR_CONF/$fileName"
+      d3bug info "Config created"
+    else
+      d3bug info "Local config found: $file"
+    fi
+  done
+
 }
 export -f checkConfig
 

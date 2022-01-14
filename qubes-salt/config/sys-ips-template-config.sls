@@ -30,6 +30,24 @@ suriGUI-chown:
   cmd.run:
     - name: "chown user:user /usr/share/suriGUI -R"
 
+/lib/systemd/system/nfqueue.service:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        [Unit]
+        Description=NFQUEUE service
+        After=network.target
+        Before=suricata.service
+        [Service]
+        Type=simple
+        ExecStart=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
+        [Install]
+        WantedBy=multi-user.target
+
+enable-nfqueue-service:
+  cmd.run:
+    - name: "systemctl enable nfqueue"
+
 # Modify default Suricata service
 /lib/systemd/system/suricata.service:
   file.managed:
@@ -37,11 +55,10 @@ suriGUI-chown:
     - contents: |
         [Unit]
         Description=Suricata IPS daemon
-        After=network.target network-online.target
+        After=nfqueue.service
         Requires=network-online.target
         [Service]
         Type=simple
-        ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
         ExecStartPre=+/bin/bash -c "if [[ ! -e /usr/share/suriGUI/conf/suricata.rules ]]; then /bin/suricata-update --output /usr/share/suriGUI/conf --no-test ; fi"
         ExecStartPre=+/bin/bash -c "if [[ ! -d /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
         ExecStartPre=+/bin/bash -c "if [[ ! -d /usr/share/suriGUI/tmp ]]; then /bin/mkdir -p /usr/share/suriGUI/tmp ; fi"
