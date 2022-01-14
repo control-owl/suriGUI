@@ -12,7 +12,7 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 while [[ ! -f "$_SURICATA_PID" ]] ; do
   checkSuricataStatus >/dev/null
-  [[ $suricataStatus == "active" ]] && break
+  if ( systemctl is-active --quiet suricata ) ; then break ; fi
   d3bug info "Waiting for Suricata"
   sleep 5
 done #&>/dev/null
@@ -115,9 +115,7 @@ function checkIgnoreStatus() {
     d3bug info "Showing SID: $sid"
   fi
 }
-
-
-
+export -f checkIgnoreStatus
 
 
 function send_notif() {
@@ -145,13 +143,12 @@ function send_notif() {
   if [[ ! -f "$currentSID" ]]; then
     touch "$currentSID"
 
-
     yad \
       --title="suriNotif" \
       --window-icon="$_PROJECT_NAME-active" \
       --timeout-indicator="top" \
       --text="$sig" \
-      --form  --on-top --timeout=$configTimeout --skip-taskbar ${pos:-}  \
+      --form --on-top --timeout=$configTimeout --skip-taskbar ${pos:-}  \
       --width=350 \
       --columns=2 \
       --align=right \
@@ -194,6 +191,7 @@ function prepareNotif() {
 
   unset ignoreStatus snoozeStatus
 }
+
 
 d3bug info "System notifications are starting..."
 

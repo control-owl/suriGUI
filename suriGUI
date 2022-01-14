@@ -42,7 +42,7 @@ function exitSuriGUI() {
   [[ -e "$_PROJECT_DIR_TMP/rules.tab" ]] && rm "$_PROJECT_DIR_TMP/rules.tab"
 
   d3bug info "EXIT 0"
-  sudo pkill -f suriGUI
+  # sudo pkill -f suriGUI
 }
 export -f exitSuriGUI
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
@@ -115,9 +115,6 @@ export _SURICATA_OUTDATE="7"
 
 xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_INACTIVE" "$_PROJECT_NAME-inactive"
 xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_ICON_ACTIVE" "$_PROJECT_NAME-active"
-
-
-
 
 
 function readConfigFile() {
@@ -387,19 +384,20 @@ function suriGUISettings() {
 export -f suriGUISettings
 
 
-function stopSuricataService() {
-  d3bug
-
-  if [[ "$suricataStatus" == "active" ]] ; then
-    sudo systemctl stop suricata &>/dev/null
-    d3bug info "Suricata stopped"
-  else
-    d3bug info "Suricata service is not active"
-  fi
-
-  updateTrayMenu inactive
-}
-export -f stopSuricataService
+# function stopSuricataService() {
+#   d3bug
+#
+#   if systemctl is-active --quiet suricata ; then
+#     sudo systemctl stop suricata &>/dev/null
+#     updateTrayMenu inactive
+#     d3bug info "Suricata stopped"
+#   else
+#     d3bug info "Suricata service is not active"
+#     export suricataStatus=inactive
+#   fi
+#
+# }
+# export -f stopSuricataService
 
 
 # function checkIptables() {
@@ -468,7 +466,7 @@ function startNotifDaemon() {
   else
     d3bug info "suriNotif already running with PID: $(cat $_NOTIF_PID)"
     pkill -f "suriNotif" &>/dev/null
-    [[ -f $_NOTIF_PID ]] && rm $_NOTIF_PID
+    rm "$_NOTIF_PID"
     startNotifDaemon
   fi
 
@@ -476,18 +474,15 @@ function startNotifDaemon() {
 export -f startNotifDaemon
 
 
-function startSuricataService() {
+function controlSuricataService() {
   d3bug
 
-  if [[ "$suricataStatus" == "active" ]] ; then
-    d3bug info "Suricata service is already active"
-  else
-    sudo systemctl start suricata &>/dev/null
-    d3bug info "Suricata starting"
-    updateTrayMenu starting
-  fi
+  # stop | start
+  local action="$1"
+  sudo systemctl "$action" suricata &>/dev/null
+  d3bug info "$action Suricata service"
 }
-export -f startSuricataService
+export -f controlSuricataService
 
 
 function updateTrayIcon() {
@@ -524,8 +519,8 @@ function updateTrayMenu() {
   #   d3bug info "Nothing changed"
   # else
     case "$status" in
-      "active") menu="Stop!bash -c stopSuricataService" ;;
-      "inactive") menu="Start!bash -c startSuricataService" ;;
+      "active") menu="Stop!bash -c 'controlSuricataService stop'" ;;
+      "inactive") menu="Start!bash -c 'controlSuricataService start'" ;;
       "starting") menu="" ;;
       *)    exit 1          ;;
     esac
@@ -608,7 +603,7 @@ function startSuriGUI() {
 
   yad --notification --no-middle --listen \
     --text="$_PROJECT_NAME v$_PROJECT_VER" \
-    --image="$_PROJECT_NAME-inactive" \
+    --image="$_PROJECT_NAME-$suricataStatus" \
     --separator="|" \
     --menu="Exit!quit" \
     --command="bash -c suriGUISettings" <&3 &>/dev/null
@@ -706,7 +701,7 @@ function checkConfig () {
 
   files=( "$_NOTIF_IGNORE_LIST" "$_PROJECT_CONFIG_FILE" )
 
-  for file in $files ; do
+  for file in "${files[@]}" ; do
     if [[ ! -f "$file" ]] ; then
       d3bug error "Config not found: $file"
       fileName=$(basename $file)
@@ -755,11 +750,11 @@ checkRequirements
 checkConfig
 checkRules
 createProjectPipes
-checkSuricataStatus
 
 readConfigFile notifications
 [[ $configNotifications == "TRUE" ]] && startNotifDaemon
 
+checkSuricataStatus
 startSuriGUI &
 
 while : ; do
