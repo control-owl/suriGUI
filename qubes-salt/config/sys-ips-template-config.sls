@@ -46,7 +46,7 @@ suriGUI-chown:
         ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d)'
         ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/tmp'
         ExecStart=+/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0'
-        ExecReload=/bin/kill -HUP $MAINPID
+        ExecReload=/usr/bin/suricatasc -c reload-rules ; /bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
         ProtectSystem=full
         ProtectHome=true
