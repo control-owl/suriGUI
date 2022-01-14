@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 2022-01-11
+# stamp: 2022-01-14
 
 # Install all necessery packets
 suricata-install-packages:
@@ -25,6 +25,11 @@ suriGUI-install:
   cmd.run:
     - name: "[ ! -d /usr/share/suriGUI ] && ( export https_proxy=127.0.0.1:8082 && git clone -b systemctl https://github.com/control-owl/suriGUI.git /usr/share/suriGUI && chmod +x /usr/share/suriGUI/suriGUI && ln -s /usr/share/suriGUI/suriGUI /usr/bin/suriGUI )"
 
+# Change ownership
+suriGUI-chown:
+  cmd.run:
+    - name: "chown user:user /usr/share/suriGUI -R"
+
 # Modify default Suricata service
 /lib/systemd/system/suricata.service:
   file.managed:
@@ -37,7 +42,10 @@ suriGUI-install:
         [Service]
         Type=simple
         ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-        ExecStart=/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0'
+        ExecStartPre=+bash -c "if [[ ! -f /usr/share/suriGUI/conf/suricata.rules ]]; then suricata-update --output /usr/share/suriGUI/conf --no-test ; fi"
+        ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d)'
+        ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/tmp'
+        ExecStart=+/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0'
         ExecReload=/bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
         ProtectSystem=full
@@ -57,7 +65,7 @@ enable-suricata-service:
         Version=1.0
         Encoding=UTF-8
         Name=suriGUI
-        Exec=sudo suriGUI
+        Exec=suriGUI
         Terminal=false
         Type=Application
 
