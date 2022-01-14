@@ -20,7 +20,6 @@ function exitSuriGUI() {
   echo "EXITING..."
 
   stopNotifDaemon
-  stopSuricataService
 
   # log delete ?
   source $_PROJECT_CONFIG_FILE
@@ -30,18 +29,20 @@ function exitSuriGUI() {
   fi
 
   # Close and remove pipes
-  [[ -p "$_PROJECT_PIPE" ]] && exec 3>&- && rm "$_PROJECT_PIPE"
-  [[ -p "$_SID_PIPE" ]] && exec 4>&- && rm "$_SID_PIPE"
+  [[ -e "$_PROJECT_PIPE" ]] && rm "$_PROJECT_PIPE"
+  [[ -e "$_SID_PIPE" ]] && rm "$_SID_PIPE"
 
   # Remove pids
-  [[ -f $_PROJECT_PID ]] && rm "$_PROJECT_PID"
-  [[ -f $_NOTIF_PID ]] && rm "$_NOTIF_PID"
+  [[ -e "$_PROJECT_PID" ]] && rm "$_PROJECT_PID"
+  [[ -e "$_NOTIF_PID" ]] && rm "$_NOTIF_PID"
 
   # Remove notebook resources
-  for tab in $_PROJECT_DIR_TMP/*.tab ; do rm "$tab" ; done
+  [[ -e "$_PROJECT_DIR_TMP/suriGUI.tab" ]] && rm "$_PROJECT_DIR_TMP/suriGUI.tab"
+  [[ -e "$_PROJECT_DIR_TMP/suricata.tab" ]] && rm "$_PROJECT_DIR_TMP/suricata.tab"
+  [[ -e "$_PROJECT_DIR_TMP/rules.tab" ]] && rm "$_PROJECT_DIR_TMP/rules.tab"
 
   d3bug info "EXIT 0"
-  pkill -f suriGUI
+  sudo pkill -f suriGUI
 }
 export -f exitSuriGUI
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
@@ -155,7 +156,7 @@ function updateConfigFile() {
       checkSuricataStatus &>/dev/null
 
       if [[ "$suricataStatus" == "active" ]] ; then
-        suricatasc -c ruleset-reload-nonblocking
+        sudo suricatasc -c ruleset-reload-nonblocking &>/dev/null
         d3bug info "Rules updated & reloaded"
       else
         d3bug info "Rules updated"
@@ -390,7 +391,7 @@ function stopSuricataService() {
   d3bug
 
   if systemctl is-active --quiet suricata; then
-    systemctl stop suricata &>/dev/null
+    sudo systemctl stop suricata &>/dev/null
     d3bug info "Suricata stopped"
   else
     d3bug info "Suricata service is not active"
@@ -401,18 +402,18 @@ function stopSuricataService() {
 export -f stopSuricataService
 
 
-function checkIptables() {
-  d3bug
-
-  if iptables -C FORWARD -m mark ! --mark 1/1 -j NFQUEUE 1>&- 2>&- ; then
-    d3bug info "iptables already set"
-  else
-    iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-    d3bug info "NFQueue set"
-  fi
-
-}
-export -f checkIptables
+# function checkIptables() {
+#   d3bug
+#
+#   if iptables -C FORWARD -m mark ! --mark 1/1 -j NFQUEUE 1>&- 2>&- ; then
+#     d3bug info "iptables already set"
+#   else
+#     iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
+#     d3bug info "NFQueue set"
+#   fi
+#
+# }
+# export -f checkIptables
 
 
 function isProcessAlive() {
@@ -466,6 +467,9 @@ function startNotifDaemon() {
     d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
   else
     d3bug info "suriNotif already running with PID: $(cat $_NOTIF_PID)"
+    pkill -f "suriNotif" &>/dev/null
+    [[ -f $_NOTIF_PID ]] && rm $_NOTIF_PID
+    startNotifDaemon
   fi
 
 }
@@ -478,12 +482,12 @@ function startSuricataService() {
   if systemctl is-active --quiet suricata; then
     d3bug info "Suricata service is already active"
   else
-    systemctl start suricata &>/dev/null
+    sudo systemctl start suricata &>/dev/null
     d3bug info "Suricata starting"
     updateTrayMenu starting
   fi
 
-  checkIptables
+  #checkIptables
 }
 export -f startSuricataService
 
@@ -492,7 +496,8 @@ function updateTrayIcon() {
   d3bug
   case "$1" in
     "starting" )
-      until  [[ $(pstree -p $(cat $_SURICATA_PID 2>/dev/null)  | perl -ne 'print "$1\n" while /\((\d+)\)/g' 2>/dev/null | wc -l  ) -gt 1 ]] ; do
+
+      until ping -q -c 1 -W 1 github.com &>/dev/null ; do
         exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-inactive" >&3 &
         sleep 0.5
         exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-active" >&3 &
@@ -572,7 +577,9 @@ function updateSuricataRules() {
 
   if command -v suricata-update &>/dev/null ; then
     d3bug info "Downloading suricata rules ..."
-    if suricata-update --output "$_PROJECT_DIR_CONF" --no-test &>/dev/null ; then
+    if suricata-update  --output "$_PROJECT_DIR_CONF" \
+                        --data-dir "$_PROJECT_DIR_TMP" \
+                        --no-test &>/dev/null ; then
 
       d3bug info "Download done"
 

@@ -42,9 +42,10 @@ suriGUI-chown:
         [Service]
         Type=simple
         ExecStartPre=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-        ExecStartPre=+bash -c "if [[ ! -f /usr/share/suriGUI/conf/suricata.rules ]]; then suricata-update --output /usr/share/suriGUI/conf --no-test ; fi"
-        ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d)'
-        ExecStartPre=+/bin/bash -c 'mkdir -p /usr/share/suriGUI/tmp'
+        ExecStartPre=+/bin/bash -c "if [[ ! -e /usr/share/suriGUI/conf/suricata.rules ]]; then /bin/suricata-update --output /usr/share/suriGUI/conf --no-test ; fi"
+        ExecStartPre=+/bin/bash -c "if [[ ! -d /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
+        ExecStartPre=+/bin/bash -c "if [[ ! -d /usr/share/suriGUI/tmp ]]; then /bin/mkdir -p /usr/share/suriGUI/tmp ; fi"
+        ExecStartPre=+/bin/bash -c "if [[ -e /usr/share/suriGUI/tmp/suricata.pid ]]; then /bin/rm /usr/share/suriGUI/tmp/suricata.pid ; fi"
         ExecStart=+/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml --pidfile /usr/share/suriGUI/tmp/suricata.pid -q 0'
         ExecReload=/usr/bin/suricatasc -c reload-rules ; /bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown

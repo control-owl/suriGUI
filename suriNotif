@@ -48,7 +48,7 @@ function ignoreSID() {
   ret=$?
 
   if [ $ret = 0 ] ; then
-    if ! grep -q $sid "$_NOTIF_IGNORE_LIST"; then
+    if ! grep -q $sid "$_NOTIF_IGNORE_LIST" ; then
       d3bug info "Writing SID $sid in ignore list"
       echo "$sid" >> $_NOTIF_IGNORE_LIST
     else
