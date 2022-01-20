@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 #
 # coder: ro0t
-# stamp: 0.211217-new-try
-
+# stamp: 2022-01-11
+#
 # God Mode: On
-# set -o nounset      # Exit on undefined variable
-# set -o errexit      # Exit on non-zero status
-# set -o pipefail     # Pipe return exit status
+set -o nounset      # Exit on undefined variable
+set -o errexit      # Exit on non-zero status
+set -o pipefail     # Pipe return exit status
+
+trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 
 #notify_cmd='notify-send -t $(( $configTimeout * 1000 ))  "$1" "$2"'
 notify_cmd=$(zenity --info --text "$1 $2")

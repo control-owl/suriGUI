@@ -1,8 +1,9 @@
 tmp/*
-log/
+log/*
 conf/suriGUI.conf
 conf/suricata.rules
 conf/suricata.rules.timestamp
 conf/classification.config
-conf/update
 conf/ignore.sid
+conf/threshold.conf
+test

@@ -1,14 +1,11 @@
 # suriGUI default config file
-# 2022-01-08
+# 2022-01-14
 
 # suriGUI Notifications
 notifications=TRUE
 
 # Notification timeout after ... seconds
-timeout=5
-
-# Autostart Suricata with suriGUI
-autostart=TRUE
+timeout=30
 
 # Position of pop-up notification
 # Top_right Top_left Bottom_left Bottom_right
