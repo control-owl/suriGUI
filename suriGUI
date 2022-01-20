@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
-#
 # coder: ro0t
-# stamp: 2022-01-11
-#
-# God Mode: On
+
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
 trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
-
-# if [ "$EUID" -ne 0 ]; then
-#   echo "Please run as root"
-#   exit 1
-# fi
 
 
 function exitSuriGUI() {
@@ -40,6 +32,8 @@ function exitSuriGUI() {
   [[ -e "$_PROJECT_DIR_TMP/suriGUI.tab" ]] && rm "$_PROJECT_DIR_TMP/suriGUI.tab"
   [[ -e "$_PROJECT_DIR_TMP/suricata.tab" ]] && rm "$_PROJECT_DIR_TMP/suricata.tab"
   [[ -e "$_PROJECT_DIR_TMP/rules.tab" ]] && rm "$_PROJECT_DIR_TMP/rules.tab"
+
+  # delete .lock files
 
   d3bug info "EXIT 0"
   # sudo pkill -f suriGUI
@@ -75,16 +69,13 @@ export dateLong=$(date +"%Y-%m-%d-%H-%M-%S")
 export _PROJECT_NAME="suriGUI"
 echo -e "$timeShort \e[42;30m  $_PROJECT_NAME  \e[0m"
 
-export _PROJECT_VER="1.0"
-export _PROJECT_BUILD="2022-01-14"
+export _PROJECT_VER="1.1"
+export _PROJECT_BUILD="2022-01-20"
 export _PROJECT_DIR="/usr/share/suriGUI"                && createDir "${_##*=}"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"             && createDir "${_##*=}"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"             && createDir "${_##*=}"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$dateShort"  && createDir "${_##*=}"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"           && createDir "${_##*=}"
-
-# export _PROJECT_LOG_FILE="$_PROJECT_DIR_LOG/$dateShort" && createDir "${_##*=}"
-# export _PROJECT_LOG_FILE_TMP="$_PROJECT_DIR_LOG/tmp" && createDir "${_##*=}"
 
 export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
 
@@ -102,11 +93,6 @@ export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
 export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
 export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"  && echo "$$" > "$_PROJECT_PID"
 export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
-
-export _NOTIF_POS_TL="--posx=1 --posy=1"
-export _NOTIF_POS_TR="--posx=-1 --posy=1"
-export _NOTIF_POS_BL="--posx=1 --posy=-1"
-export _NOTIF_POS_BR="--posx=-1 --posy=-1"
 
 export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
 
@@ -177,46 +163,6 @@ function updateSuriGUI() {
 export -f updateSuriGUI
 
 
-function testNotification() {
-  d3bug
-
-
-
-#
-#   d3bug info "Notification test: $1"
-#
-#
-#   case "${1:-*}" in
-#     "Top_left" )      pos="$_NOTIF_POS_TL"  ;;
-#     "Top_right" )     pos="$_NOTIF_POS_TR"  ;;
-#     "Bottom_left" )   pos="$_NOTIF_POS_BL"  ;;
-#     "Bottom_right" )  pos="$_NOTIF_POS_BR"  ;;
-#     * ) echo "error"   ;;
-#   esac
-#
-#   TXT=$"Date: $dateShort Time: $timeShort\n"
-#   TXT+=$"Test 1 Test 2"
-#
-# yad \
-# --title="Test notification" \
-# --text="<span size=\"xx-large\">$dateShort $timeShort</span>\n" \
-# --form --no-focus --splash --timeout=$2 --on-top  --skip-taskbar  ${pos:-}  \
-# --width=350 \
-# --columns=2 \
-# --align=right \
-# --field="Signature ID:RO" "300000" \
-# --field="Source IP:RO" "192.168.1.10" \
-# --field=".:LBL" "." \
-# \
-# --field="Category:RO" "Some category" \
-# --field="Destination IP:RO" "123.456.789.123" \
-# --field=".:LBL" "." \
-# --dialog-sep \
-# --button="Quit!gtk-quit:0" &
-}
-export -f testNotification
-
-
 function deleteIgnoredSID() {
   d3bug
   local sid="$1"
@@ -262,6 +208,7 @@ function saveSettings() {
   sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
 }
 export -f saveSettings
+
 
 function suriGUISettings() {
   d3bug
@@ -377,80 +324,24 @@ function suriGUISettings() {
     esac
 
     for tab in $_PROJECT_DIR_TMP/*.tab ; do
-      rm $tab
+      rm "$tab"
     done
 ################################################################################
 }
 export -f suriGUISettings
 
 
-# function stopSuricataService() {
-#   d3bug
-#
-#   if systemctl is-active --quiet suricata ; then
-#     sudo systemctl stop suricata &>/dev/null
-#     updateTrayMenu inactive
-#     d3bug info "Suricata stopped"
-#   else
-#     d3bug info "Suricata service is not active"
-#     export suricataStatus=inactive
-#   fi
-#
-# }
-# export -f stopSuricataService
-
-
-# function checkIptables() {
-#   d3bug
-#
-#   if iptables -C FORWARD -m mark ! --mark 1/1 -j NFQUEUE 1>&- 2>&- ; then
-#     d3bug info "iptables already set"
-#   else
-#     iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-#     d3bug info "NFQueue set"
-#   fi
-#
-# }
-# export -f checkIptables
-
-
-function isProcessAlive() {
-  d3bug
-  d3bug info "inspecting $1"
-
-  file="$_PROJECT_DIR_TMP/$1.pid"
-
-  if [[ -f "$file" ]] ; then
-    proID=$(cat $file)
-
-    if ps -p $proID > /dev/null ; then
-      export processIs="Alive"
-      d3bug info "Process is $processIs"
-     else
-       export processIs="Dead"
-       d3bug info "Process is $processIs"
-       rm $file
-     fi
-   else
-     export processIs="Dead"
-     d3bug info "Process is $processIs"
-   fi
-}
-export -f isProcessAlive
-
-
 function stopNotifDaemon() {
   d3bug
 
-  pkill -f "suriNotif" &>/dev/null
-  # pkill -P "$(cat $_NOTIF_PID)" 1>&- 2>&- # kill process and all children
+  #pkill -f "suriNotif" &>/dev/null
+  pkill -P "$(cat $_NOTIF_PID)" &>/dev/null # kill process and all children
 
   [[ -f "$_NOTIF_PID" ]] && rm $_NOTIF_PID
   d3bug info "suriNotif stopped"
 
 }
 export -f stopNotifDaemon
-
 
 
 function startNotifDaemon() {
@@ -464,9 +355,10 @@ function startNotifDaemon() {
 
     d3bug info "suriNotif started with PID: $(cat $_NOTIF_PID)"
   else
-    d3bug info "suriNotif already running with PID: $(cat $_NOTIF_PID)"
-    pkill -f "suriNotif" &>/dev/null
+    d3bug info "suriNotif PID: $(cat $_NOTIF_PID) found."
     rm "$_NOTIF_PID"
+    #pkill -P "$(cat $_NOTIF_PID)" #&>/dev/null
+    # pkill -f "suriNotif" &>/dev/null
     startNotifDaemon
   fi
 
@@ -535,9 +427,6 @@ function updateTrayMenu() {
   # fi
 }
 export -f updateTrayMenu
-
-
-
 
 
 function checkInternetConnection() {
@@ -745,7 +634,6 @@ function checkRequirements () {
 export -f checkRequirements
 
 
-
 checkRequirements
 checkConfig
 checkRules
@@ -760,5 +648,5 @@ startSuriGUI &
 while : ; do
   [[ ! -f "$_PROJECT_PID" ]] && break
   checkSuricataStatus
-  sleep 3
+  sleep 5
 done &>/dev/null

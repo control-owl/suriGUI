@@ -6,3 +6,4 @@ conf/suricata.rules.timestamp
 conf/classification.config
 conf/ignore.sid
 conf/threshold.conf
+test
