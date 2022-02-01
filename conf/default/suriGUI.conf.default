@@ -1,5 +1,5 @@
 # suriGUI default config file
-# 2022-01-14
+# 2022-01-23
 
 # suriGUI Notifications
 notifications=TRUE
@@ -10,9 +10,6 @@ timeout=30
 # Position of pop-up notification
 # Top_right Top_left Bottom_left Bottom_right
 position=Bottom_right
-
-# Snooze notification for ... seconds
-snooze=60
 
 # Default suricata action
 action=rejectboth

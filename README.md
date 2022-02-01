@@ -2,14 +2,15 @@
 
 ### Still in development
 
-This project is still in development and it is almost finished.
+This is stil a Beta.
 
 -------------
 
 ### Intro
 
-- Basic concept is to create GUI Interface for Suricata IPS
+- Basic concept is to create GUI Interface for Suricata IPS in Qubes OS
 - Option to show Desktop notifications on every alert
+- Option to edit Suricata rules with GUI
 
 -------------
 
@@ -22,7 +23,7 @@ This project is still in development and it is almost finished.
 ![](https://github.com/control-owl/suriGUI/blob/main/res/status.png)
 -------------
 
-### Installation for Qubes 4.1 (Tested on my PC only)
+### Installation for Qubes 4.1
 
 ##### sys-firewall qube
 ```sh
@@ -54,21 +55,16 @@ sudo qubesctl --show-output --all state.highstate
 6. dom0: Create qube sys-ips based on sys-ips-template
 7. sys-ips: bind-dir /usr/share/suriGUI
 8. sys-ips: start suriGUI
-
--------------
-
-### Installation for Debian 11/Ubuntu (Not tested)
-
-1. git clone https://github.com/control-owl/suriGUI
-2. ln -s suriGUI/ /usr/share/suriGUI
-2. ln -s /usr/share/suriGUI/suriGUI /bin/suriGUI
-3. sudo suriGUI
+9. (dom0: Make sys-ips as Network provider)
 
 -------------
 
 Project is free.
+
 Donation are welcome.
+
 Motivation even more.
+
 BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 
@@ -76,7 +72,7 @@ BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 ### NEXT STEPS:
 
-- [ ] suriUpdate
+- [ ] error notifications
 - [ ] program parameters --debug --output --silent --update
 - [ ] New notebook: Report
   - [ ] List all daily SIDs
