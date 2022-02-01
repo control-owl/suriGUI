@@ -20,7 +20,14 @@ This is stil a Beta.
 
 
 #### System Tray statuses: Active and Inactive icon
-![](https://github.com/control-owl/suriGUI/blob/main/res/status.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/status.png)
+-------------
+
+#### Settings
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-1.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-2.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-3.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-4.png)
 -------------
 
 ### Installation for Qubes 4.1
