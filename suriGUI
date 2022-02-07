@@ -920,7 +920,7 @@ checkProjectDirectories
 checkProjectConfigFiles
 
 echo "$$" > "$_PROJECT_PID"
-mkdi rcreateProjectPipes
+createProjectPipes
 
 checkSuricataRules
 checkSuricataStatus
