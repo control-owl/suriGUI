@@ -590,7 +590,7 @@ function updateTrayMenu()
     *)          exit 1 ;;
   esac
 
-  export icoon="$_PROJECT_DIR_RES/icons/settings.png"
+  #export icon="$_PROJECT_DIR_RES/icons/settings.png"
   #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
 
   menu+="||Settings!bash -c 'suriGUISettings'!settings"
@@ -601,7 +601,7 @@ function updateTrayMenu()
 
   d3bug info "Menu updated: $status"
 
-  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "icon:$_PROJECT_NAME-$status" >&3 &
+  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "icon:$suricataStatus" >&3 &
 
   d3bug info "Icon updated: $status"
 
