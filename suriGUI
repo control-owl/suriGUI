@@ -14,7 +14,7 @@ function _GLOBAL_VARS()
   export _PROJECT_NAME="suriGUI"
   export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
   export _PROJECT_VER="1.2"
-  export _PROJECT_BUILD="2022-02-03"
+  export _PROJECT_BUILD="2022-02-07"
 
   export timeShort=$(date +"%H:%M:%S")
   export dateShort=$(date +"%Y-%m-%d")
@@ -89,7 +89,7 @@ function d3bug()
   esac
 }
 
-function createProjectDirectories()
+function checkProjectDirectories()
 {
   d3bug
 
@@ -157,7 +157,7 @@ function updateConfigFile()
 
   case "$component" in
     "rules" )
-      d3bug info "Updating $component: $newStatus -> $oldStatus"
+      d3bug info "Updating $component: $oldStatus -> $newStatus"
 
       sed -i "s/\<$oldStatus\>/$newStatus/" "$_SURICATA_RULES"
       checkSuricataStatus &>/dev/null
@@ -165,7 +165,8 @@ function updateConfigFile()
       if [[ "$suricataStatus" == "active" ]]
       then
         d3bug info "Starting Suricata reload..."
-        sudo systemctl reload suricata #&>/dev/null
+        sudo suricatasc -c reload-rules
+        #sudo systemctl reload suricata #&>/dev/null
         d3bug info "Rules updated & reloaded"
       else
         d3bug info "Rules updated"
@@ -538,12 +539,14 @@ function stopNotifDaemon()
 {
   d3bug
 
-  #pkill -f "suriNotif" &>/dev/null
-  pkill -P "$(cat $_NOTIF_PID)" &>/dev/null # kill process and all children
-
-  [[ -f "$_NOTIF_PID" ]] && rm $_NOTIF_PID
-  d3bug info "suriNotif stopped"
-
+  if [[ -f "$_NOTIF_PID" ]]
+  then
+    pkill -P "$(cat $_NOTIF_PID)" &>/dev/null # kill process and all children
+    rm "$_NOTIF_PID"
+    d3bug info "suriNotif stopped"
+  else
+    d3bug info "suriNotif PID not found! Nothing to kill."
+  fi
 }
 
 function startNotifDaemon()
@@ -848,7 +851,7 @@ function checkProjectRequirements ()
 
   for app in "${apps[@]}"
   do
-    if ( dpkg -s "$app" &>/dev/null )
+    if dpkg -s "$app" &>/dev/null
     then
       d3bug info "$app installed"
     else
@@ -862,7 +865,7 @@ function checkProjectRequirements ()
       if [[ $ret = 0 ]]
       then
         d3bug info "Installing $app ..."
-        if ( sudo apt-get install "$app" -y &>/dev/null )
+        if sudo apt-get install "$app" -y &>/dev/null
         then
           d3bug info "Done"
         else
@@ -912,12 +915,12 @@ export -f updateSuriGUI
 
 # S T A R T   S U R I G U I
 _GLOBAL_VARS
-echo "$$" > "$_PROJECT_PID"
-
-createProjectDirectories
 checkProjectRequirements
+checkProjectDirectories
 checkProjectConfigFiles
-createProjectPipes
+
+echo "$$" > "$_PROJECT_PID"
+mkdi rcreateProjectPipes
 
 checkSuricataRules
 checkSuricataStatus
