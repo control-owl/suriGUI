@@ -520,7 +520,7 @@ function suriGUISettings()
     --image-on-top \
     --key="$KEY" \
     --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Custom Rules" --tab="Backup/Restore" \
-    --button="Close!exit":1 --button="Save!gtk-save":0
+    --button="Close":1 --button="Save":0
   ret=$?
 
   case "$ret" in
@@ -593,9 +593,9 @@ function updateTrayMenu()
   #export icon="$_PROJECT_DIR_RES/icons/settings.png"
   #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
 
-  menu+="||Settings!bash -c 'suriGUISettings'!settings"
+  menu+="||Settings!bash -c 'suriGUISettings'"
   menu+="||Update!bash -c updateSuriGUI"
-  menu+="||Exit!quit!gtk-save"
+  menu+="||Exit!quit"
 
   [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
 
@@ -883,14 +883,18 @@ function registerProjectIcons()
 {
   d3bug
 
+  # local icons=( "$_PROJECT_ICON"
+  #               "$_PROJECT_ICON_INACTIVE"
+  #               "$_PROJECT_ICON_ACTIVE"
+  #               "$_PROJECT_ICON_MENU_EXIT"
+  #               "$_PROJECT_ICON_MENU_SETTINGS"
+  #               "$_PROJECT_ICON_MENU_START"
+  #               "$_PROJECT_ICON_MENU_STOP"
+  #               "$_PROJECT_ICON_MENU_UPDATE" )
+
   local icons=( "$_PROJECT_ICON"
                 "$_PROJECT_ICON_INACTIVE"
-                "$_PROJECT_ICON_ACTIVE"
-                "$_PROJECT_ICON_MENU_EXIT"
-                "$_PROJECT_ICON_MENU_SETTINGS"
-                "$_PROJECT_ICON_MENU_START"
-                "$_PROJECT_ICON_MENU_STOP"
-                "$_PROJECT_ICON_MENU_UPDATE" )
+                "$_PROJECT_ICON_ACTIVE" )
 
   for icon in "${icons[@]}"
   do
