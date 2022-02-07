@@ -14,7 +14,7 @@ function _GLOBAL_VARS()
   export _PROJECT_NAME="suriGUI"
   export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
   export _PROJECT_VER="1.2"
-  export _PROJECT_BUILD="2022-02-01"
+  export _PROJECT_BUILD="2022-02-03"
 
   export timeShort=$(date +"%H:%M:%S")
   export dateShort=$(date +"%Y-%m-%d")
@@ -30,7 +30,8 @@ function _GLOBAL_VARS()
   export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
 
   export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suriGUI.pipe"
-  export _SID_PIPE="$_PROJECT_DIR_TMP/SID.pipe"
+  export _SID_IGNORE_PIPE="$_PROJECT_DIR_TMP/SIDignore.pipe"
+  export _SID_CUSTOM_PIPE="$_PROJECT_DIR_TMP/SIDcustom.pipe"
 
   export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
   export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
@@ -43,8 +44,9 @@ function _GLOBAL_VARS()
 
   export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
   export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
+  export _SURICATA_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
   export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
-  export _SURICATA_OUTDATE="7"
+  #export _SURICATA_OUTDATE="7"
 
   # export _SURICATA_PID="$_PROJECT_DIR_TMP/suricata.pid"
   export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"
@@ -87,12 +89,17 @@ function d3bug()
   esac
 }
 
-function createDirs()
+function createProjectDirectories()
 {
   d3bug
-  reqDirs=( "$_PROJECT_DIR" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_TMP" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_CONF" )
 
-  for dir in "${reqDirs[@]}"
+  local basicDirs=( "$_PROJECT_DIR"
+                    "$_PROJECT_DIR_RES"
+                    "$_PROJECT_DIR_TMP"
+                    "$_PROJECT_DIR_LOG"
+                    "$_PROJECT_DIR_CONF" )
+
+  for dir in "${basicDirs[@]}"
   do
     if [[ ! -d "$dir" ]]
     then
@@ -179,6 +186,7 @@ function restartSuriGUI()
   pkill -f "suriGUI" && exec "suriGUI"
 
 }
+
 function send_notif()
 {
   d3bug
@@ -299,7 +307,7 @@ function ignoreSID()
 
   local sid="$1"
   local TXT="Disable notifications for SID: $sid ?\n"
-  local TXT+="You will no longer see any info when SID is blocked.\n"
+  local TXT+="You will no longer see any info when SID is blocked."
 
   yad \
     --image="$_PROJECT_ICON" \
@@ -325,7 +333,6 @@ function ignoreSID()
   fi
 }
 
-
 function deleteIgnoredSID()
 {
   d3bug
@@ -342,8 +349,8 @@ function deleteIgnoredSID()
   then
     sed -i "/$sid/d" "$_NOTIF_IGNORE_LIST"
     d3bug info "SID: $sid removed"
-    exec 4<>$_SID_PIPE echo -e "\f" >&4 &
-    exec 4<>$_SID_PIPE echo -e "$(cat $_NOTIF_IGNORE_LIST)" >&4 &
+    exec 4<>$_SID_IGNORE_PIPE echo -e "\f" >&4 &
+    exec 4<>$_SID_IGNORE_PIPE echo -e "$(cat $_NOTIF_IGNORE_LIST)" >&4 &
   else
     d3bug info "Nothing done"
   fi
@@ -378,114 +385,153 @@ function suriGUISettings()
 
   KEY="$RANDOM"
 
-################################################################################
   readConfigFile notifications
   readConfigFile timeout
   readConfigFile keep
   readConfigFile duration
   readConfigFile notificationPositionMenu
-
-  yad --plug="$KEY" --tabnum=1 --form \
-      --field="Notifications":chk "$configNotifications" \
-      --field="Enable pop-up messages when something is blocked":LBL "" \
-      --field="":LBL "" \
-      --field="Duration:NUM" "$configTimeout\!1..60\!1\!0" \
-      --field="Notification duration in seconds":LBL "" \
-      --field="":LBL "" \
-      --field="Position":CB "$configNotificationPositionMenu" \
-      --field="Notification pop-up position":LBL "" \
-      > "$_PROJECT_DIR_TMP/suriGUI.tab" &
-################################################################################
-
-
-################################################################################
-  yad --plug="$KEY" --tabnum=2 --form \
-      --field="":LBL "" \
-      --field="<b>Config files</b>":LBL "" \
-      --field="Suricata config:":FL "$_SURICATA_CONFIG" \
-      --field="Suricata rules:":FL "$_SURICATA_RULES" \
-      \
-      --field="":LBL "" \
-      --field="<b>Log</b>":LBL "" \
-      --field="Keep log":chk "$configKeep" \
-      --field="Log directory:":dir "$_PROJECT_DIR_LOG" \
-      --field="Log history (days):NUM" "$configDuration\!1..60\!1\!0" \
-      \
-      --file-filter="Yaml files (*.yaml)| *.yaml" --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
-      --file-filter="All Files | *.*" \
-      > "$_PROJECT_DIR_TMP/suricata.tab" &
-################################################################################
-
-
-################################################################################
   readConfigFile actionMenu
   readConfigFile update
   readConfigFile action
 
-  yad --plug="$KEY" --tabnum=3 --form \
-      --field="Default rule action":CB "$configActionMenu" \
-      --field="<b>alert</b> - generate an alert":LBL "" \
-      --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
-      --field="<b>drop</b> - drop packet and generate alert":LBL "" \
-      --field="<b>reject</b> - send RST/ICMP unreach error to the sender of the matching packet.":LBL "" \
-      --field="<b>rejectsrc</b> - same as just reject":LBL "" \
-      --field="<b>rejectdst</b> - send RST/ICMP error packet to receiver of the matching packet.":LBL "" \
-      --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
-      --field="":LBL "" \
-      --field="<b>Update</b>":LBL "" \
-      --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
-      --field="":LBL "" \
-      --field="Update rules now":fbtn "bash -c updateSuricataRules" \
-      > "$_PROJECT_DIR_TMP/rules.tab" &
-################################################################################
 
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-################################################################################
+  yad \
+    --plug="$KEY" \
+    --tabnum=1 \
+    --form \
+    --field="Notifications":chk "$configNotifications" \
+    --field="Enable pop-up messages when something is blocked":LBL "" \
+    --field="":LBL "" \
+    --field="Duration:NUM" "$configTimeout\!1..60\!1\!0" \
+    --field="Notification duration in seconds":LBL "" \
+    --field="":LBL "" \
+    --field="Position":CB "$configNotificationPositionMenu" \
+    --field="Notification pop-up position":LBL "" \
+    > "$_PROJECT_DIR_TMP/suriGUI.tab" &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
+  yad \
+    --plug="$KEY" \
+    --tabnum=2 \
+    --form \
+    --field="":LBL "" \
+    --field="<b>Config files</b>":LBL "" \
+    --field="Suricata config:":FL "$_SURICATA_CONFIG" \
+    --field="Suricata rules:":FL "$_SURICATA_RULES" \
+    --field="":LBL "" \
+    --field="<b>Log</b>":LBL "" \
+    --field="Keep log":chk "$configKeep" \
+    --field="Log directory:":dir "$_PROJECT_DIR_LOG" \
+    --field="Log history (days):NUM" "$configDuration\!1..60\!1\!0" \
+    --file-filter="Yaml files (*.yaml)| *.yaml" \
+    --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
+    --file-filter="All Files | *.*" \
+    > "$_PROJECT_DIR_TMP/suricata.tab" &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
+  yad \
+    --plug="$KEY" \
+    --tabnum=3 \
+    --form \
+    --field="Default rule action":CB "$configActionMenu" \
+    --field="<b>alert</b> - generate an alert":LBL "" \
+    --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
+    --field="<b>drop</b> - drop packet and generate alert":LBL "" \
+    --field="<b>reject</b> - send RST/ICMP unreach error to the sender of the matching packet.":LBL "" \
+    --field="<b>rejectsrc</b> - same as just reject":LBL "" \
+    --field="<b>rejectdst</b> - send RST/ICMP error packet to receiver of the matching packet.":LBL "" \
+    --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
+    --field="":LBL "" \
+    --field="<b>Update</b>":LBL "" \
+    --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
+    --field="":LBL "" \
+    --field="Update rules now":fbtn "bash -c updateSuricataRules" \
+    > "$_PROJECT_DIR_TMP/rules.tab" &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
   local ignoredSIDS=( $(cat $_NOTIF_IGNORE_LIST) )
   descIgnore="List of SIDs not shown with suriNotif\\n"
   descIgnore+="Double click on SID to remove it."
 
-  exec 4<> "$_SID_PIPE"
+  exec 4<> "$_SID_IGNORE_PIPE"
 
-  yad --plug="$KEY" --tabnum=4 --list --listen --cycle-read \
-      --text="$descIgnore" \
-      --dclick-action="bash -c 'deleteIgnoredSID %s'" \
-      --column="SID" "${ignoredSIDS[@]}" <&4 &
-################################################################################
+  yad \
+    --plug="$KEY" \
+    --tabnum=4 \
+    --list \
+    --listen \
+    --cycle-read \
+    --text="$descIgnore" \
+    --dclick-action="bash -c 'deleteIgnoredSID %s'" \
+    --column="SID" "${ignoredSIDS[@]}" \
+    <&4 &
 
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-################################################################################
-    yad --plug="$KEY" --tabnum=5 --form \
-      --field="":LBL "" &
-################################################################################
+  local customRules=( $(cat $_SURICATA_CUSTOM_RULES) )
+  descCustom="List of custom Rules"
 
+  exec 5<> "$_SID_CUSTOM_PIPE"
 
-################################################################################
+  yad \
+    --plug="$KEY" \
+    --tabnum=5 \
+    --list \
+    --listen \
+    --cycle-read \
+    --text="$descCustom" \
+    --dclick-action="bash -c 'deleteIgnoredSID %s'" \
+    --column="SID" --column="Rule" "${customRules[@]}" \
+    <&5 &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
+  yad \
+    --plug="$KEY" \
+    --tabnum=6 \
+    --form \
+    --field="":LBL "" \
+    --field="Backup":fbtn "bash -c backupSuriGUI" \
+    &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
   TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
   TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
   TXT+="  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
 
-  # yad --notebook  --center  \
-  yad --notebook --width=600 --center  \
-      --title="suriGUI Settings" --text="$TXT" \
-      --auto-kill --auto-close \
-      --window-icon="$_PROJECT_ICON" --image="$_PROJECT_ICON" --image-on-top \
-      --key="$KEY" --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Backup/Restore" \
-      --button="Close!exit":1 --button="Save!gtk-save":0
+  yad \
+    --notebook \
+    --width=600 \
+    --center  \
+    --title="suriGUI Settings" \
+    --text="$TXT" \
+    --auto-kill \
+    --auto-close \
+    --window-icon="$_PROJECT_ICON" \
+    --image="$_PROJECT_ICON" \
+    --image-on-top \
+    --key="$KEY" \
+    --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Custom Rules" --tab="Backup/Restore" \
+    --button="Close!exit":1 --button="Save!gtk-save":0
   ret=$?
 
-    case "$ret" in
-      0 ) saveSettings  ;;
-      1 ) : ;;
-      * ) exit 0  ;;
-    esac
+  case "$ret" in
+    0 ) saveSettings  ;;
+    1 ) : ;;
+    * ) exit 0  ;;
+  esac
 
-    for tab in $_PROJECT_DIR_TMP/*.tab
-    do
-      rm "$tab"
-    done
-################################################################################
+  for tab in $_PROJECT_DIR_TMP/*.tab
+  do
+    rm "$tab"
+  done
 }
 
 function stopNotifDaemon()
@@ -614,7 +660,7 @@ function updateSuricataRules()
     exit 1
   fi
 
-  checkRules
+  checkSuricataRules
 }
 
 function startSuriGUI()
@@ -656,12 +702,22 @@ function createProjectPipes()
 {
   d3bug
 
-  pipes=( "$_PROJECT_PIPE" "$_SID_PIPE" )
+  local pipes=( "$_PROJECT_PIPE"
+                "$_SID_IGNORE_PIPE" )
 
   for pipe in "${pipes[@]}"
   do
     # remove old pipe if exists
-    [[ -e $pipe ]] && rm $pipe
+    if [[ -e $pipe ]]
+    then
+      if rm "$pipe"
+      then
+        d3bug info "Old Pipe deleted"
+      else
+        d3bug error "Can't remove old pipe"
+        exit 1
+      fi
+    fi
 
     # create a new one
     if mkfifo "$pipe"
@@ -674,10 +730,35 @@ function createProjectPipes()
   done
 
   exec 3<> "$_PROJECT_PIPE"  && d3bug info "Project pipe started"
-  #exec 4<> "$_SID_PIPE"      && d3bug info "SID pipe started"
 }
 
-function checkRules()
+function checkSuricataCustomRules()
+{
+  d3bug
+
+  # check for file
+  if [[ -f $_SURICATA_CUSTOM_RULES ]]
+  then
+    for line in $_SURICATA_CUSTOM_RULES
+    do
+      echo "$line"
+      #line="2027868,pass"
+      #sid="2027868"
+      #rule="pass"
+
+      #open suricata_rules
+      # find line with keyword: "2027868"
+      # check if first word is "#"
+        # if not then change first word into: "pass"
+        # if first word is comment then wtf?
+
+    done
+
+  fi
+}
+
+
+function checkSuricataRules()
 {
   d3bug
 
@@ -711,7 +792,6 @@ function checkRules()
     fi
   fi
 
-
   local old=$(awk '{print $1; exit}' "$_SURICATA_RULES")
   d3bug info "Suricata rule action: $old"
   readConfigFile action
@@ -725,13 +805,18 @@ function checkRules()
     d3bug error "Rule action mismatch"
     updateConfigFile rules "$new" "$old"
   fi
+
+  # check for custom rules
+
 }
 
-function checkConfig ()
+function checkProjectConfigFiles ()
 {
   d3bug
 
-  files=( "$_NOTIF_IGNORE_LIST" "$_PROJECT_CONFIG_FILE" )
+  local files=( "$_PROJECT_CONFIG_FILE"
+                "$_SURICATA_CUSTOM_RULES"
+                "$_NOTIF_IGNORE_LIST" )
 
   for file in "${files[@]}"
   do
@@ -739,19 +824,27 @@ function checkConfig ()
     then
       d3bug error "Config not found: $file"
       fileName=$(basename $file)
-      cp "$_PROJECT_DIR_CONF/default/$fileName.default" "$_PROJECT_DIR_CONF/$fileName"
-      d3bug info "Config created"
+      if ( cp "$_PROJECT_DIR_CONF/default/$fileName.default" "$_PROJECT_DIR_CONF/$fileName" )
+      then
+        d3bug info "Config created"
+      else
+        d3bug error "Can't copy default config file: $fileName"
+        exit 1
+      fi
     else
       d3bug info "Local config found: $file"
     fi
   done
 }
 
-function checkRequirements ()
+function checkProjectRequirements ()
 {
   d3bug
 
-  apps=( libnetfilter-queue-dev suricata jq yad )
+  local apps=( "libnetfilter-queue-dev"
+                "suricata"
+                "jq"
+                "yad" )
 
   for app in "${apps[@]}"
   do
@@ -773,7 +866,7 @@ function checkRequirements ()
         then
           d3bug info "Done"
         else
-          d3bug error "Can not install: $app"
+          d3bug error "Can't install: $app"
           exit 1
         fi
       else
@@ -783,7 +876,7 @@ function checkRequirements ()
   done
 }
 
-function registerIcons()
+function registerProjectIcons()
 {
   d3bug
 
@@ -805,11 +898,7 @@ function registerIcons()
 }
 
 
-# S T A R T   S U R I G U I
-_GLOBAL_VARS
-echo "$$" > "$_PROJECT_PID"
-echo "$timeShort $_PROJECT_NAME PID: $(cat $_PROJECT_PID)"
-
+# Export functions for yad
 export -f d3bug
 export -f exitSuriGUI
 export -f readConfigFile
@@ -821,13 +910,19 @@ export -f updateSuricataRules
 export -f updateSuriGUI
 
 
-createDirs
-checkRequirements
-checkConfig
-checkRules
+# S T A R T   S U R I G U I
+_GLOBAL_VARS
+echo "$$" > "$_PROJECT_PID"
+
+createProjectDirectories
+checkProjectRequirements
+checkProjectConfigFiles
 createProjectPipes
+
+checkSuricataRules
 checkSuricataStatus
-registerIcons
+
+registerProjectIcons
 startSuriGUI &
 
 
