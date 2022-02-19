@@ -165,9 +165,13 @@ function updateConfigFile()
       if [[ "$suricataStatus" == "active" ]]
       then
         d3bug info "Starting Suricata reload..."
-        sudo suricatasc -c reload-rules
-        #sudo systemctl reload suricata #&>/dev/null
-        d3bug info "Rules updated & reloaded"
+        if sudo suricatasc -c reload-rules
+        then
+          #sudo systemctl reload suricata #&>/dev/null
+          d3bug info "Rules updated & reloaded"
+        else
+          d3bug error "Can't reload rules??"
+        fi
       else
         d3bug info "Rules updated"
       fi

@@ -1,10 +1,1 @@
-tmp/*
-log/*
-conf/suriGUI.conf
-conf/suricata.rules
-conf/suricata.rules.timestamp
-conf/classification.config
-conf/ignore.sid
-conf/threshold.conf
-conf/suriGUI.rules
 test
