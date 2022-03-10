@@ -68,7 +68,7 @@ function exitSuriGUI()
   fi
 
   # Cleaning temp files
-  find "$_PROJECT_DIR_TMP" -type p -name "*.pipe" -delete
+  find "$_PROJECT_DIR_TMP" -type f -name "*.pipe" -delete
   find "$_PROJECT_DIR_TMP" -type f -name "*.pid" -delete
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete
   find "$_PROJECT_DIR_TMP" -type f -name "*.lock" -delete
@@ -83,9 +83,9 @@ function d3bug()
   local msg="${2:-}"
 
   case "$type" in
-    "info" )    echo "$(date +"%H:%M:%S")  |   |__ $msg" ;;
+    "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
     "error" )   echo -e "$(date +"%H:%M:%S")  |__ \e[41;30m $msg \e[0m" ;;
-    *)          echo "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" ;;
+    *)          echo    "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" ;;
   esac
 }
 
@@ -254,13 +254,13 @@ function send_notif()
         --field="Destination IP:RO" "$dest" \
         --field=".:LBL" "." \
         \
-        --button="Don't show again!error":10 \
-        --button="Unblock!redo":20 \
+        --button="Don't show again":10 \
+        --button="Unblock":20 \
         &>/dev/null
         ret=${?:-70}
         case "$ret" in
           10 )  ignoreSID "$sid"    ;;
-          20 )  unblockSID "$sid"   ;;
+          20 )  editSID "$sid" "$cat" "$src" "$dest" "$action" ;;
           70 )  d3bug info "Timeout for notification: $sid"   ;;
           252 ) d3bug info "Escape key pressed"   ;;
           * )   :    ;;
@@ -293,10 +293,67 @@ function updateSuriGUI()
   send_notif info "No update found"
 }
 
-function unblockSID()
+function editSID()
 {
   d3bug
   local sid="$1"
+  local cat="$2"
+  local src="$3"
+  local dest="$4"
+  local action="$5"
+
+
+  # create new yad window
+  #
+  # edit source address
+  # edit destination address
+  #
+
+  # TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
+  # TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
+  # TXT+="  Kernel: $(uname -sr)\\n\\n"
+  # TXT+="  <i>$(uptime)</i>"
+
+
+  TXT="<b>Suricata detected suspicious communication</b>\\n"
+  TXT+="Communication was ${action:-terminat}ed !\\n"
+  TXT+="Maybe this was false/positive? Do you want to take some action ?\\n"
+
+
+  yad \
+    --form \
+    --columns=3 \
+    --image="utilities-terminal" \
+    --image-on-top \
+    --width="400" \
+    --title="Edit SID" \
+    --text="$TXT" \
+    \
+    --field="SRC":RO "10.137.0.x" \
+    --field="Allow SRC to DEST":FBTN "bash -c allowSource" \
+    \
+    --field="DEST":RO "aaaaa" \
+    --field="Allow DEST to SRC":FBTN "bash -c allowSource" \
+    \
+    --field="Action":RO "Drop" \
+    --field="Allow both direction":FBTN "bash -c allowSource"
+
+
+  # edit rule
+  # create option do decide what wit this rule
+  # block it, do not show it + block, unlock (pass or comment out)
+  # pass pass will process rule ant then pass it trough
+  # comment out will do nothing with packets
+  # pass it is
+
+  # check for file custom.rules
+  # write to file:
+  # SID,Status
+  # 1234567,pass
+
+  # every time when custom.rules is modified, start suricata.rules update
+  # search for SID and change first word into pass
+
 
   # Comment SID in suricata rules, disable it
   sed -i "/^[^#]/ s/\(^.*$sid.*$\)/#\1/" "$_SURICATA_RULES"
@@ -409,7 +466,7 @@ function suriGUISettings()
     --field="Notifications":chk "$configNotifications" \
     --field="Enable pop-up messages when something is blocked":LBL "" \
     --field="":LBL "" \
-    --field="Duration:NUM" "$configTimeout\!1..60\!1\!0" \
+    --field="Duration":NUM "$configTimeout\!1..60\!1\!0" \
     --field="Notification duration in seconds":LBL "" \
     --field="":LBL "" \
     --field="Position":CB "$configNotificationPositionMenu" \
@@ -452,7 +509,7 @@ function suriGUISettings()
     --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
     --field="":LBL "" \
     --field="<b>Update</b>":LBL "" \
-    --field="Update rules (days):NUM" "$configUpdate\!1..365\!1\!0" \
+    --field="Update rules (days)":NUM "$configUpdate\!1..365\!1\!0" \
     --field="":LBL "" \
     --field="Update rules now":fbtn "bash -c updateSuricataRules" \
     > "$_PROJECT_DIR_TMP/rules.tab" &
@@ -764,7 +821,6 @@ function checkSuricataCustomRules()
   fi
 }
 
-
 function checkSuricataRules()
 {
   d3bug
@@ -927,12 +983,11 @@ checkProjectRequirements
 checkProjectDirectories
 checkProjectConfigFiles
 
-echo "$$" > "$_PROJECT_PID"
-createProjectPipes
-
 checkSuricataRules
 checkSuricataStatus
 
+echo "$$" > "$_PROJECT_PID"
+createProjectPipes
 registerProjectIcons
 startSuriGUI &
 
