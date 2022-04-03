@@ -324,7 +324,7 @@ function send_notif()
           touch "$sidLockFile"
           set +o errexit
 
-          TXT+="<b>${cat:-Potentially Bad traffic}</b>\n"
+          TXT="<b>${cat:-Potentially Bad traffic}</b>\n"
           TXT+="$dateShort  at  $timeShort \n"
           TXT+="<i>$sig</i>"
 
