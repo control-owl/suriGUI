@@ -360,7 +360,7 @@ function send_notif()
           ret=${?:-70}
           case "$ret" in
             10 )
-              action="${action//|}"
+              action="${action[3]}"
               echo "action:$action"
 
               case "$action" in
