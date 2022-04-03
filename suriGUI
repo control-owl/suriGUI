@@ -13,8 +13,8 @@ function _GLOBAL_VARS()
 {
   export _PROJECT_NAME="suriGUI"
   export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
-  export _PROJECT_VER="1.2"
-  export _PROJECT_BUILD="2022-02-07"
+  export _PROJECT_VER="1.5"
+  export _PROJECT_BUILD="2022-04-03"
 
   export timeShort=$(date +"%H:%M:%S")
   export dateShort=$(date +"%Y-%m-%d")
@@ -192,107 +192,6 @@ function restartSuriGUI()
 
 }
 
-function send_notif()
-{
-  d3bug
-
-  local type=${1:-Info}
-  local cat=${2:-Category}
-  local sig=${3:-Signature}
-  local sid=${4:-SID}
-  local src=${5:-SRC}
-  local dest=${6:-DEST}
-  local action=${7:-Action}
-  local sidLockFile="$_PROJECT_DIR_TMP/$sid.lock"
-
-
-  case "$type" in
-    info )
-      yad \
-      --title="$_PROJECT_NAME v.$_PROJECT_VER" \
-      --image="$_PROJECT_ICON" \
-      --image-on-top \
-      --button="Yes" --button="No" \
-      --text="$cat" &
-    ;;
-    alert )
-    if grep -q "$sid" "$_NOTIF_IGNORE_LIST"
-    then
-      d3bug info "Ignore SID: $sid"
-    else
-      if [[ ! -f "$sidLockFile" ]]
-      then
-        readConfigFile timeout
-        readConfigFile notificationPosition
-
-        case "$configNotificationPosition" in
-          "Top_left" )      pos="--posx=1 --posy=1"  ;;
-          "Top_right" )     pos="--posx=-1 --posy=1"  ;;
-          "Bottom_left" )   pos="--posx=1 --posy=-1"  ;;
-          * )               pos="--posx=-1 --posy=-1"  ;;
-        esac
-
-        touch "$sidLockFile"
-        set +o errexit
-        yad \
-        --title="suriNotif" \
-        --form --on-top --skip-taskbar ${pos:-}  \
-        --timeout="$configTimeout" --timeout-indicator="top" \
-        --window-icon="active" \
-        --text="$sig" \
-        --width=350 \
-        --columns=2 \
-        --align=right \
-        --field="Date:RO" "$dateShort" \
-        --field="Signature ID:RO" "$sid" \
-        --field="Source IP:RO" "$src" \
-        --field="Action:RO" "$action" \
-        --field=".:LBL" "." \
-        \
-        --field="Time:RO" "$timeShort" \
-        --field="Category:RO" "$cat" \
-        --field="Destination IP:RO" "$dest" \
-        --field=".:LBL" "." \
-        \
-        --button="Don't show again":10 \
-        --button="Unblock":20 \
-        &>/dev/null
-        ret=${?:-70}
-        case "$ret" in
-          10 )  ignoreSID "$sid"    ;;
-          20 )  editSID "$sid" "$cat" "$src" "$dest" "$action" ;;
-          70 )  d3bug info "Timeout for notification: $sid"   ;;
-          252 ) d3bug info "Escape key pressed"   ;;
-          * )   :    ;;
-        esac
-
-        [[ -f "$sidLockFile" ]] && rm "$sidLockFile"
-        set -o errexit
-      fi
-    fi
-    ;;
-  esac
-}
-
-function updateSuriGUI()
-{
-  d3bug
-
-  d3bug info "Starting update"
-  if [[ -d "$_PROJECT_DIR" ]]
-  then
-    cd "$_PROJECT_DIR"
-    if git fetch
-    then
-      restartSuriGUI
-    else
-      d3bug info "No update found"
-    fi
-  fi
-  d3bug info "Updating done"
-  send_notif info "No update found"
-}
-
 function editSID()
 {
   d3bug
@@ -340,7 +239,7 @@ function editSID()
 
 
   # edit rule
-  # create option do decide what wit this rule
+  # create option do decide what with this rule
   # block it, do not show it + block, unlock (pass or comment out)
   # pass pass will process rule ant then pass it trough
   # comment out will do nothing with packets
@@ -393,6 +292,122 @@ function ignoreSID()
   else
     d3bug info "Nothing done"
   fi
+}
+
+function send_notif()
+{
+  d3bug
+
+  local type=${1:-Info}
+  local cat=${2:-Category}
+  local sig=${3:-Signature}
+  local sid=${4:-SID}
+  local src=${5:-SRC}
+  local dest=${6:-DEST}
+  local action=${7:-Action}
+  local sidLockFile="$_PROJECT_DIR_TMP/$sid.lock"
+
+
+  case "$type" in
+    "info" )
+      yad \
+      --title="$_PROJECT_NAME v.$_PROJECT_VER" \
+      --image="$_PROJECT_ICON" \
+      --image-on-top \
+      --button="Yes" --button="No" \
+      --text="$cat" &
+    ;;
+    "alert" )
+      if grep -q "$sid" "$_NOTIF_IGNORE_LIST"
+      then
+        d3bug info "Ignore SID: $sid"
+      else
+        if [[ ! -f "$sidLockFile" ]]
+        then
+          readConfigFile timeout
+          readConfigFile notificationPosition
+
+          case "$configNotificationPosition" in
+            "Top_left" )      pos="--posx=1 --posy=1"  ;;
+            "Top_right" )     pos="--posx=-1 --posy=1"  ;;
+            "Bottom_left" )   pos="--posx=1 --posy=-1"  ;;
+            * )               pos="--posx=-1 --posy=-1"  ;;
+          esac
+
+          touch "$sidLockFile"
+          set +o errexit
+
+          ACTIONcontrol="Continue blocking!Don't show again!Edit rule"
+
+          action=$( yad \
+            --title="suriNotif" ${pos:-} \
+            --form \
+            --on-top \
+            --width=500 \
+            --timeout="${configTimeout:-60}" \
+            --timeout-indicator="top" \
+            --window-icon="res/suriGUI.png" \
+            --image="res/alert_64.png" \
+            --image-on-top \
+            --text="$TXT" \
+            --field="SID:RO" "$sid" \
+            --field="Source IP:RO" "$src" \
+            --field="Destination IP:RO" "$dest" \
+            --field="Action:CB" "$ACTIONcontrol" \
+            --button="OK":10
+          )
+
+          ret=${?:-70}
+          case "$ret" in
+            10 )
+              action="${action//|}"
+              echo "action:$action"
+
+              case "$action" in
+                "Continue blocking")
+                  : # Do nothing
+                ;;
+
+                "Don't show again")
+                  ignoreSID "$sid"
+                ;;
+
+                "Edit rule")
+                  editSID "$sid"
+                ;;
+              esac
+            ;;
+            # 20 )  editSID "$sid" "$cat" "$src" "$dest" "$action" ;;
+            70 )  d3bug info "Timeout for notification: $sid"   ;;
+            252 ) d3bug info "Escape key pressed"   ;;
+            * )   :    ;;
+          esac
+
+          [[ -f "$sidLockFile" ]] && rm "$sidLockFile"
+          set -o errexit
+        fi
+      fi
+    ;;
+  esac
+}
+
+function updateSuriGUI()
+{
+  d3bug
+
+  d3bug info "Starting update"
+  if [[ -d "$_PROJECT_DIR" ]]
+  then
+    cd "$_PROJECT_DIR"
+    if git fetch
+    then
+      restartSuriGUI
+    else
+      d3bug info "No update found"
+    fi
+  fi
+  d3bug info "Updating done"
+  send_notif info "No update found"
 }
 
 function deleteIgnoredSID()
