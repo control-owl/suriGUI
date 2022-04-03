@@ -201,24 +201,12 @@ function editSID()
   local dest="$4"
   local action="$5"
 
-
-  # create new yad window
-  #
-  # edit source address
-  # edit destination address
-  #
-
-  # TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
-  # TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
-  # TXT+="  Kernel: $(uname -sr)\\n\\n"
-  # TXT+="  <i>$(uptime)</i>"
+  # TXT="<b>Suricata detected suspicious communication</b>\\n"
+  # TXT+="Communication was ${action:-terminat}ed !\\n"
+  # TXT+="Maybe this was false/positive? Do you want to take some action ?\\n"
 
 
-  TXT="<b>Suricata detected suspicious communication</b>\\n"
-  TXT+="Communication was ${action:-terminat}ed !\\n"
-  TXT+="Maybe this was false/positive? Do you want to take some action ?\\n"
-
-
+  # --text="$TXT" \
   yad \
     --form \
     --columns=3 \
@@ -226,7 +214,6 @@ function editSID()
     --image-on-top \
     --width="400" \
     --title="Edit SID" \
-    --text="$TXT" \
     \
     --field="SRC":RO "10.137.0.x" \
     --field="Allow SRC to DEST":FBTN "bash -c allowSource" \
@@ -361,7 +348,7 @@ function send_notif()
           case "$ret" in
             10 )
               action="${action[3]}"
-              echo "action:$action"
+              d3bug info "Selected action: $action"
 
               case "$action" in
                 "Continue blocking")
