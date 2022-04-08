@@ -1062,8 +1062,8 @@ host-mode: auto
 # the file name of the socket.
 unix-command:
   enabled: yes
-#  filename: /var/run/suricata-command.socket
-  filename: /usr/share/suriGUI/tmp/suricata-command.socket
+  filename: /var/run/suricata-command.socket
+  #filename: /usr/share/suriGUI/tmp/suricata-command.socket
 
 # Magic file. The extension .mgc is added to the value here.
 #magic-file: /usr/share/file/magic
