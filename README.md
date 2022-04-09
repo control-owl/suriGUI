@@ -77,8 +77,16 @@ BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 -------------
 
-### NEXT STEPS:
+### Next steps:
 
+- [ ] new setting file
+- [ ] yaml parser/writer
+- [ ] documentation with comments
+- [ ] cleaning
+- [ ] d3bug redesign
+- [ ] output to file
+- [ ] 
+- [ ]
 - [ ] error notifications
 - [ ] program parameters --debug --output --silent --update
 - [ ] New notebook: Report
