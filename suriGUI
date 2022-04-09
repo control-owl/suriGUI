@@ -43,7 +43,7 @@ function _GLOBAL_VARS()
 
   # FILEs
   export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
-  export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/settings.yaml"
+  export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
   export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
   export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
   export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
@@ -59,7 +59,6 @@ function _GLOBAL_VARS()
   _PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
   _PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
   _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
-
 }
 
 
@@ -94,12 +93,9 @@ function exitSuriGUI()
 
 
 function d3bug()
+# Print output messages, function names, errors
+# Usage: d3bug info|error Lorem ipsum dolor sit amet
 {
-  # Print output messages, function names, errors
-  # Todo:
-  # Output to log file
-  # No output
-  # Only errors
   local type="${1:-*}"
   local msg="${2:-}"
 
@@ -116,42 +112,9 @@ function d3bug()
 }
 
 
-# function checkDirPermission ()
-# {
-#   d3bug
-#
-#   local dir="${1:-$_PROJECT_DIR}"
-#
-#   # for dir in ${_PROJECT_DB_DIRS[@]}
-#   # do
-#     if [[ -d "$dir" ]]
-#     then
-#       d3bug info "Inspecting directory: $dir"
-#       if [[ -w "$dir" ]]
-#       then
-#         d3bug info "Directory writable"
-#       else
-#         d3bug error "Directory not writable."
-#
-#         if sudo chown user:user "$dir" -R
-#         then
-#           d3bug info "Directory owned"
-#         else
-#           d3bug error "Something is wrong with folder/permission"
-#           exit 1
-#         fi
-#       fi
-#     else
-#       echo "not dir"
-#     fi
-#   # done
-#
-# }
-
-
 function checkProjectDirectories()
+# Create project directories and set permissions
 {
-  # Create all needed directories and set permissions
   d3bug
 
   for dir in "${_PROJECT_DB_DIRS[@]}"
@@ -185,9 +148,9 @@ function checkProjectDirectories()
 
 
 function parse_settings()
-# Read settings.yaml file and print its output
-# To set veriables use:
-# eval $(parse_settings file.yaml)
+# Read settings.yaml and convert it to variables
+# Print: parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
+# Set variables: eval $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
 {
   local file="${1:-$_PROJECT_CONFIG_FILE_NEW}"
   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
@@ -204,7 +167,6 @@ function parse_settings()
     }
   }'
 }
-
 
 
 function readConfigFile()
@@ -429,15 +391,14 @@ function send_notif()
         preventSuricataSpam "$sid" "$suriGUIlog"
         if [[ "${stopSpam:-}" == "FALSE" ]]
         then
-          echo "show notif now"
-          readConfigFile timeout
-          readConfigFile notificationPosition
-
-          case "$configNotificationPosition" in
-            "Top_left" )      pos="--posx=1 --posy=1"  ;;
-            "Top_right" )     pos="--posx=-1 --posy=1"  ;;
-            "Bottom_left" )   pos="--posx=1 --posy=-1"  ;;
-            * )               pos="--posx=-1 --posy=-1"  ;;
+          case "$CONF_global_notifications_position" in
+            "Top left" )      pos="--posx=1 --posy=1"  ;;
+            "Top right" )     pos="--posx=-1 --posy=1"  ;;
+            "Bottom left" )   pos="--posx=1 --posy=-1"  ;;
+            "Bottom right" )  pos="--posx=-1 --posy=-1"  ;;
+            "Center" )        pos="--center"  ;;
+            "Under mouse" )   pos="--mouse"  ;;
+            * )               pos=""  ;;
           esac
 
           TXT="<b>${cat:-Potentially Bad traffic}</b>\n"
@@ -452,7 +413,7 @@ function send_notif()
             --form \
             --on-top \
             --width=500 \
-            --timeout="${configTimeout:-60}" \
+            --timeout="$CONF_global_notifications_duration" \
             --timeout-indicator="top" \
             --window-icon="res/suriGUI.png" \
             --image="res/alert_64.png" \
@@ -505,8 +466,6 @@ function send_notif()
     ;;
   esac
 }
-# Export for yad
-export -f send_notif
 
 function updateSuriGUI()
 {
@@ -580,35 +539,38 @@ function suriGUISettings()
 
   KEY="$RANDOM"
 
-  readConfigFile notifications
-  readConfigFile timeout
   readConfigFile keep
   readConfigFile duration
-  readConfigFile notificationPositionMenu
   readConfigFile actionMenu
   readConfigFile update
   readConfigFile action
 
-
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
+  local notificationPositionMenu="Top left\!Top right\!Bottom left\!Bottom right\!Center\!Under mouse"
+  local makeDefault="^"
+  local notificationPositionMenu=$(echo "$notificationPositionMenu" \
+          | sed "s/$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position/g")
 
   yad \
     --plug="$KEY" \
     --tabnum=1 \
     --form \
-    --field="Notifications":chk "$configNotifications" \
-    --field="Enable pop-up messages when something is blocked":LBL "" \
+    --field="<b>Notifications</b>":LBL "" \
+    --field="Enable pop-up messages when something is blocked":chk "$CONF_global_notifications_enable" \
+    --field="Notification duration in seconds":NUM "$CONF_global_notifications_duration\!1..60\!1\!0" \
+    --field="Notification pop-up position":CB "$notificationPositionMenu" \
     --field="":LBL "" \
-    --field="Duration":NUM "$configTimeout\!1..60\!1\!0" \
-    --field="Notification duration in seconds":LBL "" \
+    --field="<b>Update</b>":LBL "" \
+    --field="Auto update suricata rules":chk "$CONF_global_autoupdate_rules_enable" \
+    --field="Interval in days":NUM "$CONF_global_autoupdate_rules_interval\!1..120\!1\!0" \
+    --field="Auto update suriGUI":chk "$CONF_global_autoupdate_suriGUI_enable" \
+    --field="Interval in days":NUM "$CONF_global_autoupdate_suriGUI_interval\!1..120\!1\!0" \
     --field="":LBL "" \
-    --field="Position":CB "$configNotificationPositionMenu" \
-    --field="Notification pop-up position":LBL "" \
-    --field="":LBL "" \
-    --field="d3bug to file":CB "$xxxx" \
-    --field="d3bug nothing (silent)":CB "$xxxx" \
-    --field="d3bug only errors":CB "$xxxx" \
-    --field="Debugging suriGUI output":LBL "" \
+    --field="<b>Debugging</b>":LBL "" \
+    --field="Enable debug":chk "$CONF_global_debugging_enable" \
+    --field="Show only errors":chk "$CONF_global_debugging_erroronly" \
+    --field="Output to file":chk "$CONF_global_debugging_file" \
     > "$_PROJECT_DIR_TMP/suriGUI.tab" &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
@@ -792,7 +754,7 @@ function updateTrayMenu()
   #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
 
   # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
-  menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
+  # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
   menu+="||Settings!bash -c 'suriGUISettings'"
   menu+="||Exit!quit"
 
@@ -1143,15 +1105,18 @@ export -f deleteIgnoredSID
 export -f controlSuricataService
 export -f updateSuricataRules
 export -f updateSuriGUI
+export -f send_notif
 
 
 
 # S T A R T   S U R I G U I
+echo -e "$(date +"%H:%M:%S")  \e[42;30m START \e[0m"
 _GLOBAL_VARS
 
 # Read settings
-eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
-eval $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
+# eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
+parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
+eval export $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
 
 checkProjectRequirements
 # checkDirPermission
