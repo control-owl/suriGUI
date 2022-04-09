@@ -1,0 +1,38 @@
+# suriGUI default config file
+# 2022-04-09
+
+## global definitions
+global:
+  mode: ips
+  action: rejectboth
+  autoupdate:
+    enable: yes
+    rules:
+      enable: yes
+      interval: 7
+    suriGUI:
+      enable: yes
+      interval: "Pre start"
+  notifications:
+    enable: yes
+    duration: 60
+    position: "Center"
+    display: "Primary"
+  debugging:
+    enable: yes
+    erroronly: no
+    file: yes
+  log:
+    enable: yes
+
+suricata:
+  config:
+    location: "conf/suricata.yaml"
+  rules:
+    location: "conf/suricata.rules"
+  log:
+    enable: yes
+    location: "log/"
+    old:
+      keep: yes
+      interval: 90

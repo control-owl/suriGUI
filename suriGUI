@@ -5,12 +5,14 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
+# trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
+trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
 function _GLOBAL_VARS()
 {
+  # INFO
   export _PROJECT_NAME="suriGUI"
   export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
   export _PROJECT_VER="0.1.6"
@@ -18,17 +20,16 @@ function _GLOBAL_VARS()
 
   # DIRs
   export _PROJECT_DIR="/usr/share/suriGUI"
+  export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
   export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
+  export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
   export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
-  export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +"%Y-%m-%d")"
   export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
-  export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
-  export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
 
   # PIPEs
-  export _PROJECT_PIPE="$_PROJECT_DIR_TMP/suriGUI.pipe"
-  export _SID_IGNORE_PIPE="$_PROJECT_DIR_TMP/SIDignore.pipe"
-  export _SID_CUSTOM_PIPE="$_PROJECT_DIR_TMP/SIDcustom.pipe"
+  export _PROJECT_PIPE_MAIN="$_PROJECT_DIR_TMP/suriGUI.pipe"
+  export _PROJECT_PIPE_SID_IGNORE="$_PROJECT_DIR_TMP/SIDignore.pipe"
+  export _PROJECT_PIPE_SID_CUSTOM="$_PROJECT_DIR_TMP/SIDcustom.pipe"
 
   # ICONs
   export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
@@ -41,6 +42,9 @@ function _GLOBAL_VARS()
   export _PROJECT_ICON_MENU_UPDATE="$_PROJECT_DIR_RES/icons/update.png"
 
   # FILEs
+  export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
+  export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/settings.yaml"
+  export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
   export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
   export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
   export _SURICATA_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
@@ -54,9 +58,14 @@ function _GLOBAL_VARS()
   # ARRAYs
   _PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
   _PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
+  _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
+
 }
 
+
 function exitSuriGUI()
+# Trap any exit signal and execute this function
+# Remove all tmp files (and log if enabled)
 {
   echo "EXITING..."
 
@@ -78,13 +87,26 @@ function exitSuriGUI()
 
   d3bug info "EXIT 0"
   #exit 0
-  sudo pkill -f suriGUI
+
+  # Kill project and Suricata
+  #sudo pkill -f suriGUI
 }
+
 
 function d3bug()
 {
+  # Print output messages, function names, errors
+  # Todo:
+  # Output to log file
+  # No output
+  # Only errors
   local type="${1:-*}"
   local msg="${2:-}"
+
+  local logToFile="FALSE"
+  local silentOutput="FALSE"
+  local onlyErrorMsg="FALSE"
+
 
   case "$type" in
     "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
@@ -93,17 +115,46 @@ function d3bug()
   esac
 }
 
+
+# function checkDirPermission ()
+# {
+#   d3bug
+#
+#   local dir="${1:-$_PROJECT_DIR}"
+#
+#   # for dir in ${_PROJECT_DB_DIRS[@]}
+#   # do
+#     if [[ -d "$dir" ]]
+#     then
+#       d3bug info "Inspecting directory: $dir"
+#       if [[ -w "$dir" ]]
+#       then
+#         d3bug info "Directory writable"
+#       else
+#         d3bug error "Directory not writable."
+#
+#         if sudo chown user:user "$dir" -R
+#         then
+#           d3bug info "Directory owned"
+#         else
+#           d3bug error "Something is wrong with folder/permission"
+#           exit 1
+#         fi
+#       fi
+#     else
+#       echo "not dir"
+#     fi
+#   # done
+#
+# }
+
+
 function checkProjectDirectories()
 {
+  # Create all needed directories and set permissions
   d3bug
 
-  local basicDirs=( "$_PROJECT_DIR"
-                    "$_PROJECT_DIR_RES"
-                    "$_PROJECT_DIR_TMP"
-                    "$_PROJECT_DIR_LOG"
-                    "$_PROJECT_DIR_CONF" )
-
-  for dir in "${basicDirs[@]}"
+  for dir in "${_PROJECT_DB_DIRS[@]}"
   do
     if [[ ! -d "$dir" ]]
     then
@@ -115,42 +166,98 @@ function checkProjectDirectories()
         exit 1
       fi
     else
-      d3bug info "Directory found: $dir"
+      if [[ -w "$dir" ]]
+      then
+        d3bug info "Directory: $dir is writable"
+      else
+        d3bug error "Directory: $dir is not writable."
+        if sudo chown user:user "$_PROJECT_DIR" -R
+        then
+          d3bug info "Directory: $dir owned"
+        else
+          d3bug error "Something is wrong with folder/permission"
+          exit 1
+        fi
+      fi
     fi
   done
 }
 
+
+function parse_settings()
+# Read settings.yaml file and print its output
+# To set veriables use:
+# eval $(parse_settings file.yaml)
+{
+  local file="${1:-$_PROJECT_CONFIG_FILE_NEW}"
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  sed -ne "s|^\($s\):|\1|" \
+      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+       printf("%s%s%s=\"%s\"\n", "CONF_",vn, $2, $3);
+    }
+  }'
+}
+
+
+
 function readConfigFile()
+# Read suriGUI.conf and export all variables for yad
+# Yad is not working if export is not done
 {
   d3bug
-  local config="$1"
+  local config="${1:-*}"
 
   source "$_PROJECT_CONFIG_FILE"
 
   case "$config" in
-    "actionMenu" )
+    "actionMenu")
       defaultActions="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
       makeDefault="^"
       export configActionMenu=$(echo "$defaultActions" | sed "s/$action/$makeDefault$action/g")
     ;;
-    "update" ) export configUpdate="$update" ;;
-    "timeout" ) export configTimeout="$timeout" ;;
-    "duration" ) export configDuration="$duration" ;;
-    "notifications" ) export configNotifications="$notifications" ;;
-    "keep" ) export configKeep="$keep" ;;
-    "action" ) export configAction="$action" ;;
-    "notificationPositionMenu" )
-    defaultPositions="Top_left\!Top_right\!Bottom_left\!Bottom_right"
-    makeDefault="^"
-    export configNotificationPositionMenu=$(echo "$defaultPositions" | sed "s/$position/$makeDefault$position/g")
+    "update")
+      export configUpdate="$update"
     ;;
-    "notificationPosition" ) export configNotificationPosition="$position" ;;
+    "timeout")
+      export configTimeout="$timeout"
+    ;;
+    "duration")
+      export configDuration="$duration"
+    ;;
+    "notifications")
+      export configNotifications="$notifications"
+    ;;
+    "keep")
+      export configKeep="$keep"
+      ;;
+    "action")
+      export configAction="$action"
+      ;;
+    "notificationPositionMenu")
+      defaultPositions="Top_left\!Top_right\!Bottom_left\!Bottom_right"
+      makeDefault="^"
+      export configNotificationPositionMenu=$(echo "$defaultPositions" | sed "s/$position/$makeDefault$position/g")
+    ;;
+    "notificationPosition")
+      export configNotificationPosition="$position"
+      ;;
+    *)
+      d3bug error "wrong config lookup"
+    ;;
   esac
 
   d3bug info "Get config: $config"
 }
 
 function updateConfigFile()
+# Write to suriGUI.conf and reload suricata if rule settings were changed
 {
   d3bug
 
@@ -160,27 +267,27 @@ function updateConfigFile()
   local oldStatus="${3:-}"
 
   case "$component" in
-    "rules" )
+    "rules")
       d3bug info "Updating $component: $oldStatus -> $newStatus"
 
       sed -i "s/\<$oldStatus\>/$newStatus/" "$_SURICATA_RULES"
-      checkSuricataStatus &>/dev/null
-
-      if [[ "$suricataStatus" == "active" ]]
-      then
-        d3bug info "Starting Suricata reload..."
-        if sudo suricatasc -c reload-rules
-        then
-          #sudo systemctl reload suricata #&>/dev/null
-          d3bug info "Rules updated & reloaded"
-        else
-          d3bug error "Can't reload rules??"
-        fi
-      else
-        d3bug info "Rules updated"
-      fi
+      # checkSuricataStatus &>/dev/null
+      #
+      # if [[ "$suricataStatus" == "active" ]]
+      # then
+      #   d3bug info "Starting Suricata reload..."
+      #   if sudo suricatasc -c reload-rules
+      #   then
+      #     #sudo systemctl reload suricata #&>/dev/null
+      #     d3bug info "Rules updated & reloaded"
+      #   else
+      #     d3bug error "Can't reload rules??"
+      #   fi
+      # else
+      #   d3bug info "Rules updated"
+      # fi
     ;;
-    "action" )
+    "action")
       sed -i "s/^\(action\s*=\s*\).*\$/\1$newStatus/" "$_PROJECT_CONFIG_FILE"
       d3bug info "Rule action: $newStatus"
     ;;
@@ -188,6 +295,7 @@ function updateConfigFile()
 }
 
 function restartSuriGUI()
+# Kill suriGUI and suricata, then reload
 {
   d3bug
 
@@ -217,15 +325,15 @@ function editSID()
     --image="utilities-terminal" \
     --image-on-top \
     --width="400" \
-    --title="Edit SID" \
+    --title="Edit SID: $sid" \
     \
-    --field="SRC":RO "10.137.0.x" \
+    --field="SRC":RO "$src" \
     --field="Allow SRC to DEST":FBTN "bash -c allowSource" \
     \
-    --field="DEST":RO "aaaaa" \
+    --field="DEST":RO "$dest" \
     --field="Allow DEST to SRC":FBTN "bash -c allowSource" \
     \
-    --field="Action":RO "Drop" \
+    --field="Action":RO "$action" \
     --field="Allow both direction":FBTN "bash -c allowSource"
 
 
@@ -253,39 +361,6 @@ function editSID()
   # d3bug info "Done"
 }
 
-# function ignoreSID()
-# {
-#   d3bug
-#
-#   local sid="$1"
-#
-#   local TXT="Disable notifications for SID: $sid ?\n"
-#   local TXT+="You will no longer see any info when SID is blocked."
-#
-#   yad \
-#     --image="$_PROJECT_ICON" \
-#     --image-on-top \
-#     --width=450 \
-#     --title="$_PROJECT_NAME" \
-#     --button="Yes" --button="No" \
-#     --text="$TXT" \
-#   &>/dev/null
-#   ret=$?
-#
-#   if [ "$ret" = 0 ]
-#   then
-#     if ! grep -q "$sid" "$_NOTIF_IGNORE_LIST"
-#     then
-#       d3bug info "Writing SID $sid in ignore list"
-#       echo "$sid" >> $_NOTIF_IGNORE_LIST
-#     else
-#       d3bug info "SID already in ignore list"
-#     fi
-#   else
-#     d3bug info "Nothing done"
-#   fi
-# }
-
 function preventSuricataSpam()
 {
   d3bug
@@ -306,7 +381,6 @@ function preventSuricataSpam()
   fi
 }
 
-
 function checkIgnoreSidList()
 {
   d3bug
@@ -323,8 +397,6 @@ function checkIgnoreSidList()
   fi
 }
 
-
-
 function send_notif()
 {
   d3bug
@@ -337,14 +409,15 @@ function send_notif()
   local dest=${6:-DEST}
   local action=${7:-Action}
 
-echo "1"
+
   case "$type" in
     "info")
       yad \
       --title="$_PROJECT_NAME v.$_PROJECT_VER" \
       --image="$_PROJECT_ICON" \
+      --form \
       --image-on-top \
-      --button="Yes" --button="No" \
+      --button="OK" \
       --text="$cat" &
     ;;
     "alert")
@@ -432,6 +505,8 @@ echo "1"
     ;;
   esac
 }
+# Export for yad
+export -f send_notif
 
 function updateSuriGUI()
 {
@@ -443,13 +518,14 @@ function updateSuriGUI()
     cd "$_PROJECT_DIR"
     if git fetch
     then
+      d3bug info "Update done"
+      send_notif "info" "Update done. Restarting..."
       restartSuriGUI
     else
       d3bug info "No update found"
+      send_notif "info" "No update found"
     fi
   fi
-  d3bug info "Updating done"
-  send_notif "info" "No update found"
 }
 
 function deleteIgnoredSID()
@@ -468,8 +544,8 @@ function deleteIgnoredSID()
   then
     sed -i "/$sid/d" "$_NOTIF_IGNORE_LIST"
     d3bug info "SID: $sid removed"
-    exec 4<>$_SID_IGNORE_PIPE echo -e "\f" >&4 &
-    exec 4<>$_SID_IGNORE_PIPE echo -e "$(cat $_NOTIF_IGNORE_LIST)" >&4 &
+    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "\f" >&4 &
+    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "$(cat $_NOTIF_IGNORE_LIST)" >&4 &
   else
     d3bug info "Nothing done"
   fi
@@ -528,6 +604,11 @@ function suriGUISettings()
     --field="":LBL "" \
     --field="Position":CB "$configNotificationPositionMenu" \
     --field="Notification pop-up position":LBL "" \
+    --field="":LBL "" \
+    --field="d3bug to file":CB "$xxxx" \
+    --field="d3bug nothing (silent)":CB "$xxxx" \
+    --field="d3bug only errors":CB "$xxxx" \
+    --field="Debugging suriGUI output":LBL "" \
     > "$_PROJECT_DIR_TMP/suriGUI.tab" &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
@@ -577,7 +658,7 @@ function suriGUISettings()
   descIgnore="List of SIDs not shown with suriNotif\\n"
   descIgnore+="Double click on SID to remove it."
 
-  exec 4<> "$_SID_IGNORE_PIPE"
+  exec 4<> "$_PROJECT_PIPE_SID_IGNORE"
 
   yad \
     --plug="$KEY" \
@@ -595,7 +676,7 @@ function suriGUISettings()
   local customRules=( $(cat $_SURICATA_CUSTOM_RULES) )
   descCustom="List of custom Rules"
 
-  exec 5<> "$_SID_CUSTOM_PIPE"
+  exec 5<> "$_PROJECT_PIPE_SID_CUSTOM"
 
   yad \
     --plug="$KEY" \
@@ -710,18 +791,17 @@ function updateTrayMenu()
   #export icon="$_PROJECT_DIR_RES/icons/settings.png"
   #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
 
-  menu+="||Settings!bash -c 'suriGUISettings'"
-  menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
+  # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
   menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
-  menu+="||Update!bash -c updateSuriGUI"
+  menu+="||Settings!bash -c 'suriGUISettings'"
   menu+="||Exit!quit"
 
-  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "menu:$menu" >&3 &
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
 
   d3bug info "Menu updated: $status"
   d3bug info "Menu: $menu"
 
-  [[ -p $_PROJECT_PIPE ]] && exec 3<>$_PROJECT_PIPE echo "icon:$suricataStatus" >&3 &
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "icon:$suricataStatus" >&3 &
 
   d3bug info "Icon updated: $status"
 
@@ -769,6 +849,23 @@ function updateSuricataRules()
       echo "$(date +'%Y-%m-%d')" > "$_SURICATA_UPDATE_TIMESTAMP"
       d3bug info "Update finished $(date +'%Y-%m-%d') @ $(date +'%H:%M:%S')"
 
+      checkSuricataStatus &>/dev/null
+
+      if [[ "$suricataStatus" == "active" ]]
+      then
+        d3bug info "Starting Suricata reload..."
+        if sudo suricatasc -c reload-rules
+        then
+          #sudo systemctl reload suricata #&>/dev/null
+          d3bug info "Rules updated & reloaded"
+          send_notif info "Rules updated & reloaded"
+        else
+          d3bug error "Can't reload rules??"
+        fi
+      else
+        d3bug info "Rules updated"
+      fi
+
 
       # d3bug info "Starting reload Suricata rules..."
       # sudo suricatasc -c reload-rules
@@ -782,7 +879,6 @@ function updateSuricataRules()
     d3bug error "suricata-update not installed. Exit 1"
     exit 1
   fi
-
   checkSuricataRules
 }
 
@@ -831,10 +927,10 @@ function createProjectPipes()
 {
   d3bug
 
-  local pipes=( "$_PROJECT_PIPE"
-                "$_SID_IGNORE_PIPE" )
+  # local pipes=( "$_PROJECT_PIPE_MAIN"
+  #               "$_PROJECT_PIPE_SID_IGNORE" )
 
-  for pipe in "${pipes[@]}"
+  for pipe in "${_PROJECT_DB_PIPES[@]}"
   do
     # remove old pipe if exists
     if [[ -e $pipe ]]
@@ -858,7 +954,7 @@ function createProjectPipes()
     fi
   done
 
-  exec 3<> "$_PROJECT_PIPE"  && d3bug info "Project pipe started"
+  exec 3<> "$_PROJECT_PIPE_MAIN"  && d3bug info "Project pipe started"
 }
 
 function checkSuricataCustomRules()
@@ -974,37 +1070,6 @@ function checkProjectConfigFiles ()
   done
 }
 
-function checkDirPermission ()
-{
-  d3bug
-
-  for dir in ${_PROJECT_DB_DIRS[@]}
-  do
-    if [[ -d "$dir" ]]
-    then
-      d3bug info "Inspecting directory: $dir"
-      if [[ -w "$dir" ]]
-      then
-        d3bug info "Directory writable"
-      else
-        d3bug error "Directory not writable."
-
-        if sudo chown user:user "$dir" -R
-        then
-          d3bug info "Directory owned"
-        else
-          d3bug error "Something is wrong with folder/permission"
-          exit 1
-        fi
-      fi
-    else
-      echo "not dir"
-    fi
-  done
-
-}
-
-
 function checkProjectRequirements ()
 {
   d3bug
@@ -1067,6 +1132,7 @@ function registerProjectIcons()
 }
 
 
+
 # Export functions for yad
 export -f d3bug
 export -f exitSuriGUI
@@ -1079,10 +1145,16 @@ export -f updateSuricataRules
 export -f updateSuriGUI
 
 
+
 # S T A R T   S U R I G U I
 _GLOBAL_VARS
+
+# Read settings
+eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
+eval $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
+
 checkProjectRequirements
-checkDirPermission
+# checkDirPermission
 checkProjectDirectories
 checkProjectConfigFiles
 
@@ -1115,6 +1187,9 @@ d3bug info "Log output found"
 
 readConfigFile notifications
 [[ $configNotifications == "TRUE" ]] && startNotifDaemon
+
+
+
 
 while :
 do
