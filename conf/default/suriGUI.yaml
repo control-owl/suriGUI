@@ -18,7 +18,6 @@ global:
     enable: TRUE
     duration: 60
     position: "Center"
-#    display: "Primary"
   debugging:
     enable: TRUE
     erroronly: FALSE

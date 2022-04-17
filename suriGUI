@@ -135,7 +135,7 @@ function checkProjectDirectories()
         d3bug info "Directory: $dir is writable"
       else
         d3bug error "Directory: $dir is not writable."
-        if sudo chown user:user "$_PROJECT_DIR" -R
+        if sudo chown user:user "$dir" -R
         then
           d3bug info "Directory: $dir owned"
         else
@@ -275,11 +275,11 @@ function restartSuriGUI()
 function editSID()
 {
   d3bug
-  local sid="$1"
-  local cat="$2"
-  local src="$3"
-  local dest="$4"
-  local action="$5"
+  local sid="${1:-}"
+  local cat="${2:-}"
+  local src="${3:-}"
+  local dest="${4:-}"
+  local action="${5:-}"
 
   # TXT="<b>Suricata detected suspicious communication</b>\\n"
   # TXT+="Communication was ${action:-terminat}ed !\\n"
@@ -328,6 +328,7 @@ function editSID()
   # sudo suricatasc -c reload-rules
   # d3bug info "Done"
 }
+
 
 function preventSuricataSpam()
 # Prevent showing same alert more than 1 time
@@ -1049,8 +1050,7 @@ function checkProjectConfigFiles ()
   local files=( "$_PROJECT_CONFIG_FILE"
                 "$_SURICATA_CUSTOM_RULES"
                 "$_NOTIF_IGNORE_LIST"
-                "$_SURIGUI_LOG_FILE"
-                 )
+                "$_SURIGUI_LOG_FILE" )
 
   for file in "${_PROJECT_DB_FILES[@]}"
   do
@@ -1147,7 +1147,7 @@ _GLOBAL_VARS
 # Read settings
 # eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
 # parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
-eval export $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
+eval export $(parse_settings "$_PROJECT_DIR_CONF/suriGUI.yaml")
 
 checkProjectRequirements
 checkProjectDirectories
@@ -1181,7 +1181,7 @@ d3bug info "Log output found"
 
 
 #readConfigFile notifications
-[[ "$CONF_global_notifications_enable" == "TRUE" ]] && startNotifDaemon
+[[ "${CONF_global_notifications_enable:-FALSE}" == "TRUE" ]] && startNotifDaemon
 
 while :
 do
