@@ -5,7 +5,6 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-# trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
@@ -16,7 +15,7 @@ function _GLOBAL_VARS()
   export _PROJECT_NAME="suriGUI"
   export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
   export _PROJECT_VER="0.1.6"
-  export _PROJECT_BUILD="2022-04-09"
+  export _PROJECT_BUILD="2022-04-17"
 
   # DIRs
   export _PROJECT_DIR="/usr/share/suriGUI"
@@ -59,6 +58,8 @@ function _GLOBAL_VARS()
   _PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
   _PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
   _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
+  _PROJECT_DB_FILES=( "$_PROJECT_CONFIG_FILE" "$_SURICATA_CUSTOM_RULES" "$_NOTIF_IGNORE_LIST" "$_SURIGUI_LOG_FILE" )
+  _PROJECT_DB_ICONS=( "$_PROJECT_ICON" "$_PROJECT_ICON_INACTIVE" "$_PROJECT_ICON_ACTIVE" )
 }
 
 
@@ -94,7 +95,7 @@ function exitSuriGUI()
 
 function d3bug()
 # Print output messages, function names, errors
-# Usage: d3bug info|error Lorem ipsum dolor sit amet
+# Usage: d3bug info|error "Lorem ipsum dolor sit amet"
 {
   local type="${1:-*}"
   local msg="${2:-}"
@@ -113,7 +114,7 @@ function d3bug()
 
 
 function checkProjectDirectories()
-# Create project directories and set permissions
+# Create project directories and set permissions to user:user
 {
   d3bug
 
@@ -172,6 +173,7 @@ function parse_settings()
 function readConfigFile()
 # Read suriGUI.conf and export all variables for yad
 # Yad is not working if export is not done
+# will be removed and replaced with settings.yaml
 {
   d3bug
   local config="${1:-*}"
@@ -220,6 +222,8 @@ function readConfigFile()
 
 function updateConfigFile()
 # Write to suriGUI.conf and reload suricata if rule settings were changed
+# NEED TO REWRITE
+# will be removed and replaced with new function
 {
   d3bug
 
@@ -258,6 +262,8 @@ function updateConfigFile()
 
 function restartSuriGUI()
 # Kill suriGUI and suricata, then reload
+# Suricata should not be killed
+# Too long loading time
 {
   d3bug
 
@@ -324,6 +330,8 @@ function editSID()
 }
 
 function preventSuricataSpam()
+# Prevent showing same alert more than 1 time
+# Write log to suriGUI.log
 {
   d3bug
   local sid="$1"
@@ -344,6 +352,8 @@ function preventSuricataSpam()
 }
 
 function checkIgnoreSidList()
+# Check if SID is on Ignore list
+# If yes then do not show notification
 {
   d3bug
 
@@ -360,6 +370,9 @@ function checkIgnoreSidList()
 }
 
 function send_notif()
+# Show suriGUI notification when Suricata produces Alert message
+# Check if SID is on Ignore list
+# Check if Alert was alredy showed
 {
   d3bug
 
@@ -468,6 +481,7 @@ function send_notif()
 }
 
 function updateSuriGUI()
+# Not working yet
 {
   d3bug
 
@@ -488,6 +502,7 @@ function updateSuriGUI()
 }
 
 function deleteIgnoredSID()
+# Remove ignored SID from Ignore list
 {
   d3bug
 
@@ -508,11 +523,11 @@ function deleteIgnoredSID()
   else
     d3bug info "Nothing done"
   fi
-
-
 }
 
 function saveSettings()
+# Save suriGUI settings to config file
+# will be removed and replaced with new function
 {
   d3bug
 
@@ -534,6 +549,15 @@ function saveSettings()
 }
 
 function suriGUISettings()
+# suriGUI Setting Window
+# PIPE 4
+# PIPE 5
+# suriGUI settings
+# Suricata settings
+# Rules settings
+# Ignored SID List
+# Custom Rules List - will be replaced
+# Backup/Restore - Not done yet
 {
   d3bug
 
@@ -697,20 +721,30 @@ function suriGUISettings()
 }
 
 function stopNotifDaemon()
+# Stop showing suriGUI notifications
+# redesign:
+# Check if cat file is really our app
+# what if cat file is old file and we kill wrong process
 {
   d3bug
 
   if [[ -f "$_NOTIF_PID" ]]
   then
-    pkill -P "$(cat $_NOTIF_PID)" #&>/dev/null # kill process and all children
-    rm "$_NOTIF_PID"
-    d3bug info "suriNotif stopped"
+    if pkill -P "$(cat $_NOTIF_PID)"
+    then
+      rm "$_NOTIF_PID"
+      d3bug info "suriNotif stopped"
+    else
+      d3bug error "Can not stop Notifications "
+    fi
   else
     d3bug info "suriNotif PID not found! Nothing to kill."
   fi
 }
 
 function startNotifDaemon()
+# Start suriGUI notifications
+# Tail Suricata eve.json file
 {
   d3bug
 
@@ -727,6 +761,7 @@ function startNotifDaemon()
 }
 
 function controlSuricataService()
+# Start | stop Suricata service
 {
   d3bug
 
@@ -738,6 +773,7 @@ function controlSuricataService()
 }
 
 function updateTrayMenu()
+# Create suriGUI tray menu and tray icon
 {
   d3bug
 
@@ -770,6 +806,7 @@ function updateTrayMenu()
 }
 
 function checkInternetConnection()
+# Check if internet connection is present
 {
   d3bug
 
@@ -791,6 +828,8 @@ function checkInternetConnection()
 }
 
 function updateSuricataRules()
+# Download latest Suricata rules to one file
+# Reload Suricata if needed
 {
   d3bug
 
@@ -845,6 +884,9 @@ function updateSuricataRules()
 }
 
 function startSuriGUI()
+# Start suriGUI
+# PIPE 3
+# Create yad tray icon
 {
   d3bug
 
@@ -857,7 +899,7 @@ function startSuriGUI()
     --text="$_PROJECT_NAME v$_PROJECT_VER" \
     --image="$suricataStatus" \
     --separator="|" \
-    --menu="Exit!quit!gtk-exit" \
+    --menu="Exit!quit" \
     --command="bash -c suriGUISettings" \
   <&3 &>/dev/null
 
@@ -865,6 +907,7 @@ function startSuriGUI()
 }
 
 function checkSuricataStatus()
+# Check Suricata's service status
 {
   d3bug
 
@@ -886,11 +929,10 @@ function checkSuricataStatus()
 }
 
 function createProjectPipes()
+# Create suriGUI pipes
+# Pipes 3,4,5
 {
   d3bug
-
-  # local pipes=( "$_PROJECT_PIPE_MAIN"
-  #               "$_PROJECT_PIPE_SID_IGNORE" )
 
   for pipe in "${_PROJECT_DB_PIPES[@]}"
   do
@@ -920,6 +962,8 @@ function createProjectPipes()
 }
 
 function checkSuricataCustomRules()
+# Future implementation
+# Not done yet
 {
   d3bug
 
@@ -945,6 +989,7 @@ function checkSuricataCustomRules()
 }
 
 function checkSuricataRules()
+# Auto update suricata rules if they are too old or never updated
 {
   d3bug
 
@@ -997,6 +1042,7 @@ function checkSuricataRules()
 }
 
 function checkProjectConfigFiles ()
+# Create default config files
 {
   d3bug
 
@@ -1006,7 +1052,7 @@ function checkProjectConfigFiles ()
                 "$_SURIGUI_LOG_FILE"
                  )
 
-  for file in "${files[@]}"
+  for file in "${_PROJECT_DB_FILES[@]}"
   do
     if [[ ! -f "$file" ]]
     then
@@ -1033,10 +1079,9 @@ function checkProjectConfigFiles ()
 }
 
 function checkProjectRequirements ()
+# Install suriGUI required applications
 {
   d3bug
-
-
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
@@ -1069,30 +1114,17 @@ function checkProjectRequirements ()
 }
 
 function registerProjectIcons()
+# Create suriGUI icon files
 {
   d3bug
 
-  # local icons=( "$_PROJECT_ICON"
-  #               "$_PROJECT_ICON_INACTIVE"
-  #               "$_PROJECT_ICON_ACTIVE"
-  #               "$_PROJECT_ICON_MENU_EXIT"
-  #               "$_PROJECT_ICON_MENU_SETTINGS"
-  #               "$_PROJECT_ICON_MENU_START"
-  #               "$_PROJECT_ICON_MENU_STOP"
-  #               "$_PROJECT_ICON_MENU_UPDATE" )
-
-  local icons=( "$_PROJECT_ICON"
-                "$_PROJECT_ICON_INACTIVE"
-                "$_PROJECT_ICON_ACTIVE" )
-
-  for icon in "${icons[@]}"
+  for icon in "${_PROJECT_DB_ICONS[@]}"
   do
     local iconName=$(basename "$icon" | sed "s/\..*//")
     xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
     d3bug info "Registered icon: $iconName"
   done
 }
-
 
 
 # Export functions for yad
@@ -1108,18 +1140,16 @@ export -f updateSuriGUI
 export -f send_notif
 
 
-
 # S T A R T   S U R I G U I
 echo -e "$(date +"%H:%M:%S")  \e[42;30m START \e[0m"
 _GLOBAL_VARS
 
 # Read settings
 # eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
-parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
+# parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
 eval export $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
 
 checkProjectRequirements
-# checkDirPermission
 checkProjectDirectories
 checkProjectConfigFiles
 
@@ -1150,11 +1180,8 @@ done #&>/dev/null
 d3bug info "Log output found"
 
 
-readConfigFile notifications
-[[ $configNotifications == "TRUE" ]] && startNotifDaemon
-
-
-
+#readConfigFile notifications
+[[ "$CONF_global_notifications_enable" == "TRUE" ]] && startNotifDaemon
 
 while :
 do
