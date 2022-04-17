@@ -9,58 +9,56 @@ trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
-function _GLOBAL_VARS()
-{
-  # INFO
-  export _PROJECT_NAME="suriGUI"
-  export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
-  export _PROJECT_VER="0.1.6"
-  export _PROJECT_BUILD="2022-04-17"
+# GLOBAL VARIABLES
+# INFO
+export _PROJECT_NAME="suriGUI" && echo "$(date +'%H:%M:%S') $_PROJECT_NAME"
+export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
+export _PROJECT_VER="0.1.6"
+export _PROJECT_BUILD="2022-04-17"
 
-  # DIRs
-  export _PROJECT_DIR="/usr/share/suriGUI"
-  export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
-  export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
-  export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
-  export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
-  export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
+# DIRs
+export _PROJECT_DIR="/usr/share/suriGUI"
+export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
+export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
+export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
+export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
 
-  # PIPEs
-  export _PROJECT_PIPE_MAIN="$_PROJECT_DIR_TMP/suriGUI.pipe"
-  export _PROJECT_PIPE_SID_IGNORE="$_PROJECT_DIR_TMP/SIDignore.pipe"
-  export _PROJECT_PIPE_SID_CUSTOM="$_PROJECT_DIR_TMP/SIDcustom.pipe"
+# PIPEs
+export _PROJECT_PIPE_MAIN="$_PROJECT_DIR_TMP/suriGUI.pipe"
+export _PROJECT_PIPE_SID_IGNORE="$_PROJECT_DIR_TMP/SIDignore.pipe"
+export _PROJECT_PIPE_SID_CUSTOM="$_PROJECT_DIR_TMP/SIDcustom.pipe"
 
-  # ICONs
-  export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
-  export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
-  export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
-  export _PROJECT_ICON_MENU_EXIT="$_PROJECT_DIR_RES/icons/exit.png"
-  export _PROJECT_ICON_MENU_SETTINGS="$_PROJECT_DIR_RES/icons/settings.png"
-  export _PROJECT_ICON_MENU_START="$_PROJECT_DIR_RES/icons/start.png"
-  export _PROJECT_ICON_MENU_STOP="$_PROJECT_DIR_RES/icons/stop.png"
-  export _PROJECT_ICON_MENU_UPDATE="$_PROJECT_DIR_RES/icons/update.png"
+# ICONs
+export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
+export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
+export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
+export _PROJECT_ICON_MENU_EXIT="$_PROJECT_DIR_RES/icons/exit.png"
+export _PROJECT_ICON_MENU_SETTINGS="$_PROJECT_DIR_RES/icons/settings.png"
+export _PROJECT_ICON_MENU_START="$_PROJECT_DIR_RES/icons/start.png"
+export _PROJECT_ICON_MENU_STOP="$_PROJECT_DIR_RES/icons/stop.png"
+export _PROJECT_ICON_MENU_UPDATE="$_PROJECT_DIR_RES/icons/update.png"
 
-  # FILEs
-  export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
-  export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
-  export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
-  export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
-  export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
-  export _SURICATA_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
-  export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
-  export _SURIGUI_LOG_FILE="$_PROJECT_DIR_LOG/suriGUI.log"
+# FILEs
+export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
+export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
+export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
+export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
+export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
+export _SURICATA_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
+export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
+export _SURIGUI_LOG_FILE="$_PROJECT_DIR_LOG/suriGUI.log"
 
-  # PIDs
-  export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid"
-  export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
+# PIDs
+export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid" && echo "$$" > "$_PROJECT_PID"
+export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
 
-  # ARRAYs
-  _PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
-  _PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
-  _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
-  _PROJECT_DB_FILES=( "$_PROJECT_CONFIG_FILE" "$_SURICATA_CUSTOM_RULES" "$_NOTIF_IGNORE_LIST" "$_SURIGUI_LOG_FILE" )
-  _PROJECT_DB_ICONS=( "$_PROJECT_ICON" "$_PROJECT_ICON_INACTIVE" "$_PROJECT_ICON_ACTIVE" )
-}
+# ARRAYs
+_PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
+_PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
+_PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
+_PROJECT_DB_FILES=( "$_PROJECT_CONFIG_FILE" "$_SURICATA_CUSTOM_RULES" "$_NOTIF_IGNORE_LIST" "$_SURIGUI_LOG_FILE" )
+_PROJECT_DB_ICONS=( "$_PROJECT_ICON" "$_PROJECT_ICON_INACTIVE" "$_PROJECT_ICON_ACTIVE" )
 
 
 function exitSuriGUI()
@@ -220,6 +218,7 @@ function readConfigFile()
   d3bug info "Get config: $config"
 }
 
+
 function updateConfigFile()
 # Write to suriGUI.conf and reload suricata if rule settings were changed
 # NEED TO REWRITE
@@ -260,6 +259,7 @@ function updateConfigFile()
   esac
 }
 
+
 function restartSuriGUI()
 # Kill suriGUI and suricata, then reload
 # Suricata should not be killed
@@ -272,6 +272,129 @@ function restartSuriGUI()
 
 }
 
+
+function changeSID()
+# changeSID 1234567 add|remove source|destination 1.2.3.4
+# changeSID 1234567 enable|disable
+{
+  local SID="$1"
+  local action="$2"
+  local location="$3"
+  local IP="$4"
+
+
+  oldRule=$(grep -F "sid:$SID" $_SURICATA_RULES)
+  if [[ -z "$oldRule" ]]
+  then
+    echo "Rule with SID: $SID is NOT found in file: $_SURICATA_RULES"
+    echo "Exit 1"
+    exit 1
+  fi
+
+  ruleLineNum="$(grep -n "$SID" $_SURICATA_RULES | head -n 1 | cut -d: -f1)"
+
+  # get rule status
+  if [[ "$oldRule" =~ ^[[:space:]]*#.* ]]
+  then
+    ruleStatus="inactive"
+  else
+    ruleStatus="active"
+  fi
+
+  # get old source/destionation position in rule
+  if [[ $(cut -d " " -f 5 <<< $oldRule) == "->" ]]
+  then
+    sourcePos=3
+    destinationPos=6
+  else
+    if [[ $(cut -d " " -f 6 <<< $oldRule) == "->" ]]
+    then
+      sourcePos=4
+      destinationPos=7
+    else
+      echo "Rule does NOT have standard formating."
+      echo "There is eather double spaces in rule or broken comment."
+      echo "Exit 1"
+      exit 1
+    fi
+  fi
+
+  oldSource=$(cut -d " " -f "$sourcePos" <<< $oldRule)
+  oldDestination=$(cut -d " " -f "$destinationPos" <<< $oldRule)
+
+
+  if [[ $location == "source" ]]
+  then
+    local oldLocation="$oldSource"
+    local newLocation="$sourcePos"
+  else
+    local oldLocation="$oldDestination"
+    local newLocation="$destinationPos"
+  fi
+
+  echo "----------------------"
+  echo "- Line: $ruleLineNum"
+  echo "- SID: $SID"
+  echo "- Action: $action"
+  echo "- Location: $location"
+  echo "- IP: $IP"
+  echo "- Rule: $oldRule" #| head -c 100
+  echo "- Status: $ruleStatus"
+  echo "- Source: $oldSource"
+  echo "- Destination: $oldDestination"
+  echo "----------------------"
+
+  case "$action" in
+    "add")
+      # detect if location already has IP addresses
+      if grep -F "$IP" &>/dev/null <<< $oldLocation
+      then
+        echo "SID $SID already contains IP: $IP in $location"
+        shift
+      else
+        echo "SID $SID does not contain IP: $IP in $location"
+
+        # detect if current location is prepared for multiple addresses []
+        if [[ "$oldLocation" =~ \[.*\] ]]
+        then
+          echo "multiple addresses found"
+          oldLocation=$(awk -F'[][]' '{print $2}' <<< $oldLocation)
+        else
+          echo "only one address in $location"
+        fi
+
+        newAddress="[$oldLocation,!$IP]"
+        echo "newAddress: $newAddress"
+        echo "new location: $newLocation"
+
+        newRule=$(awk -v r=${newAddress} -v pos=${newLocation} '{$pos=r}1' <<< $oldRule)
+
+        echo "new location: $newRule"
+
+        # execute change
+        sed -i -e "${ruleLineNum} c\\" -e "${newRule}" ${_SURICATA_RULES}
+
+      fi
+    ;;
+    "remove")
+      :
+      # Remove ip from source or destination address
+    ;;
+    "enable")
+      :
+      # comment rule
+    ;;
+    "disable")
+      :
+      # uncomment rule
+    ;;
+    *) exit 1 ;;
+
+  esac
+}
+
+
+
 function editSID()
 {
   d3bug
@@ -281,62 +404,41 @@ function editSID()
   local dest="${4:-}"
   local action="${5:-}"
 
-  # TXT="<b>Suricata detected suspicious communication</b>\\n"
-  # TXT+="Communication was ${action:-terminat}ed !\\n"
-  # TXT+="Maybe this was false/positive? Do you want to take some action ?\\n"
+  TXT="SID: $sid   Category: $cat  Action: $action \\n"
+  TXT+="Suricata has prevented $src to communicate with $dest \\n"
+  TXT+="\\n"
 
 
-  # --text="$TXT" \
   yad \
     --form \
-    --columns=3 \
+    --columns=2 \
     --image="utilities-terminal" \
     --image-on-top \
-    --width="400" \
+    --width="600" \
     --title="Edit SID: $sid" \
+    --text="$TXT" \
     \
     --field="SRC":RO "$src" \
     --field="Allow SRC to DEST":FBTN "bash -c allowSource" \
     \
     --field="DEST":RO "$dest" \
-    --field="Allow DEST to SRC":FBTN "bash -c allowSource" \
-    \
-    --field="Action":RO "$action" \
-    --field="Allow both direction":FBTN "bash -c allowSource"
+    --field="Allow DEST to SRC":FBTN "bash -c allowSource"
 
-
-  # edit rule
-  # create option do decide what with this rule
-  # block it, do not show it + block, unlock (pass or comment out)
-  # pass pass will process rule ant then pass it trough
-  # comment out will do nothing with packets
-  # pass it is
-
-  # check for file custom.rules
-  # write to file:
-  # SID,Status
-  # 1234567,pass
-
-  # every time when custom.rules is modified, start suricata.rules update
-  # search for SID and change first word into pass
-
-
-  # Comment SID in suricata rules, disable it
-  # sed -i "/^[^#]/ s/\(^.*$sid.*$\)/#\1/" "$_SURICATA_RULES"
-  #
-  # d3bug info "SID: $sid unblocked. Reloading rules..."
-  # sudo suricatasc -c reload-rules
-  # d3bug info "Done"
 }
 
 
 function preventSuricataSpam()
-# Prevent showing same alert more than 1 time
+# Prevent showing same alert more than 1 time per day
 # Write log to suriGUI.log
 {
   d3bug
-  local sid="$1"
-  local currentLog="$2"
+
+  local SID="$1"
+  local SRC="$2"
+  local DST="$3"
+  # local dateStamp="$(date +'%Y-%m-%d')"
+  # local currentLog="$dateStamp|$SID|$SRC|$DST"
+  local currentLog="$SID|$SRC|$DST"
 
   d3bug info "Current log: $currentLog"
 
@@ -346,11 +448,12 @@ function preventSuricataSpam()
     stopSpam="TRUE"
   else
     d3bug info "Not found in suriGUIlog"
-    echo "$suriGUIlog" >> "$_SURIGUI_LOG_FILE"
+    echo "$currentLog" >> "$_SURIGUI_LOG_FILE"
     d3bug info "Output written"
     stopSpam="FALSE"
   fi
 }
+
 
 function checkIgnoreSidList()
 # Check if SID is on Ignore list
@@ -369,6 +472,7 @@ function checkIgnoreSidList()
     ignoreSID="FALSE"
   fi
 }
+
 
 function send_notif()
 # Show suriGUI notification when Suricata produces Alert message
@@ -397,12 +501,10 @@ function send_notif()
       --text="$cat" &
     ;;
     "alert")
-      suriGUIlog="$(date +'%Y-%m-%d')|$(date +'%H:%M:%S')|$sid|$src|$dest"
-
       checkIgnoreSidList "$sid"
       if [[ "${ignoreSID:-}" == "FALSE" ]]
       then
-        preventSuricataSpam "$sid" "$suriGUIlog"
+        preventSuricataSpam "$sid" "$src" "$dest"
         if [[ "${stopSpam:-}" == "FALSE" ]]
         then
           case "$CONF_global_notifications_position" in
@@ -419,7 +521,7 @@ function send_notif()
           TXT+="$(date +'%Y-%m-%d') at  $(date +'%H:%M:%S') \n"
           TXT+="<i>$sig</i>"
 
-          ACTIONcontrol="Continue blocking!Don't show again!Edit rule"
+          ACTIONcontrol="Continue blocking!Don't show again!Allow"
 
           set +o errexit # yad problem, error exit must be disabled
           yadOutput="$( yad \
@@ -464,8 +566,9 @@ function send_notif()
                   fi
                 ;;
 
-                "Edit rule")
-                  editSID "$sid" "$cat" "$src" "$dest" "$action"
+                "Allow")
+                  #editSID "$sid" "$cat" "$src" "$dest" #"$action"
+                  :
                 ;;
                 *) d3bug error "Can't read action" ;;
               esac
@@ -480,6 +583,7 @@ function send_notif()
     ;;
   esac
 }
+
 
 function updateSuriGUI()
 # Not working yet
@@ -501,6 +605,7 @@ function updateSuriGUI()
     fi
   fi
 }
+
 
 function deleteIgnoredSID()
 # Remove ignored SID from Ignore list
@@ -526,6 +631,7 @@ function deleteIgnoredSID()
   fi
 }
 
+
 function saveSettings()
 # Save suriGUI settings to config file
 # will be removed and replaced with new function
@@ -548,6 +654,7 @@ function saveSettings()
   sed -i "s/^\(action\s*=\s*\).*\$/\1${tab3[0]}/" "$_PROJECT_CONFIG_FILE"
   sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
 }
+
 
 function suriGUISettings()
 # suriGUI Setting Window
@@ -721,6 +828,7 @@ function suriGUISettings()
   done
 }
 
+
 function stopNotifDaemon()
 # Stop showing suriGUI notifications
 # redesign:
@@ -743,6 +851,7 @@ function stopNotifDaemon()
   fi
 }
 
+
 function startNotifDaemon()
 # Start suriGUI notifications
 # Tail Suricata eve.json file
@@ -761,6 +870,7 @@ function startNotifDaemon()
   d3bug info "Notifications started with PID: $(cat $_NOTIF_PID)"
 }
 
+
 function controlSuricataService()
 # Start | stop Suricata service
 {
@@ -772,6 +882,7 @@ function controlSuricataService()
   sudo systemctl "$action" suricata &>/dev/null
   d3bug info "$action Suricata service"
 }
+
 
 function updateTrayMenu()
 # Create suriGUI tray menu and tray icon
@@ -806,6 +917,7 @@ function updateTrayMenu()
 
 }
 
+
 function checkInternetConnection()
 # Check if internet connection is present
 {
@@ -827,6 +939,7 @@ function checkInternetConnection()
     fi
   fi
 }
+
 
 function updateSuricataRules()
 # Download latest Suricata rules to one file
@@ -884,6 +997,7 @@ function updateSuricataRules()
   checkSuricataRules
 }
 
+
 function startSuriGUI()
 # Start suriGUI
 # PIPE 3
@@ -907,6 +1021,7 @@ function startSuriGUI()
   [[ -f "$_PROJECT_PID" ]] && rm "$_PROJECT_PID"
 }
 
+
 function checkSuricataStatus()
 # Check Suricata's service status
 {
@@ -928,6 +1043,7 @@ function checkSuricataStatus()
   d3bug info "Suricata is $suricataStatus"
   updateTrayMenu "$suricataStatus"
 }
+
 
 function createProjectPipes()
 # Create suriGUI pipes
@@ -962,6 +1078,7 @@ function createProjectPipes()
   exec 3<> "$_PROJECT_PIPE_MAIN"  && d3bug info "Project pipe started"
 }
 
+
 function checkSuricataCustomRules()
 # Future implementation
 # Not done yet
@@ -988,6 +1105,7 @@ function checkSuricataCustomRules()
 
   fi
 }
+
 
 function checkSuricataRules()
 # Auto update suricata rules if they are too old or never updated
@@ -1042,6 +1160,7 @@ function checkSuricataRules()
 
 }
 
+
 function checkProjectConfigFiles ()
 # Create default config files
 {
@@ -1078,6 +1197,7 @@ function checkProjectConfigFiles ()
   done
 }
 
+
 function checkProjectRequirements ()
 # Install suriGUI required applications
 {
@@ -1113,6 +1233,7 @@ function checkProjectRequirements ()
   done
 }
 
+
 function registerProjectIcons()
 # Create suriGUI icon files
 {
@@ -1141,13 +1262,11 @@ export -f send_notif
 
 
 # S T A R T   S U R I G U I
-echo -e "$(date +"%H:%M:%S")  \e[42;30m START \e[0m"
-_GLOBAL_VARS
 
 # Read settings
 # eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
 # parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
-eval export $(parse_settings "$_PROJECT_DIR_CONF/suriGUI.yaml")
+eval export $(parse_settings "$_PROJECT_CONFIG_FILE_NEW")
 
 checkProjectRequirements
 checkProjectDirectories
@@ -1156,10 +1275,11 @@ checkProjectConfigFiles
 checkSuricataRules
 checkSuricataStatus
 
-echo "$$" > "$_PROJECT_PID"
+
 createProjectPipes
 registerProjectIcons
 startSuriGUI &
+
 
 
 while ( ! systemctl is-active --quiet suricata )
