@@ -1,7 +1,2 @@
-suriGUI.conf
-suricata.rules
-suricata.rules.timestamp
-classification.config
-ignore.sid
-threshold.conf
-suriGUI.rules
+/suriGUI.rules
+/suriGUI.yaml

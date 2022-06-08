@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 2022-01-14
+# stamp: 2022-06-07
 
 # Install all necessery packets
 suricata-install-packages:
@@ -60,9 +60,9 @@ enable-nfqueue-service:
         Requires=network-online.target
         [Service]
         Type=simple
-        ExecStartPre=+/bin/bash -c "if [[ ! -e /usr/share/suriGUI/conf/suricata.rules ]]; then /bin/suricata-update --output /usr/share/suriGUI/conf --no-test ; fi"
+        ExecStartPre=+/bin/bash -c "if [[ ! -e /usr/share/suriGUI/conf/suricata/suricata.rules ]]; then /bin/suricata-update --output /usr/share/suriGUI/conf/suricata --data-dir /usr/share/suriGUI/tmp --no-test ; fi"
         ExecStartPre=+/bin/bash -c "if [[ ! -d /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
-        ExecStart=+/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata.yaml -q 0'
+        ExecStart=+/bin/bash -c '/usr/bin/suricata -l /usr/share/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /usr/share/suriGUI/conf/suricata/suricata.yaml -q 0'
         ExecReload=/usr/bin/suricatasc -c reload-rules ; /bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
         ProtectSystem=full

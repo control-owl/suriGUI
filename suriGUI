@@ -13,9 +13,14 @@ trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 # INFO
 export _PROJECT_NAME="suriGUI" && echo "$(date +'%H:%M:%S') $_PROJECT_NAME"
 export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
-export _PROJECT_VER="0.1.6"
-export _PROJECT_BUILD="2022-04-17"
+export _PROJECT_VER="0.1.7"
+export _PROJECT_BUILD="2022-05-29"
 
+_PROJECT_DB_REQS=( "libnetfilter-queue-dev"
+                   "suricata"
+                   "jq"
+                   "yad" )
+#
 # DIRs
 export _PROJECT_DIR="/usr/share/suriGUI"
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
@@ -23,68 +28,91 @@ export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
 export _PROJECT_DIR_RES="$_PROJECT_DIR/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR/tmp"
+export _PROJECT_DIR_SURICATA="$_PROJECT_DIR_CONF/suricata"
 
+_PROJECT_DB_DIRS=( "$_PROJECT_DIR"
+                   "$_PROJECT_DIR_CONF"
+                   "$_PROJECT_DIR_RES"
+                   "$_PROJECT_DIR_LOG"
+                   "$_PROJECT_DIR_TMP"
+                   "$_PROJECT_DIR_SURICATA" )
+#
 # PIPEs
 export _PROJECT_PIPE_MAIN="$_PROJECT_DIR_TMP/suriGUI.pipe"
 export _PROJECT_PIPE_SID_IGNORE="$_PROJECT_DIR_TMP/SIDignore.pipe"
 export _PROJECT_PIPE_SID_CUSTOM="$_PROJECT_DIR_TMP/SIDcustom.pipe"
 
+_PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN"
+                    "$_PROJECT_PIPE_SID_IGNORE"
+                    "$_PROJECT_PIPE_SID_CUSTOM" )
+#
 # ICONs
-export _PROJECT_ICON="$_PROJECT_DIR_RES/suriGUI.png"
+export _PROJECT_ICON_MAIN="$_PROJECT_DIR_RES/suriGUI.png"
 export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
 export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
-export _PROJECT_ICON_MENU_EXIT="$_PROJECT_DIR_RES/icons/exit.png"
-export _PROJECT_ICON_MENU_SETTINGS="$_PROJECT_DIR_RES/icons/settings.png"
-export _PROJECT_ICON_MENU_START="$_PROJECT_DIR_RES/icons/start.png"
-export _PROJECT_ICON_MENU_STOP="$_PROJECT_DIR_RES/icons/stop.png"
-export _PROJECT_ICON_MENU_UPDATE="$_PROJECT_DIR_RES/icons/update.png"
 
+_PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
+                    "$_PROJECT_ICON_INACTIVE"
+                    "$_PROJECT_ICON_ACTIVE" )
+#
 # FILEs
-export _PROJECT_CONFIG_FILE="$_PROJECT_DIR_CONF/suriGUI.conf"
-export _PROJECT_CONFIG_FILE_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
-export _NOTIF_IGNORE_LIST="$_PROJECT_DIR_CONF/ignore.sid"
-export _SURICATA_CONFIG="$_PROJECT_DIR_CONF/suricata.yaml"
-export _SURICATA_RULES="$_PROJECT_DIR_CONF/suricata.rules"
-export _SURICATA_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
-export _SURICATA_UPDATE_TIMESTAMP="$_SURICATA_RULES.timestamp"
-export _SURIGUI_LOG_FILE="$_PROJECT_DIR_LOG/suriGUI.log"
+export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
+export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
+export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"
+export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"
+export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"
+export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"
 
+_PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
+                    "$_PROJECT_FILE_CUSTOM_RULES"
+                    "$_PROJECT_FILE_LOG"
+                    "$_PROJECT_FILE_SURICATA_RULES"
+                    "$_PROJECT_FILE_SURICATA_CONFIG" )
+#
 # PIDs
-export _PROJECT_PID="$_PROJECT_DIR_TMP/suriGUI.pid" && echo "$$" > "$_PROJECT_PID"
-export _NOTIF_PID="$_PROJECT_DIR_TMP/suriNotif.pid"
+export _PROJECT_PID_MAIN="$_PROJECT_DIR_TMP/suriGUI.pid"
+export _PROJECT_PID_NOTIF="$_PROJECT_DIR_TMP/suriNotif.pid"
 
-# ARRAYs
-_PROJECT_DB_DIRS=( "$_PROJECT_DIR" "$_PROJECT_DIR_CONF" "$_PROJECT_DIR_RES" "$_PROJECT_DIR_LOG" "$_PROJECT_DIR_TMP")
-_PROJECT_DB_REQS=( "libnetfilter-queue-dev" "suricata" "jq" "yad" )
-_PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN" "$_PROJECT_PIPE_SID_IGNORE" "$_PROJECT_PIPE_SID_CUSTOM" )
-_PROJECT_DB_FILES=( "$_PROJECT_CONFIG_FILE" "$_SURICATA_CUSTOM_RULES" "$_NOTIF_IGNORE_LIST" "$_SURIGUI_LOG_FILE" )
-_PROJECT_DB_ICONS=( "$_PROJECT_ICON" "$_PROJECT_ICON_INACTIVE" "$_PROJECT_ICON_ACTIVE" )
 
 
 function exitSuriGUI()
 # Trap any exit signal and execute this function
 # Remove all tmp files (and log if enabled)
 {
-  echo "EXITING..."
 
+  echo "EXIT"
   stopNotifDaemon
 
   # log delete ?
-  source "$_PROJECT_CONFIG_FILE"
-  if [[ "$keep" != "TRUE" ]]
-  then
-    d3bug info "Deleting log files"
-    rm "$_PROJECT_DIR_LOG" -R
-  fi
+  # source "$_PROJECT_CONFIG_FILE"
+  # if [[ "$keep" != "TRUE" ]]
+  # then
+  #   d3bug info "Deleting log files"
+  #   rm "$_PROJECT_DIR_LOG" -R
+  # fi
 
   # Cleaning temp files
-  find "$_PROJECT_DIR_TMP" -type f -name "*.pipe" -delete
-  #find "$_PROJECT_DIR_TMP" -type f -name "*.pid" -delete
-  find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete
+  find "$_PROJECT_DIR_TMP" -type f -name "*.pipe" -delete &>/dev/null
+  #find "$_PROJECT_DIR_TMP" -type f -name "*.pid" -delete &>/dev/null
+  find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
 
 
   d3bug info "EXIT 0"
-  #exit 0
+
+  # if [[ -f "$_PROJECT_PID_MAIN" ]]
+  # then
+  #   if pkill -P "$(cat $_PROJECT_PID_MAIN)"
+  #   then
+  #     rm "$_PROJECT_PID_MAIN"
+  #   else
+  #     d3bug error "Can not kill myself ?"
+  #   fi
+  # else
+  #   d3bug info "PID not found! Nothing to kill."
+  # fi
+
+
+  exit 0
 
   # Kill project and Suricata
   #sudo pkill -f suriGUI
@@ -105,67 +133,17 @@ function d3bug()
 
   case "$type" in
     "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
+    "ok" )      echo    "$(date +"%H:%M:%S")  |   |__ 🗹 $msg" ;;
     "error" )   echo -e "$(date +"%H:%M:%S")  |__ \e[41;30m $msg \e[0m" ;;
     *)          echo    "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" ;;
   esac
 }
 
 
-function checkProjectDirectories()
-# Create project directories and set permissions to user:user
-{
-  d3bug
-
-  for dir in "${_PROJECT_DB_DIRS[@]}"
-  do
-    if [[ ! -d "$dir" ]]
-    then
-      if mkdir -p "$dir"
-      then
-        d3bug info "Directory created: $dir"
-      else
-        d3bug error "Can not create directory: $dir"
-        exit 1
-      fi
-    else
-      if [[ -w "$dir" ]]
-      then
-        d3bug info "Directory: $dir is writable"
-      else
-        d3bug error "Directory: $dir is not writable."
-        if sudo chown user:user "$dir" -R
-        then
-          d3bug info "Directory: $dir owned"
-        else
-          d3bug error "Something is wrong with folder/permission"
-          exit 1
-        fi
-      fi
-    fi
-  done
-}
 
 
-function parse_settings()
-# Read settings.yaml and convert it to variables
-# Print: parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
-# Set variables: eval $(parse_settings "$_PROJECT_DIR_CONF/settings.yaml")
-{
-  local file="${1:-$_PROJECT_CONFIG_FILE_NEW}"
-  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
-  sed -ne "s|^\($s\):|\1|" \
-      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
-  awk -F$fs '{
-    indent = length($1)/2;
-    vname[indent] = $2;
-    for (i in vname) {if (i > indent) {delete vname[i]}}
-    if (length($3) > 0) {
-       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-       printf("%s%s%s=\"%s\"\n", "CONF_",vn, $2, $3);
-    }
-  }'
-}
+
+
 
 
 function readConfigFile()
@@ -235,7 +213,7 @@ function updateConfigFile()
     "rules")
       d3bug info "Updating $component: $oldStatus -> $newStatus"
 
-      sed -i "s/\<$oldStatus\>/$newStatus/" "$_SURICATA_RULES"
+      sed -i "s/\<$oldStatus\>/$newStatus/" "$_PROJECT_FILE_SURICATA_RULES"
       # checkSuricataStatus &>/dev/null
       #
       # if [[ "$suricataStatus" == "active" ]]
@@ -283,15 +261,15 @@ function changeSID()
   local IP="$4"
 
 
-  oldRule=$(grep -F "sid:$SID" $_SURICATA_RULES)
+  oldRule=$(grep -F "sid:$SID" $_PROJECT_FILE_SURICATA_RULES)
   if [[ -z "$oldRule" ]]
   then
-    echo "Rule with SID: $SID is NOT found in file: $_SURICATA_RULES"
+    echo "Rule with SID: $SID is NOT found in file: $_PROJECT_FILE_SURICATA_RULES"
     echo "Exit 1"
     exit 1
   fi
 
-  ruleLineNum="$(grep -n "$SID" $_SURICATA_RULES | head -n 1 | cut -d: -f1)"
+  ruleLineNum="$(grep -n "$SID" $_PROJECT_FILE_SURICATA_RULES | head -n 1 | cut -d: -f1)"
 
   # get rule status
   if [[ "$oldRule" =~ ^[[:space:]]*#.* ]]
@@ -372,7 +350,7 @@ function changeSID()
         echo "new location: $newRule"
 
         # execute change
-        sed -i -e "${ruleLineNum} c\\" -e "${newRule}" ${_SURICATA_RULES}
+        sed -i -e "${ruleLineNum} c\\" -e "${newRule}" ${_PROJECT_FILE_SURICATA_RULES}
 
       fi
     ;;
@@ -392,7 +370,6 @@ function changeSID()
 
   esac
 }
-
 
 
 function editSID()
@@ -422,7 +399,7 @@ function editSID()
     --field="Allow SRC to DEST":FBTN "bash -c allowSource" \
     \
     --field="DEST":RO "$dest" \
-    --field="Allow DEST to SRC":FBTN "bash -c allowSource"
+    --field="Allow DEST to SRC":FBTN "bash -c allowDestination"
 
 }
 
@@ -442,13 +419,13 @@ function preventSuricataSpam()
 
   d3bug info "Current log: $currentLog"
 
-  if grep -q "$currentLog" "$_SURIGUI_LOG_FILE"
+  if grep -q "$currentLog" "$_PROJECT_FILE_LOG"
   then
     d3bug error "Spam message"
     stopSpam="TRUE"
   else
     d3bug info "Not found in suriGUIlog"
-    echo "$currentLog" >> "$_SURIGUI_LOG_FILE"
+    echo "$currentLog" >> "$_PROJECT_FILE_LOG"
     d3bug info "Output written"
     stopSpam="FALSE"
   fi
@@ -463,7 +440,7 @@ function checkIgnoreSidList()
 
   local sid="$1"
 
-  if grep -q "$sid" "$_NOTIF_IGNORE_LIST"
+  if grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
   then
     d3bug error "SID: $sid is on ignore list"
     ignoreSID="TRUE"
@@ -494,7 +471,7 @@ function send_notif()
     "info")
       yad \
       --title="$_PROJECT_NAME v.$_PROJECT_VER" \
-      --image="$_PROJECT_ICON" \
+      --image="$_PROJECT_ICON_MAIN" \
       --form \
       --image-on-top \
       --button="OK" \
@@ -557,10 +534,10 @@ function send_notif()
                 ;;
 
                 "Don't show again")
-                  if ! grep -q "$sid" "$_NOTIF_IGNORE_LIST"
+                  if ! grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
                   then
                     d3bug info "Writing SID: $sid to ignore list"
-                    echo "$sid" >> $_NOTIF_IGNORE_LIST
+                    echo "$sid" >> $_PROJECT_FILE_IGNORED_SIDS
                   else
                     d3bug info "SID: $sid is already in ignore list"
                   fi
@@ -607,6 +584,17 @@ function updateSuriGUI()
 }
 
 
+function deleteCustomRule()
+# Remove custom suriGUI rule
+# remove any modification from SID
+# to be done
+{
+  d3bug
+
+}
+
+
+
 function deleteIgnoredSID()
 # Remove ignored SID from Ignore list
 {
@@ -615,17 +603,17 @@ function deleteIgnoredSID()
   # 1000000 | xxxxxxx (7)
   local sid="$1"
 
-  yad --image="$_PROJECT_ICON" --image-on-top \
+  yad --image="$_PROJECT_ICON_MAIN" --image-on-top \
       --title="$_PROJECT_NAME" \
       --button="Yes" --button="No" \
       --text="Delete SID: $sid from Ignore list?" &>/dev/null
   ret=$?
   if [ $ret = 0 ]
   then
-    sed -i "/$sid/d" "$_NOTIF_IGNORE_LIST"
+    sed -i "/$sid/d" "$_PROJECT_FILE_IGNORED_SIDS"
     d3bug info "SID: $sid removed"
     exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "\f" >&4 &
-    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "$(cat $_NOTIF_IGNORE_LIST)" >&4 &
+    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "$(cat $_PROJECT_FILE_IGNORED_SIDS)" >&4 &
   else
     d3bug info "Nothing done"
   fi
@@ -713,8 +701,8 @@ function suriGUISettings()
     --form \
     --field="":LBL "" \
     --field="<b>Config files</b>":LBL "" \
-    --field="Suricata config:":FL "$_SURICATA_CONFIG" \
-    --field="Suricata rules:":FL "$_SURICATA_RULES" \
+    --field="Suricata config:":FL "$_PROJECT_FILE_SURICATA_CONFIG" \
+    --field="Suricata rules:":FL "$_PROJECT_FILE_SURICATA_RULES" \
     --field="":LBL "" \
     --field="<b>Log</b>":LBL "" \
     --field="Keep log":chk "$configKeep" \
@@ -748,7 +736,7 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local ignoredSIDS=( $(cat $_NOTIF_IGNORE_LIST) )
+  local ignoredSIDS=( $(cat $_PROJECT_FILE_IGNORED_SIDS) )
   descIgnore="List of SIDs not shown with suriNotif\\n"
   descIgnore+="Double click on SID to remove it."
 
@@ -769,6 +757,7 @@ function suriGUISettings()
 
   local customRules=( $(cat $_SURICATA_CUSTOM_RULES) )
   descCustom="List of custom Rules"
+  readarray arrayaa <<< $(cat $_SURICATA_CUSTOM_RULES)
 
   exec 5<> "$_PROJECT_PIPE_SID_CUSTOM"
 
@@ -778,9 +767,10 @@ function suriGUISettings()
     --list \
     --listen \
     --cycle-read \
+    --separator="|" \
     --text="$descCustom" \
-    --dclick-action="bash -c 'deleteIgnoredSID %s'" \
-    --column="SID" --column="Rule" "${customRules[@]}" \
+    --dclick-action="bash -c 'deleteCustomRule %s'" \
+    --column="SID" --column="Status" --column="IPs" "${arrayaa[@]}" \
     <&5 &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
@@ -808,8 +798,8 @@ function suriGUISettings()
     --text="$TXT" \
     --auto-kill \
     --auto-close \
-    --window-icon="$_PROJECT_ICON" \
-    --image="$_PROJECT_ICON" \
+    --window-icon="$_PROJECT_ICON_MAIN" \
+    --image="$_PROJECT_ICON_MAIN" \
     --image-on-top \
     --key="$KEY" \
     --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Custom Rules" --tab="Backup/Restore" \
@@ -837,11 +827,12 @@ function stopNotifDaemon()
 {
   d3bug
 
-  if [[ -f "$_NOTIF_PID" ]]
+  if [[ -f "$_PROJECT_PID_NOTIF" ]]
   then
-    if pkill -P "$(cat $_NOTIF_PID)"
+    # if pkill -P "$(cat $_PROJECT_PID_NOTIF)"
+    if ( kill -9 "$(cat $_PROJECT_PID_NOTIF)" &>/dev/null )
     then
-      rm "$_NOTIF_PID"
+      rm "$_PROJECT_PID_NOTIF"
       d3bug info "suriNotif stopped"
     else
       d3bug error "Can not stop Notifications "
@@ -866,21 +857,26 @@ function startNotifDaemon()
         send_notif "alert" "$category" "$signature" "$sid" "$SRC" "$DEST" "$action" ; \
       done ) &
 
-  echo "$!" > "$_NOTIF_PID"
-  d3bug info "Notifications started with PID: $(cat $_NOTIF_PID)"
+  echo "$!" > "$_PROJECT_PID_NOTIF"
+  d3bug info "Notifications started with PID: $(cat $_PROJECT_PID_NOTIF)"
 }
 
 
 function controlSuricataService()
-# Start | stop Suricata service
+# Start or stop Suricata service
+# Usage: controlSuricataService start|stop
 {
   d3bug
 
   # stop | start
   local action="$1"
 
-  sudo systemctl "$action" suricata &>/dev/null
-  d3bug info "$action Suricata service"
+  if sudo systemctl "$action" suricata &>/dev/null
+  then
+    d3bug ok "$action Suricata service"
+  else
+    d3bug error "Can not control Suricata service. $action is not working"
+  fi
 }
 
 
@@ -918,86 +914,6 @@ function updateTrayMenu()
 }
 
 
-function checkInternetConnection()
-# Check if internet connection is present
-{
-  d3bug
-
-  if ping -q -c 1 -W 1 github.com >/dev/null
-  then
-    d3bug info "Internet connection is active"
-  else
-    d3bug error "No internet connection. Trying with Qubes proxy"
-
-    export https_proxy="127.0.0.1:8082"
-    if ping -q -c 1 -W 1 github.com >/dev/null
-    then
-      d3bug error "Internet connection not active. Exit 1"
-      exit 1
-    else
-      d3bug info "Internet found behind Qubes Proxy"
-    fi
-  fi
-}
-
-
-function updateSuricataRules()
-# Download latest Suricata rules to one file
-# Reload Suricata if needed
-{
-  d3bug
-
-  checkInternetConnection
-
-  readConfigFile action
-  oldAction="$configAction"
-
-  if command -v suricata-update &>/dev/null
-  then
-    d3bug info "Downloading suricata rules ..."
-    if suricata-update  --output "$_PROJECT_DIR_CONF" \
-                        --data-dir "$_PROJECT_DIR_TMP" \
-                        --no-test &>/dev/null
-    then
-      d3bug info "Download done"
-
-      echo "$(date +'%Y-%m-%d')" > "$_SURICATA_UPDATE_TIMESTAMP"
-      d3bug info "Update finished $(date +'%Y-%m-%d') @ $(date +'%H:%M:%S')"
-
-      checkSuricataStatus &>/dev/null
-
-      if [[ "$suricataStatus" == "active" ]]
-      then
-        d3bug info "Starting Suricata reload..."
-        if sudo suricatasc -c reload-rules
-        then
-          #sudo systemctl reload suricata #&>/dev/null
-          d3bug info "Rules updated & reloaded"
-          send_notif info "Rules updated & reloaded"
-        else
-          d3bug error "Can't reload rules??"
-        fi
-      else
-        d3bug info "Rules updated"
-      fi
-
-
-      # d3bug info "Starting reload Suricata rules..."
-      # sudo suricatasc -c reload-rules
-      # d3bug info "Suricata rules reloaded"
-
-    else
-      d3bug error "Error updating Suricata rules. Exit 1"
-      exit 1
-    fi
-  else
-    d3bug error "suricata-update not installed. Exit 1"
-    exit 1
-  fi
-  checkSuricataRules
-}
-
-
 function startSuriGUI()
 # Start suriGUI
 # PIPE 3
@@ -1018,7 +934,35 @@ function startSuriGUI()
     --command="bash -c suriGUISettings" \
   <&3 &>/dev/null
 
-  [[ -f "$_PROJECT_PID" ]] && rm "$_PROJECT_PID"
+  [[ -f "$_PROJECT_PID_MAIN" ]] && rm "$_PROJECT_PID_MAIN"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function registerProjectIcons()
+# Register suriGUI icon files
+{
+  d3bug
+
+  for icon in "${_PROJECT_DB_ICONS[@]}"
+  do
+    local iconName=$(basename "$icon" | sed "s/\..*//")
+    if xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
+    then
+      d3bug ok "$iconName"
+    else
+      d3bug error "Can not register icon: $iconName"
+    fi
+  done
 }
 
 
@@ -1033,15 +977,166 @@ function checkSuricataStatus()
   else
     export suricataStatus="inactive"
     d3bug error "Suricata is inactive. trying to restart..."
-    if sudo systemctl restart suricata
-    then
-      sleep 10
-      d3bug info "Suricata restarted"
-    fi
+    # if sudo systemctl restart suricata
+    # then
+    #   sleep 10
+    #   d3bug info "Suricata restarted"
+    # else
+    #   d3bug error "Problem with restarting service"
+    # fi
   fi
 
   d3bug info "Suricata is $suricataStatus"
   updateTrayMenu "$suricataStatus"
+}
+
+
+function readCustomRules()
+# Read suriGUI.rules and convert it to associative array
+# Print: readCustomRules
+# Set array: eval declare -A $(readCustomRules)
+# Get value: echo ${RULE_1234567[status]}
+{
+  local file="$_PROJECT_FILE_CONFIG_NEW"
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  sed -ne "s|^\($s\):|\1|" \
+      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])}
+       printf("%s%s%s%s%s=\"%s\"\n", "RULE_", vn, "[", $2, "]", $3);
+    }
+  }'
+}
+
+
+function checkCustomRules()
+# After every update, Suricata will overwrite our editing of suricata rules
+# It will create a fresh rule file
+# To prevent overwrite, suriGUI.rules is created to persist our editing
+{
+  d3bug
+
+  # Show all custom rule settings
+  # readCustomRules
+  #
+  # # Create associative arrays
+  # eval declare -A $(readCustomRules)
+  #
+  # # Show value
+  # SID="7654321"
+  # ask="status"
+  # comp="RULE_$SID[$ask]"
+  # echo "output: ${!comp}"
+  #
+  # checkSuricataRules
+
+
+  # local old=$(awk '{print $1; exit}' "$_PROJECT_FILE_SURICATA_RULES")
+  # d3bug info "Suricata rule action: $old"
+  # readConfigFile action
+  # local new="$configAction"
+  # d3bug info "suriGUI rule action: $new"
+  #
+  # if [[ "$old" == "$new" ]]
+  # then
+  #   d3bug info "Rule action match"
+  # else
+  #   d3bug error "Rule action mismatch"
+  #   updateConfigFile rules "$new" "$old"
+  # fi
+}
+
+
+function reloadSuricataRules()
+{
+  d3bug
+
+  d3bug info "Realoading rules ..."
+
+  if sudo suricatasc -c reload-rules &>/dev/null
+  then
+    d3bug ok "Rules reloaded @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
+  else
+    d3bug error "Can't reload rules! Maybe Suricata is not running ?"
+  fi
+}
+
+
+function updateSuricataRules()
+# Download latest Suricata rules
+# Reload Suricata if needed
+{
+  d3bug
+
+  if command -v suricata-update &>/dev/null
+  then
+    d3bug info "Starting update ..."
+
+    if suricata-update  --output "$_PROJECT_DIR_SURICATA" \
+                        --data-dir "$_PROJECT_DIR_TMP" \
+                        --no-test &>/dev/null
+    then
+      echo "$(date +'%Y-%m-%d')" > "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP"
+      d3bug ok "Update done @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
+
+      reloadSuricataRules
+    else
+      d3bug error "Error updating Suricata rules. Exit 1"
+      exit 1
+    fi
+  else
+    d3bug error "suricata-update not installed. Exit 1"
+    exit 1
+  fi
+}
+
+
+function checkSuricataRules()
+# Check for last update
+{
+  d3bug
+
+  if [[ -f "$_PROJECT_FILE_SURICATA_RULES" ]]
+  then
+    d3bug ok "$_PROJECT_FILE_SURICATA_RULES"
+
+    if [[ "$CONF_global_autoupdate_rules_enable" == "TRUE" ]]
+    then
+      d3bug ok "Auto-Update enabled"
+
+      # check for last update and perform it
+      if [[ ! -f "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP" ]]
+      then
+        d3bug error "Timestamp not found. Updating..."
+        updateSuricataRules
+      else
+        if [[ $(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+        then
+          export lastUpdate="$((($(date +%s)-$(date +%s --date $(cat $_PROJECT_FILE_SURICATA_RULES_TIMESTAMP)))/(3600*24)))"
+          if [[ "$lastUpdate" -gt "$CONF_global_autoupdate_rules_interval" ]]
+          then
+            d3bug error "Rules to old. Updating..."
+            updateSuricataRules
+          else
+            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_global_autoupdate_rules_interval days)"
+          fi
+        else
+          d3bug error "Rules never updated. Updating..."
+          updateSuricataRules
+        fi
+      fi
+    else
+      d3bug info "Auto-Update disabled"
+    fi
+  else
+    d3bug error "Suricata rules not found. Updating..."
+    updateSuricataRules
+  fi
 }
 
 
@@ -1058,7 +1153,7 @@ function createProjectPipes()
     then
       if rm "$pipe"
       then
-        d3bug info "Old Pipe deleted"
+        d3bug info "Old Pipe found and deleted"
       else
         d3bug error "Can't remove old pipe"
         exit 1
@@ -1068,7 +1163,7 @@ function createProjectPipes()
     # create a new one
     if mkfifo "$pipe"
     then
-      d3bug info "Pipe created: $pipe"
+      d3bug ok "$pipe"
     else
       d3bug error "Can't create pipe: $pipe"
       exit 1
@@ -1079,127 +1174,120 @@ function createProjectPipes()
 }
 
 
-function checkSuricataCustomRules()
-# Future implementation
-# Not done yet
+function readSettingFile()
+# Read suriGui.yaml and convert it to variables
+# Print: readSettingFile "$_PROJECT_DIR_CONF/settings.yaml"
+# Set variables: eval $(readSettingFile "$_PROJECT_DIR_CONF/settings.yaml")
 {
-  d3bug
-
-  # check for file
-  if [[ -f $_SURICATA_CUSTOM_RULES ]]
-  then
-    for line in $_SURICATA_CUSTOM_RULES
-    do
-      echo "$line"
-      #line="2027868,pass"
-      #sid="2027868"
-      #rule="pass"
-
-      #open suricata_rules
-      # find line with keyword: "2027868"
-      # check if first word is "#"
-        # if not then change first word into: "pass"
-        # if first word is comment then wtf?
-
-    done
-
-  fi
+  local file="$_PROJECT_FILE_CONFIG_NEW"
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  sed -ne "s|^\($s\):|\1|" \
+      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+       printf("%s%s%s=\"%s\"\n", "CONF_",vn, $2, $3);
+    }
+  }'
 }
 
 
-function checkSuricataRules()
-# Auto update suricata rules if they are too old or never updated
+function checkInternetConnection()
+# Check if internet connection is present
 {
   d3bug
 
-  readConfigFile "update"
+  local pingComm="$(ping -q -c 1 -W 1 1.1.1.1 >/dev/null)"
 
-  if [[ ! -f "$_SURICATA_RULES" ]]
+  if ($pingComm)
   then
-    updateSuricataRules
+    d3bug ok "Internet connection is active"
   else
-    d3bug info "Suricata rules found"
+    d3bug error "No internet connection. Trying with Qubes proxy"
 
-    if [[ ! -f "$_SURICATA_UPDATE_TIMESTAMP" ]]
+    export https_proxy="127.0.0.1:8082"
+
+    if ($pingComm)
     then
-      d3bug error "Timestamp not found. Updating..."
-      updateSuricataRules
+      d3bug error "Internet connection not active. Exit 1"
+      exit 1
     else
-      if [[ $(cat "$_SURICATA_UPDATE_TIMESTAMP") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
-      then
-        export lastUpdate="$((($(date +%s)-$(date +%s --date $(cat $_SURICATA_UPDATE_TIMESTAMP)))/(3600*24)))"
-        if [[ "$lastUpdate" -gt "$configUpdate" ]]
-        then
-          d3bug error "Rules to old"
-          updateSuricataRules
-        else
-          d3bug info "Rules old $lastUpdate days. No need to update. ($configUpdate days)"
-        fi
-      else
-        d3bug error "Rules never updated. Updating..."
-        updateSuricataRules
-      fi
+      d3bug ok "Internet found behind Qubes Proxy"
     fi
   fi
-
-  local old=$(awk '{print $1; exit}' "$_SURICATA_RULES")
-  d3bug info "Suricata rule action: $old"
-  readConfigFile action
-  local new="$configAction"
-  d3bug info "suriGUI rule action: $new"
-
-  if [[ "$old" == "$new" ]]
-  then
-    d3bug info "Rule action match"
-  else
-    d3bug error "Rule action mismatch"
-    updateConfigFile rules "$new" "$old"
-  fi
-
-  # check for custom rules
-
 }
 
 
-function checkProjectConfigFiles ()
-# Create default config files
+function checkProjectFiles()
+# Make sure that the config files are present
+# If not, copy default config
 {
   d3bug
-
-  local files=( "$_PROJECT_CONFIG_FILE"
-                "$_SURICATA_CUSTOM_RULES"
-                "$_NOTIF_IGNORE_LIST"
-                "$_SURIGUI_LOG_FILE" )
 
   for file in "${_PROJECT_DB_FILES[@]}"
   do
     if [[ ! -f "$file" ]]
     then
-      d3bug error "${file##*.} not found: $file"
+      d3bug error "File not found: $file"
       fileName=$(basename $file)
-      if [[ "${file##*.}" = "log" ]]
-      then
-        destination="$_PROJECT_DIR_LOG/$fileName"
-      else
-        destination="$_PROJECT_DIR_CONF/$fileName"
-      fi
+      destination="$(dirname "${file}")"
 
-      if ( cp "$_PROJECT_DIR_CONF/default/$fileName.default" "$destination" )
+      if ( cp "$_PROJECT_DIR_CONF/default/$fileName" "$destination" &>/dev/null)
       then
-        d3bug info "Config created"
+        d3bug ok "File created: $file"
       else
-        d3bug error "Can't copy default config file: $fileName"
+        d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
         exit 1
       fi
     else
-      d3bug info "Local ${file##*.} found: $file"
+      # d3bug info "Local ${file##*.} found: $file"
+      d3bug ok "$file"
     fi
   done
 }
 
 
-function checkProjectRequirements ()
-# Install suriGUI required applications
+function checkProjectDirectories()
+# Create project directories and set permissions to user:user
+{
+  d3bug
+
+  for dir in "${_PROJECT_DB_DIRS[@]}"
+  do
+    if [[ ! -d "$dir" ]]
+    then
+      if mkdir -p "$dir"
+      then
+        d3bug ok "Directory created: $dir"
+      else
+        d3bug error "Can not create directory: $dir"
+        exit 1
+      fi
+    else
+      if [[ -w "$dir" ]]
+      then
+        d3bug ok "$dir"
+      else
+        d3bug error "Directory: $dir is not writable."
+        if sudo chown user:user "$dir" -R
+        then
+          d3bug info "Directory: $dir owned"
+        else
+          d3bug error "Something is wrong with folder/permission"
+          exit 1
+        fi
+      fi
+    fi
+  done
+}
+
+
+function checkProjectDependencies()
+# Install project dependencies
 {
   d3bug
 
@@ -1207,11 +1295,11 @@ function checkProjectRequirements ()
   do
     if dpkg -s "$app" &>/dev/null
     then
-      d3bug info "$app installed"
+      d3bug ok "$app"
     else
-      d3bug error "$app not found"
+      d3bug error "$app not installed"
 
-      yad --image="$_PROJECT_ICON" --image-on-top \
+      yad --image="$_PROJECT_ICON_MAIN" --image-on-top \
           --title="$_PROJECT_NAME" \
           --button="Yes" --button="No" \
           --text="$app is not installed.\nDo you want to install it now?" &>/dev/null
@@ -1221,29 +1309,16 @@ function checkProjectRequirements ()
         d3bug info "Installing $app ..."
         if sudo apt-get install "$app" -y &>/dev/null
         then
-          d3bug info "Done"
+          d3bug ok "$app was successfully installed"
         else
           d3bug error "Can't install: $app"
           exit 1
         fi
       else
+        d3bug error "If you do not want to install $app \nthen you can not use Suricata nor suriGUI."
         exit 1
       fi
     fi
-  done
-}
-
-
-function registerProjectIcons()
-# Create suriGUI icon files
-{
-  d3bug
-
-  for icon in "${_PROJECT_DB_ICONS[@]}"
-  do
-    local iconName=$(basename "$icon" | sed "s/\..*//")
-    xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
-    d3bug info "Registered icon: $iconName"
   done
 }
 
@@ -1262,23 +1337,29 @@ export -f send_notif
 
 
 # S T A R T   S U R I G U I
-
-# Read settings
-# eval $(parse_settings "$_PROJECT_DIR_CONF/default/settings.yaml")
-# parse_settings "$_PROJECT_DIR_CONF/settings.yaml"
-eval export $(parse_settings "$_PROJECT_CONFIG_FILE_NEW")
-
-checkProjectRequirements
+# 0
+checkProjectDependencies
 checkProjectDirectories
-checkProjectConfigFiles
+checkProjectFiles
+checkInternetConnection
 
+# 1
+# readSettingFile
+eval export $(readSettingFile)
+createProjectPipes
+
+# 2
 checkSuricataRules
+checkCustomRules
+
+# 3
 checkSuricataStatus
 
 
-createProjectPipes
+# 4
 registerProjectIcons
 startSuriGUI &
+
 
 
 
@@ -1301,11 +1382,15 @@ d3bug info "Log output found"
 
 
 #readConfigFile notifications
-[[ "${CONF_global_notifications_enable:-FALSE}" == "TRUE" ]] && startNotifDaemon
+[[ "${CONF_global_notifications_enable:-}" == "TRUE" ]] && startNotifDaemon
+
+echo "$$" > "$_PROJECT_PID_MAIN"
 
 while :
 do
-  [[ ! -f "$_PROJECT_PID" ]] && break
+  [[ ! -f "$_PROJECT_PID_MAIN" ]] && break
   checkSuricataStatus
   sleep 5
 done &>/dev/null
+
+echo "End of script"
