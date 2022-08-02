@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # coder: ro0t
-
+clear
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
@@ -9,17 +9,18 @@ trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
+
+
+
 # GLOBAL VARIABLES
 # INFO
-export _PROJECT_NAME="suriGUI" && echo "$(date +'%H:%M:%S') $_PROJECT_NAME"
-export _PROJECT_DESCRIPTION="GUI for Suricata IPS and Qubes OS"
-export _PROJECT_VER="0.1.7"
-export _PROJECT_BUILD="2022-05-29"
+export _PROJECT_NAME="suriGUI"
+export _PROJECT_DESCRIPTION="GUI for Suricata"
+export _PROJECT_VER="0.2.220802"
 
-_PROJECT_DB_REQS=( "libnetfilter-queue-dev"
-                   "suricata"
-                   "jq"
-                   "yad" )
+
+
+
 #
 # DIRs
 export _PROJECT_DIR="/usr/share/suriGUI"
@@ -36,6 +37,8 @@ _PROJECT_DB_DIRS=( "$_PROJECT_DIR"
                    "$_PROJECT_DIR_LOG"
                    "$_PROJECT_DIR_TMP"
                    "$_PROJECT_DIR_SURICATA" )
+
+
 #
 # PIPEs
 export _PROJECT_PIPE_MAIN="$_PROJECT_DIR_TMP/suriGUI.pipe"
@@ -62,19 +65,35 @@ export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"
 export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"
 export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"
 export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"
+export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"
 
 _PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
                     "$_PROJECT_FILE_CUSTOM_RULES"
                     "$_PROJECT_FILE_LOG"
                     "$_PROJECT_FILE_SURICATA_RULES"
+                    "$_PROJECT_FILE_IGNORED_SIDS"
                     "$_PROJECT_FILE_SURICATA_CONFIG" )
 #
 # PIDs
 export _PROJECT_PID_MAIN="$_PROJECT_DIR_TMP/suriGUI.pid"
 export _PROJECT_PID_NOTIF="$_PROJECT_DIR_TMP/suriNotif.pid"
 
+_PROJECT_DB_REQS=( "libnetfilter-queue-dev"
+                   "suricata"
+                   "jq"
+                   "yad" )
+
+echo -e \
+"####################
+# $_PROJECT_NAME          #
+# $_PROJECT_DESCRIPTION #
+# $_PROJECT_VER       #
+####################
+$(date +'%Y-%m-%d-%H-%M-%S')" \
+   | tee -a "$_PROJECT_FILE_LOG"
 
 
+exit 1
 function exitSuriGUI()
 # Trap any exit signal and execute this function
 # Remove all tmp files (and log if enabled)
@@ -132,15 +151,12 @@ function d3bug()
 
 
   case "$type" in
-    "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
-    "ok" )      echo    "$(date +"%H:%M:%S")  |   |__ 🗹 $msg" ;;
-    "error" )   echo -e "$(date +"%H:%M:%S")  |__ \e[41;30m $msg \e[0m" ;;
-    *)          echo    "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" ;;
+    "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "ok" )      echo    "$(date +"%H:%M:%S")  |   |__ 🗹 $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "error" )   echo -e "$(date +"%H:%M:%S")  |__ \e[41;30m $msg \e[0m" | tee -a "$_PROJECT_FILE_LOG" ;;
+    *)          echo    "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" | tee -a "$_PROJECT_FILE_LOG" ;;
   esac
 }
-
-
-
 
 
 
@@ -413,9 +429,11 @@ function preventSuricataSpam()
   local SID="$1"
   local SRC="$2"
   local DST="$3"
-  # local dateStamp="$(date +'%Y-%m-%d')"
+
+  # make timeStamp in GUI settings
+  local timeStamp="$(date +'%Y-%m-%d-%H:%M')"
   # local currentLog="$dateStamp|$SID|$SRC|$DST"
-  local currentLog="$SID|$SRC|$DST"
+  local currentLog="$timeStamp|$SID|$SRC|$DST"
 
   d3bug info "Current log: $currentLog"
 
@@ -785,7 +803,7 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>    Build: <b>$_PROJECT_BUILD</b>\\n\\n"
+  TXT="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
   TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
   TXT+="  Kernel: $(uname -sr)\\n\\n"
   TXT+="  <i>$(uptime)</i>"
@@ -1123,7 +1141,7 @@ function checkSuricataRules()
             d3bug error "Rules to old. Updating..."
             updateSuricataRules
           else
-            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_global_autoupdate_rules_interval days)"
+            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_global_autoupdate_rules_interval day interval)"
           fi
         else
           d3bug error "Rules never updated. Updating..."

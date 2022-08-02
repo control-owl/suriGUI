@@ -4,6 +4,12 @@
 
 This is stil a Beta.
 
+Focus is to bring this thing to stable.
+GUI will be not focus.
+Only stability!
+Then I will add all to GUI Settings.
+Good.
+
 -------------
 
 ### Intro
@@ -79,13 +85,18 @@ BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
 
 ### Next steps:
 
+- [ ] stability
+- [ ] no IPS downtime
+
+fuck that. ok
+
 - [ ] new setting file
 - [ ] yaml parser/writer
 - [ ] documentation with comments
 - [ ] cleaning
 - [ ] d3bug redesign
 - [ ] output to file
-- [ ] 
+- [ ]
 - [ ]
 - [ ] error notifications
 - [ ] program parameters --debug --output --silent --update
