@@ -1,0 +1,10 @@
+%YAML 1.1
+---
+
+# suriGUI custom rules
+# 2022-06-07
+
+# SID:
+#   status: active|inactive
+#   whitelist: "!x.x.x.x[,!x.x.x.x]"
+#   notify: TRUE|FALSE
