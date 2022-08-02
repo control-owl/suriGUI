@@ -8,3 +8,4 @@
     - makedirs: True
     - contents: |
         binds+=( '/usr/share/suriGUI' )
+        binds+=( '/home/user/suriGUI' )
