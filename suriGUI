@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # coder: ro0t
-clear
+#clear
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
@@ -18,9 +18,6 @@ export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
 export _PROJECT_VER="0.2.220802"
 
-
-
-
 #
 # DIRs
 export _PROJECT_DIR="/usr/share/suriGUI"
@@ -37,6 +34,25 @@ _PROJECT_DB_DIRS=( "$_PROJECT_DIR"
                    "$_PROJECT_DIR_LOG"
                    "$_PROJECT_DIR_TMP"
                    "$_PROJECT_DIR_SURICATA" )
+
+#
+# FILEs
+export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
+export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
+export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"
+export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"
+export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"
+export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"
+export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"
+export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"
+
+_PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
+                    "$_PROJECT_FILE_CUSTOM_RULES"
+                    "$_PROJECT_FILE_LOG"
+                    "$_PROJECT_FILE_SURICATA_RULES"
+                    "$_PROJECT_FILE_IGNORED_SIDS"
+                    "$_PROJECT_FILE_SPAM"
+                    "$_PROJECT_FILE_SURICATA_CONFIG" )
 
 
 #
@@ -57,22 +73,8 @@ export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
 _PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
                     "$_PROJECT_ICON_INACTIVE"
                     "$_PROJECT_ICON_ACTIVE" )
-#
-# FILEs
-export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"
-export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"
-export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"
-export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"
-export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"
-export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"
-export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"
 
-_PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
-                    "$_PROJECT_FILE_CUSTOM_RULES"
-                    "$_PROJECT_FILE_LOG"
-                    "$_PROJECT_FILE_SURICATA_RULES"
-                    "$_PROJECT_FILE_IGNORED_SIDS"
-                    "$_PROJECT_FILE_SURICATA_CONFIG" )
+
 #
 # PIDs
 export _PROJECT_PID_MAIN="$_PROJECT_DIR_TMP/suriGUI.pid"
@@ -83,14 +85,7 @@ _PROJECT_DB_REQS=( "libnetfilter-queue-dev"
                    "jq"
                    "yad" )
 
-echo -e \
-"####################
-# $_PROJECT_NAME          #
-# $_PROJECT_DESCRIPTION #
-# $_PROJECT_VER       #
-####################
-$(date +'%Y-%m-%d-%H-%M-%S')" \
-   | tee -a "$_PROJECT_FILE_LOG"
+
 
 
 function exitSuriGUI()
@@ -98,7 +93,7 @@ function exitSuriGUI()
 # Remove all tmp files (and log if enabled)
 {
 
-  echo "EXIT"
+  echo "EXITing"
   stopNotifDaemon
 
   # log delete ?
@@ -111,11 +106,11 @@ function exitSuriGUI()
 
   # Cleaning temp files
   find "$_PROJECT_DIR_TMP" -type f -name "*.pipe" -delete &>/dev/null
-  #find "$_PROJECT_DIR_TMP" -type f -name "*.pid" -delete &>/dev/null
+  find "$_PROJECT_DIR_TMP" -type f -name "*.tmp" -delete &>/dev/null
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
 
 
-  d3bug info "EXIT 0"
+  d3bug info "good luck"
 
   # if [[ -f "$_PROJECT_PID_MAIN" ]]
   # then
@@ -150,14 +145,25 @@ function d3bug()
 
 
   case "$type" in
+    "notee" ) echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
+    "welcome" ) echo    "$(date +"%H:%M:%S")  |   |__ $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
     "info" )    echo    "$(date +"%H:%M:%S")  |   |__ $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
     "ok" )      echo    "$(date +"%H:%M:%S")  |   |__ 🗹 $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "error" )   echo -e "$(date +"%H:%M:%S")  |__ \e[41;30m $msg \e[0m" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "error" )   echo -e "$(date +"%H:%M:%S")  ERROR $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
     *)          echo    "$(date +"%H:%M:%S")  |__ ${FUNCNAME[1]}" | tee -a "$_PROJECT_FILE_LOG" ;;
   esac
 }
 
 
+d3bug "welcome" \
+"
+
+####################
+# $_PROJECT_NAME          #
+# $_PROJECT_DESCRIPTION #
+# $_PROJECT_VER       #
+####################" #\
+   #| tee -a "$_PROJECT_FILE_LOG"
 
 
 
@@ -434,15 +440,16 @@ function preventSuricataSpam()
   # local currentLog="$dateStamp|$SID|$SRC|$DST"
   local currentLog="$timeStamp|$SID|$SRC|$DST"
 
-  d3bug info "Current log: $currentLog"
+  # d3bug info "Current log: $currentLog"
 
-  if grep -q "$currentLog" "$_PROJECT_FILE_LOG"
+  # if grep -q "$currentLog" "$_PROJECT_FILE_LOG"
+  if grep -q "$currentLog" "$_PROJECT_FILE_SPAM"
   then
-    d3bug error "Spam message"
+    d3bug info "Spam message"
     stopSpam="TRUE"
   else
     d3bug info "Not found in suriGUIlog"
-    echo "$currentLog" >> "$_PROJECT_FILE_LOG"
+    echo "$currentLog" >> "$_PROJECT_FILE_SPAM"
     d3bug info "Output written"
     stopSpam="FALSE"
   fi
@@ -515,7 +522,7 @@ function send_notif()
           TXT+="$(date +'%Y-%m-%d') at  $(date +'%H:%M:%S') \n"
           TXT+="<i>$sig</i>"
 
-          ACTIONcontrol="Continue blocking!Don't show again!Allow"
+          ACTIONcontrol="Continue blocking!Don't show again!Allow (not working yet)"
 
           set +o errexit # yad problem, error exit must be disabled
           yadOutput="$( yad \
@@ -847,7 +854,7 @@ function stopNotifDaemon()
   if [[ -f "$_PROJECT_PID_NOTIF" ]]
   then
     # if pkill -P "$(cat $_PROJECT_PID_NOTIF)"
-    if ( kill -9 "$(cat $_PROJECT_PID_NOTIF)" &>/dev/null )
+    if sudo kill -9 "$(cat $_PROJECT_PID_NOTIF)" #&>/dev/null
     then
       rm "$_PROJECT_PID_NOTIF"
       d3bug info "suriNotif stopped"
@@ -880,8 +887,8 @@ function startNotifDaemon()
 
 
 function controlSuricataService()
-# Start or stop Suricata service
-# Usage: controlSuricataService start|stop
+# Control Suricata service with systemctl
+# Usage: controlSuricataService start|stop|restart
 {
   d3bug
 
@@ -917,6 +924,7 @@ function updateTrayMenu()
   # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
   # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
   menu+="||Settings!bash -c 'suriGUISettings'"
+  menu+="||Restart Suricata service!bash -c 'controlSuricataService restart'"
   menu+="||Exit!quit"
 
   [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
@@ -993,7 +1001,8 @@ function checkSuricataStatus()
     export suricataStatus="active"
   else
     export suricataStatus="inactive"
-    d3bug error "Suricata is inactive. trying to restart..."
+
+    d3bug error "Suricata is inactive."
     # if sudo systemctl restart suricata
     # then
     #   sleep 10
@@ -1168,26 +1177,34 @@ function createProjectPipes()
     # remove old pipe if exists
     if [[ -e $pipe ]]
     then
-      if rm "$pipe"
+      if ! rm "$pipe"
       then
-        d3bug info "Old Pipe found and deleted"
-      else
         d3bug error "Can't remove old pipe"
         exit 1
+      #else
+      #d3bug ok "Old Pipe found and deleted"
+
       fi
     fi
 
     # create a new one
-    if mkfifo "$pipe"
+    if ! mkfifo "$pipe"
     then
-      d3bug ok "$pipe"
-    else
       d3bug error "Can't create pipe: $pipe"
       exit 1
+    else
+      d3bug ok "$pipe"
     fi
   done
 
-  exec 3<> "$_PROJECT_PIPE_MAIN"  && d3bug info "Project pipe started"
+  if exec 3<> "$_PROJECT_PIPE_MAIN"
+  then
+    d3bug ok "Project pipe started"
+  else
+    d3bug error "Can not start Project pipe. Exit 1"
+    exit 1
+  fi
+
 }
 
 
@@ -1242,6 +1259,8 @@ function checkInternetConnection()
 function checkProjectFiles()
 # Make sure that the config files are present
 # If not, copy default config
+# clean default file if not neccessery
+#only if touch is needed
 {
   d3bug
 
@@ -1406,7 +1425,7 @@ echo "$$" > "$_PROJECT_PID_MAIN"
 while :
 do
   [[ ! -f "$_PROJECT_PID_MAIN" ]] && break
-  checkSuricataStatus
+  ( checkSuricataStatus ) #&>/dev/null
   sleep 5
 done &>/dev/null
 
