@@ -919,8 +919,8 @@ function updateTrayMenu()
   local status="$1"
 
   case "$status" in
-    "active")   menu="Stop!bash -c 'controlSuricataService stop'" ;;
-    "inactive") menu="Start!bash -c 'controlSuricataService start'" ;;
+    "active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
+    "inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
     *)          menu="" ;;
   esac
 
@@ -929,8 +929,8 @@ function updateTrayMenu()
 
   # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
   # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
+  menu+="|Restart Suricata service!bash -c 'controlSuricataService restart'"
   menu+="||Settings!bash -c 'suriGUISettings'"
-  menu+="||Restart Suricata service!bash -c 'controlSuricataService restart'"
   menu+="||Exit!quit"
 
   [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
