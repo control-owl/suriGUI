@@ -7,4 +7,4 @@
   file.managed:
     - makedirs: True
     - contents: |
-        binds+=( '/home/user/suriGUI' )
+        binds+=( '/usr/share/suriGUI' )
