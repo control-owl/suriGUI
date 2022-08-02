@@ -55,16 +55,16 @@ suriGUI-startup-file:
   file.managed:
     - makedirs: True
     - contents: |
-    [Unit]
-    Description=NFQUEUE service
-    After=network.target
-    Before=suricata.service
-    [Service]
-    Type=oneshot
-    ExecStart=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
-    RemainAfterExit=true
-    [Install]
-    WantedBy=multi-user.target
+        [Unit]
+        Description=NFQUEUE service
+        After=network.target
+        Before=suricata.service
+        [Service]
+        Type=oneshot
+        ExecStart=sudo iptables -I FORWARD -m mark ! --mark 1/1 -j NFQUEUE
+        RemainAfterExit=true
+        [Install]
+        WantedBy=multi-user.target
 
 
 #
@@ -124,7 +124,7 @@ enable-suricata-service:
 #     RemainAfterExit=true
 #     [Install]
 #     WantedBy=multi-user.target
-# 
+#
 # enable-suriGUI-service:
 #   cmd.run:
 #     - name: "systemctl enable suricata"
