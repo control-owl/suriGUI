@@ -22,7 +22,7 @@ suricata-install-dependencies:
 #
 suriGUI-install:
   cmd.run:
-    - name: "export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI.git /home/user/suriGUI"
+    - name: "export https_proxy=127.0.0.1:8082 && git clone --branch main https://github.com/control-owl/suriGUI.git /home/user/suriGUI"
 
 suriGUI-link:
   cmd.run:
