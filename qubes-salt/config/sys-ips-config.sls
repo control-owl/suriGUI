@@ -3,8 +3,8 @@
 # coder: ro0t
 # stamp: 2022-08-02
 
-# /rw/config/qubes-bind-dirs.d/50_user.conf:
-#   file.managed:
-#     - makedirs: True
-#     - contents: |
-#         binds+=( '/usr/share/suriGUI' )
+/rw/config/qubes-bind-dirs.d/50_user.conf:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        binds+=( '/home/user/suriGUI' )
