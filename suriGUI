@@ -140,6 +140,13 @@ function d3bug()
   local silentOutput="FALSE"
   local onlyErrorMsg="FALSE"
 
+  if [[ ! -e "$_PROJECT_FILE_LOG" ]]
+  then
+    if ! mkdir -p "${_PROJECT_FILE_LOG%/*}" && touch "$_PROJECT_FILE_LOG"
+    then
+      echo "error"
+    fi
+  fi
 
   case "$type" in
     "notee" ) echo    "$(date +"%H:%M:%S")  |   |__ $msg" ;;
@@ -152,7 +159,7 @@ function d3bug()
 }
 
 
-d3bug "welcome" \
+echo -e \
 "
 
 ####################
