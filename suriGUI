@@ -93,7 +93,6 @@ $(date +'%Y-%m-%d-%H-%M-%S')" \
    | tee -a "$_PROJECT_FILE_LOG"
 
 
-exit 1
 function exitSuriGUI()
 # Trap any exit signal and execute this function
 # Remove all tmp files (and log if enabled)
