@@ -8,10 +8,7 @@ set -o pipefail     # Pipe return exit status
 trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
-
-
-
-
+#23-23
 # GLOBAL VARIABLES
 # INFO
 export _PROJECT_NAME="suriGUI"
@@ -20,7 +17,7 @@ export _PROJECT_VER="0.2.220802"
 
 #
 # DIRs
-export _PROJECT_DIR="/usr/share/suriGUI"
+export _PROJECT_DIR="/home/user/suriGUI"
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
@@ -162,7 +159,9 @@ d3bug "welcome" \
 # $_PROJECT_NAME          #
 # $_PROJECT_DESCRIPTION #
 # $_PROJECT_VER       #
-####################" #\
+####################"
+
+#\
    #| tee -a "$_PROJECT_FILE_LOG"
 
 
