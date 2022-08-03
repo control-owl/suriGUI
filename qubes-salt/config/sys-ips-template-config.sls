@@ -34,21 +34,26 @@ suriGUI-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
-# /etc/xdg/autostart/suriGUI.desktop:
-#   file.managed:
-#     - makedirs: True
-#     - contents: |
-#         [Desktop Entry]
-#         Version=1.0
-#         Encoding=UTF-8
-#         Name=suriGUI
-#         Exec=/usr/bin/suriGUI
-#         Terminal=false
-#         Type=Application
-#
-# suriGUI-startup-file:
-#   cmd.run:
-#     - name: "chmod +x /etc/xdg/autostart/suriGUI.desktop"
+suriGUI-status-link:
+  cmd.run:
+    - name: "chmod +x /home/user/suriGUI/suriGUI-status && ln -s /home/user/suriGUI/suriGUI-status /usr/bin/suriGUI-status"
+
+/etc/xdg/autostart/suriGUI-status.desktop:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        [Desktop Entry]
+        Version=1.0
+        Encoding=UTF-8
+        Name=suriGUI-status
+        Exec=suriGUI-status
+        Terminal=false
+        Type=Application
+
+suriGUI-status-startup-file:
+  cmd.run:
+    - name: "chmod +x /etc/xdg/autostart/suriGUI-status.desktop"
+
 
 #
 # NFQUEUE service
