@@ -34,22 +34,21 @@ suriGUI-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
-/etc/xdg/autostart/suriGUI.desktop:
-  file.managed:
-    - makedirs: True
-    - contents: |
-        [Desktop Entry]
-        Version=1.0
-        Encoding=UTF-8
-        Name=suriGUI
-        Exec=/usr/bin/suriGUI
-        Terminal=false
-        Type=Application
-
-suriGUI-startup-file:
-  cmd.run:
-    - name: "chmod +x /etc/xdg/autostart/suriGUI.desktop"
-
+# /etc/xdg/autostart/suriGUI.desktop:
+#   file.managed:
+#     - makedirs: True
+#     - contents: |
+#         [Desktop Entry]
+#         Version=1.0
+#         Encoding=UTF-8
+#         Name=suriGUI
+#         Exec=/usr/bin/suriGUI
+#         Terminal=false
+#         Type=Application
+#
+# suriGUI-startup-file:
+#   cmd.run:
+#     - name: "chmod +x /etc/xdg/autostart/suriGUI.desktop"
 
 #
 # NFQUEUE service
@@ -84,6 +83,7 @@ stop-suricata-service:
         [Unit]
         Description=Suricata IPS daemon
         After=nfqueue.service
+        Before=suriGUI.service
         Requires=network-online.target
         [Service]
         Type=simple
@@ -98,6 +98,25 @@ stop-suricata-service:
         WantedBy=multi-user.target
 
 
+
+#
+# suriGUI service
+#
+/lib/systemd/system/suriGUI.service:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        [Unit]
+        Description=suriGUI service
+        After=suricata.service
+        [Service]
+        ExecStart=/usr/bin/suriGUI
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+
+
 #
 # Services
 #
@@ -108,6 +127,10 @@ enable-nfqueue-service:
 enable-suricata-service:
   cmd.run:
     - name: "systemctl enable suricata"
+
+enable-suriGUI-service:
+  cmd.run:
+    - name: "systemctl enable suriGUI"
 
 
 

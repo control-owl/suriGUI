@@ -68,8 +68,9 @@ _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN"
 #
 # ICONs
 export _PROJECT_ICON_MAIN="$_PROJECT_DIR_RES/suriGUI.png"
-export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
-export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
+export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/inactive.png"
+export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/active.png"
+export _PROJECT_ICON_ALERT="$_PROJECT_DIR_RES/icons/notif/alert.png"
 
 _PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
                     "$_PROJECT_ICON_INACTIVE"
@@ -111,6 +112,7 @@ function exitSuriGUI()
   find "$_PROJECT_DIR_TMP" -type f -name "*.tmp" -delete &>/dev/null
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
 
+  #todo: delete all files and foolders in tmp
 
   d3bug info "good luck"
 
@@ -541,8 +543,8 @@ function send_notif()
             --width=500 \
             --timeout="$CONF_global_notifications_duration" \
             --timeout-indicator="top" \
-            --window-icon="res/suriGUI.png" \
-            --image="res/alert_64.png" \
+            --window-icon="$_PROJECT_ICON_ALERT" \
+            --image="$_PROJECT_ICON_ALERT" \
             --image-on-top \
             --text="$TXT" \
             --field="SID:RO" "$sid" \
@@ -1294,7 +1296,7 @@ function checkProjectFiles()
           d3bug info "Backup file found"
           if cp "$backupFile" "$destination"
           then
-            d3bug ok "File created: $fileName"
+            d3bug info "File restored: $fileName"
           else
             d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
             exit 1
@@ -1310,12 +1312,12 @@ function checkProjectFiles()
             exit 1
           fi
         fi
-      else
-        d3bug ok "$file"
+      #else
       fi
 
   done
 
+  d3bug ok "$file"
 
   # for file in "${_PROJECT_DB_FILES[@]}"
   # do

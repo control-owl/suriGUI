@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# coder: ro0t
+#clear
+set -o nounset      # Exit on undefined variable
+set -o errexit      # Exit on non-zero status
+set -o pipefail     # Pipe return exit status
+
+trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
+pipe="tmp/status.pipe"
+
+if [[ -e $pipe ]]
+then
+  if ! rm "$pipe"
+  then
+    exit 1
+  fi
+fi
+mkfifo $pipe
+exec 5<> "$pipe"
+
+function iconManager()
+{
+  export statusIcon
+
+
+  xdg-icon-resource install --context mimetypes --size 48 "res/icons/suricata/inactive.png" "Suricata-Inactive"
+  xdg-icon-resource install --context mimetypes --size 48 "res/icons/suricata/active.png" "Suricata-Active"
+
+}
+
+iconManager
+
+function controlSuricataService()
+# Control Suricata service with systemctl
+# Usage: controlSuricataService start|stop|restart
+{
+  # d3bug
+
+  # stop | start
+  local action="$1"
+
+  if ! sudo systemctl "$action" suricata #&>/dev/null
+  then
+    echo "Can not control Suricata service. $action is not working"
+  fi
+}
+
+export -f controlSuricataService
+
+function suricataStatus()
+{
+  if systemctl is-active --quiet suricata
+  then
+    export suricataStatus="Suricata-Active"
+    menu="Stop IPS!bash -c 'controlSuricataService stop'"
+  else
+    export suricataStatus="Suricata-Inactive"
+    menu="Start IPS!bash -c 'controlSuricataService start'"
+  fi
+
+  menu+="|Restart IPS!bash -c 'controlSuricataService restart'"
+  menu+="||Hide icon!quit"
+
+  exec 5<>$pipe echo "menu:$menu" >&5 &
+  exec 5<>$pipe echo "icon:$suricataStatus" >&5 &
+}
+
+suricataStatus
+
+
+
+
+
+
+
+
+
+
+function startStatus()
+# Start suriGUI
+# PIPE 3
+# Create yad tray icon
+{
+  # d3bug
+  #
+  # d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
+
+
+
+
+  yad \
+    --notification\
+    --no-middle \
+    --listen \
+    --text="tooltip" \
+    --image="$suricataStatus" \
+    --separator="|" \
+    --menu="Exit!quit" \
+    --command="bash -c suriGUISettings" \
+  <&5 & &>/dev/null
+}
+
+
+startStatus
+
+
+
+
+while :
+do
+  #[[ ! -f "$suricataStatus" ]] && break
+  suricataStatus
+  sleep 5
+done #&>/dev/null
+
+echo "End of script"
