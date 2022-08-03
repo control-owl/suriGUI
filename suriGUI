@@ -1388,7 +1388,7 @@ function checkProjectDirectories()
     fi
   done
 
-
+  
   sudo chown user:user "$_PROJECT_DIR" -R
 
 }
