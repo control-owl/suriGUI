@@ -26,9 +26,9 @@ suriGUI-install:
   cmd.run:
     - name: "export https_proxy=127.0.0.1:8082 && git clone -b opt https://github.com/control-owl/suriGUI.git /opt/suriGUI"
 
-suriGUI-chown:
-  cmd.run:
-    - name: "chown user:user /opt/suriGUI -R"
+# suriGUI-chown:
+#   cmd.run:
+#     - name: "chown user:user /opt/suriGUI -R"
 
 suriGUI-link:
   cmd.run:
@@ -46,7 +46,7 @@ suriGUI-status-link:
         Version=1.0
         Encoding=UTF-8
         Name=suriGUI-status
-        Exec=suriGUI-status
+        Exec=sudo /usr/bin/suriGUI/suriGUI-status
         Terminal=false
         Type=Application
 
@@ -115,14 +115,14 @@ stop-suricata-service:
         Description=suriGUI service
         After=suricata.service
         [Service]
-        ExecStart=/usr/bin/suriGUI
-        Restart=always
+        ExecStart=sudo /usr/bin/suriGUI
 
         [Install]
         WantedBy=multi-user.target
 
 
 #
+# Restart=always
 # Services
 #
 enable-nfqueue-service:
