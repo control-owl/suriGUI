@@ -5,8 +5,9 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
-pipe="tmp/status.pipe"
+trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
+export defLoc="/opt/suriGUI"
+pipe="$defLoc/tmp/status.pipe"
 
 if [[ -e $pipe ]]
 then
@@ -18,13 +19,17 @@ fi
 mkfifo $pipe
 exec 5<> "$pipe"
 
+
+
+
+
 function iconManager()
 {
   export statusIcon
 
 
-  xdg-icon-resource install --context mimetypes --size 48 "res/icons/suricata/inactive.png" "Suricata-Inactive"
-  xdg-icon-resource install --context mimetypes --size 48 "res/icons/suricata/active.png" "Suricata-Active"
+  xdg-icon-resource install --context mimetypes --size 48 "$defLoc/res/icons/suricata/inactive.png" "Suricata-Inactive"
+  xdg-icon-resource install --context mimetypes --size 48 "$defLoc/res/icons/suricata/active.png" "Suricata-Active"
 
 }
 

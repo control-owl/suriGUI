@@ -113,15 +113,17 @@ stop-suricata-service:
     - contents: |
         [Unit]
         Description=suriGUI service
-        After=suricata.service
+        After=multi-user.target
         [Service]
-        ExecStart=/usr/bin/suriGUI
-
-        [Install]
-        WantedBy=multi-user.target
+        Type=forking
+        User=user
+        ExecStart=/usr/bin/suriGUI &
 
 
 #
+#
+# [Install]
+# WantedBy=multi-user.target
 # Restart=always
 # Services
 #
