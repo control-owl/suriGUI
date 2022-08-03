@@ -26,9 +26,9 @@ suriGUI-install:
   cmd.run:
     - name: "export https_proxy=127.0.0.1:8082 && git clone -b opt https://github.com/control-owl/suriGUI.git /opt/suriGUI"
 
-# suriGUI-chown:
-#   cmd.run:
-#     - name: "chown user:user /opt/suriGUI -R"
+suriGUI-chown:
+  cmd.run:
+    - name: "chown user:user /opt/suriGUI -R"
 
 suriGUI-link:
   cmd.run:
