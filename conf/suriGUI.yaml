@@ -2,7 +2,8 @@
 ---
 
 # suriGUI default config file
-# 2022-04-09
+# still not implemented
+# 2022-08-03
 
 global:
   mode: ips

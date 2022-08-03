@@ -10,7 +10,8 @@ trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 # opt version only
 #todo: show icon at start to show if program at least run
-
+#todo: make new app for showing that suricata/IPS is starting
+# make service and kill it as soon as suriGUI started
 
 # GLOBAL VARIABLES
 # INFO
@@ -686,6 +687,7 @@ function suriGUISettings()
 # Ignored SID List
 # Custom Rules List - will be replaced
 # Backup/Restore - Not done yet
+# todo: preview log in tab, create new tab: log
 {
   d3bug
 
@@ -1107,13 +1109,15 @@ function updateSuricataRules()
 {
   d3bug
 
+
+
   if command -v suricata-update &>/dev/null
   then
     d3bug info "Starting update ..."
 
     if suricata-update  --output "$_PROJECT_DIR_SURICATA" \
                         --data-dir "$_PROJECT_DIR_TMP" \
-                        --no-test &>/dev/null
+                        --no-test #&>/dev/null
     then
       echo "$(date +'%Y-%m-%d')" > "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP"
       d3bug ok "Update done @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
@@ -1273,41 +1277,79 @@ function checkProjectFiles()
 {
   d3bug
 
-
+  local defStorage="$_PROJECT_DIR_CONF/default"
 
   for file in "${_PROJECT_DB_FILES[@]}"
   do
-
-    # todo: if file is not in default folder, touch it
-
-    # local defStorage="$_PROJECT_DIR_CONF/default"
-    # fileName=$(basename $file)
-    #
-    #
-    # echo "full file path: $file"
-    # echo "fileName: $fileName"
-    # if [[ ! -e "$defStorage/$fileName" ]]
-    # then
-    #   echo "touch $file"
-    # fi
-    if [[ ! -f "$file" ]]
-    then
-      d3bug error "File not found: $file"
       fileName=$(basename $file)
       destination="$(dirname "${file}")"
+      backupFile="$defStorage/$fileName"
 
-      if cp "$_PROJECT_DIR_CONF/default/$fileName" "$destination"
+      if [[ ! -e "$file"  ]]
       then
-        d3bug ok "File created: $file"
+        d3bug error "File not found: $file"
+
+        if [[ -e "$backupFile" ]]
+        then
+          d3bug info "Backup file found"
+          if cp "$backupFile" "$destination"
+          then
+            d3bug ok "File created: $fileName"
+          else
+            d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
+            exit 1
+          fi
+        else
+          if touch "$file"
+          then
+            d3bug ok "File created: $file"
+          else
+            d3bug error "Can't create config file: \"$fileName\" in directory: \"$destination\""
+            # todo: try to inspect if dir is there
+            # chown
+            exit 1
+          fi
+        fi
       else
-        d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
-        exit 1
+        d3bug ok "$file"
       fi
-    else
-      # d3bug info "Local ${file##*.} found: $file"
-      d3bug ok "$file"
-    fi
+
   done
+
+
+  # for file in "${_PROJECT_DB_FILES[@]}"
+  # do
+  #
+  #   # todo: if file is not in default folder, touch it
+  #
+  #   # local defStorage="$_PROJECT_DIR_CONF/default"
+  #   # fileName=$(basename $file)
+  #   #
+  #   #
+  #   # echo "full file path: $file"
+  #   # echo "fileName: $fileName"
+  #   # if [[ ! -e "$defStorage/$fileName" ]]
+  #   # then
+  #   #   echo "touch $file"
+  #   # fi
+  #   if [[ ! -f "$file" ]]
+  #   then
+  #     d3bug error "File not found: $file"
+  #     fileName=$(basename $file)
+  #     destination="$(dirname "${file}")"
+  #
+  #     if cp "$_PROJECT_DIR_CONF/default/$fileName" "$destination"
+  #     then
+  #       d3bug ok "File created: $file"
+  #     else
+  #       d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
+  #       exit 1
+  #     fi
+  #   else
+  #     # d3bug info "Local ${file##*.} found: $file"
+  #     d3bug ok "$file"
+  #   fi
+  # done
 }
 
 
