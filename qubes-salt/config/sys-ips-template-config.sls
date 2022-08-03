@@ -118,12 +118,13 @@ stop-suricata-service:
         Type=forking
         User=user
         ExecStart=/usr/bin/suriGUI &
-
+        [Install]
+        WantedBy=graphical.target
 
 #
 #
 # [Install]
-# WantedBy=multi-user.target
+# WantedBy=graphical.target
 # Restart=always
 # Services
 #
