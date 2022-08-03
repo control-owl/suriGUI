@@ -117,7 +117,7 @@ stop-suricata-service:
         [Service]
         Type=forking
         User=user
-        ExecStart=/usr/bin/suriGUI &
+        ExecStart=sudo /usr/bin/suriGUI &
         [Install]
         WantedBy=graphical.target
 
