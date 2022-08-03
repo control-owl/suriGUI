@@ -7,4 +7,4 @@
   file.managed:
     - makedirs: True
     - contents: |
-    binds+=( '/opt/suriGUI' )
+        binds+=( '/opt/suriGUI' )
