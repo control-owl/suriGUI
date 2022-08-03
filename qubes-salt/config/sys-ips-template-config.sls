@@ -46,7 +46,7 @@ suriGUI-status-link:
         Version=1.0
         Encoding=UTF-8
         Name=suriGUI-status
-        Exec=sudo /usr/bin/suriGUI/suriGUI-status
+        Exec=/usr/bin/suriGUIsuriGUI-status
         Terminal=false
         Type=Application
 
@@ -115,7 +115,7 @@ stop-suricata-service:
         Description=suriGUI service
         After=suricata.service
         [Service]
-        ExecStart=sudo /usr/bin/suriGUI
+        ExecStart=/usr/bin/suriGUI
 
         [Install]
         WantedBy=multi-user.target

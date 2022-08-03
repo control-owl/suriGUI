@@ -17,7 +17,7 @@ export _PROJECT_VER="0.2.220802"
 
 #
 # DIRs
-export _PROJECT_DIR="/home/user/suriGUI"
+export _PROJECT_DIR="/opt/suriGUI"
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
@@ -1315,7 +1315,7 @@ function checkProjectDirectories()
         d3bug ok "$dir"
       else
         d3bug error "Directory: $dir is not writable."
-        if chown user:user "$dir" -R
+        if sudo chown user:user "$dir" -R
         then
           d3bug info "Directory: $dir owned"
         else
