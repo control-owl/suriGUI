@@ -36,7 +36,7 @@ suriGUI-link:
 
 suriGUI-status-link:
   cmd.run:
-    - name: "chmod +x /home/user/suriGUI/suriGUI-status && ln -s /home/user/suriGUI/suriGUI-status /usr/bin/suriGUI-status"
+    - name: "chmod +x /opt/suriGUI/suriGUI-status && ln -s /opt/suriGUI/suriGUI-status /usr/bin/suriGUI-status"
 
 /etc/xdg/autostart/suriGUI-status.desktop:
   file.managed:
