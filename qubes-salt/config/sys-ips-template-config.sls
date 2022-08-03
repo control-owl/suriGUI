@@ -42,7 +42,7 @@ suriGUI-link:
         Version=1.0
         Encoding=UTF-8
         Name=suriGUI
-        Exec=suriGUI
+        Exec=/usr/bin/suriGUI
         Terminal=false
         Type=Application
 

@@ -9,7 +9,7 @@ trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 # opt version only
-
+#todo: show icon at start to show if program at least run
 
 
 # GLOBAL VARIABLES
@@ -90,7 +90,8 @@ _PROJECT_DB_REQS=( "libnetfilter-queue-dev"
 
 function exitSuriGUI()
 # Trap any exit signal and execute this function
-# Remove all tmp files (and log if enabled)
+# Remove all tmp files
+# todo: implement log deletion based on settings configuration
 {
 
   echo "EXITing"
@@ -135,6 +136,7 @@ function exitSuriGUI()
 function d3bug()
 # Print output messages, function names, errors
 # Usage: d3bug info|error "Lorem ipsum dolor sit amet"
+# todo: add verbosity and no output, error only
 {
   local type="${1:-*}"
   local msg="${2:-}"
@@ -162,24 +164,21 @@ function d3bug()
 }
 
 
+
+# Engage!
 echo -e \
-"
-
-####################
-# $_PROJECT_NAME          #
+"####################
+#     $_PROJECT_NAME      #
 # $_PROJECT_DESCRIPTION #
-# $_PROJECT_VER       #
+# build $_PROJECT_VER #
 ####################"
-
-#\
-   #| tee -a "$_PROJECT_FILE_LOG"
 
 
 
 function readConfigFile()
-# Read suriGUI.conf and export all variables for yad
+# Read suriGUI.conf and export all variables to yad
 # Yad is not working if export is not done
-# will be removed and replaced with settings.yaml
+# todo: remove and replace with suriGUI.yaml
 {
   d3bug
   local config="${1:-*}"
@@ -1126,6 +1125,7 @@ function updateSuricataRules()
     fi
   else
     d3bug error "suricata-update not installed. Exit 1"
+    #todo: maybe not exit if default file is there
     exit 1
   fi
 }
@@ -1273,15 +1273,30 @@ function checkProjectFiles()
 {
   d3bug
 
+
+
   for file in "${_PROJECT_DB_FILES[@]}"
   do
+
+    # todo: if file is not in default folder, touch it
+
+    # local defStorage="$_PROJECT_DIR_CONF/default"
+    # fileName=$(basename $file)
+    #
+    #
+    # echo "full file path: $file"
+    # echo "fileName: $fileName"
+    # if [[ ! -e "$defStorage/$fileName" ]]
+    # then
+    #   echo "touch $file"
+    # fi
     if [[ ! -f "$file" ]]
     then
       d3bug error "File not found: $file"
       fileName=$(basename $file)
       destination="$(dirname "${file}")"
 
-      if ( cp "$_PROJECT_DIR_CONF/default/$fileName" "$destination" &>/dev/null)
+      if cp "$_PROJECT_DIR_CONF/default/$fileName" "$destination"
       then
         d3bug ok "File created: $file"
       else
@@ -1348,6 +1363,7 @@ function checkProjectDependencies()
           --title="$_PROJECT_NAME" \
           --button="Yes" --button="No" \
           --text="$app is not installed.\nDo you want to install it now?" &>/dev/null
+
       ret=$?
       if [[ $ret = 0 ]]
       then
