@@ -1,7 +1,8 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 2022-08-02
+# stamp: 2022-08-03
+
 
 #
 # Dependencies
@@ -17,20 +18,21 @@ suricata-install-dependencies:
       - libnetfilter-queue-dev
       - suricata
 
+
 #
 # suriGUI
 #
 suriGUI-install:
   cmd.run:
-    - name: "export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI.git /home/user/suriGUI"
-
-suriGUI-link:
-  cmd.run:
-    - name: "chmod +x /home/user/suriGUI/suriGUI && ln -s /home/user/suriGUI/suriGUI /usr/bin/suriGUI"
+    - name: "export https_proxy=127.0.0.1:8082 && git clone -b opt https://github.com/control-owl/suriGUI.git /opt/suriGUI"
 
 suriGUI-chown:
   cmd.run:
-    - name: "chown user:user /home/user/suriGUI -R"
+    - name: "chown user:user /opt/suriGUI -R"
+
+suriGUI-link:
+  cmd.run:
+    - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
 /etc/xdg/autostart/suriGUI.desktop:
   file.managed:
@@ -47,6 +49,7 @@ suriGUI-chown:
 suriGUI-startup-file:
   cmd.run:
     - name: "chmod +x /etc/xdg/autostart/suriGUI.desktop"
+
 
 #
 # NFQUEUE service
@@ -84,15 +87,16 @@ stop-suricata-service:
         Requires=network-online.target
         [Service]
         Type=simple
-        ExecStartPre=+/bin/bash -c "if [[ ! -e /home/user/suriGUI/conf/suricata/suricata.rules ]]; then /bin/suricata-update --output /home/user/suriGUI/conf/suricata --data-dir /home/user/suriGUI/tmp --no-test ; fi"
-        ExecStartPre=+/bin/bash -c "if [[ ! -d /home/user/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /home/user/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
-        ExecStart=+/bin/bash -c '/usr/bin/suricata -l /home/user/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /home/user/suriGUI/conf/suricata/suricata.yaml -q 0'
+        ExecStartPre=+/bin/bash -c "if [[ ! -e /opt/suriGUI/conf/suricata/suricata.rules ]]; then /bin/suricata-update --output /opt/suriGUI/conf/suricata --data-dir /opt/suriGUI/tmp --no-test ; fi"
+        ExecStartPre=+/bin/bash -c "if [[ ! -d /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
+        ExecStart=+/bin/bash -c '/usr/bin/suricata -l /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /opt/suriGUI/conf/suricata/suricata.yaml -q 0'
         ExecReload=/usr/bin/suricatasc -c reload-rules ; /bin/kill -HUP $MAINPID
         ExecStop=/usr/bin/suricatasc -c shutdown
         ProtectSystem=full
         ProtectHome=true
         [Install]
         WantedBy=multi-user.target
+
 
 #
 # Services

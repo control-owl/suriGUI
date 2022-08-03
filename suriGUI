@@ -8,16 +8,19 @@ set -o pipefail     # Pipe return exit status
 trap 'd3bug error "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
-#23-23
+# opt version only
+
+
+
 # GLOBAL VARIABLES
 # INFO
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
-export _PROJECT_VER="0.2.220802"
+export _PROJECT_VER="0.2.220803"
 
 #
 # DIRs
-export _PROJECT_DIR="/home/user/suriGUI"
+export _PROJECT_DIR="/opt/suriGUI"
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR/conf"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR/log/$(date +'%Y-%m-%d')"
