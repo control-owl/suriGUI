@@ -1120,10 +1120,11 @@ function updateSuricataRules()
   then
     d3bug info "Starting update ..."
 
-    if suricata-update  --output "$_PROJECT_DIR_SURICATA" \
+    if sudo suricata-update  --output "$_PROJECT_DIR_SURICATA" \
                         --data-dir "$_PROJECT_DIR_TMP" \
                         --no-test #&>/dev/null
     then
+      sudo chown user:user "$_PROJECT_DIR_SURICATA" -R
       echo "$(date +'%Y-%m-%d')" > "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP"
       d3bug ok "Update done @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
 
