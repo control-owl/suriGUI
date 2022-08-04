@@ -938,38 +938,38 @@ function controlSuricataService()
 }
 
 
-#function updateTrayMenu()
-## Create suriGUI tray menu and tray icon
-## usage: updateTrayMenu active|inactive
-#{
-#  d3bug
-#
-#  local status="$1"
-#
-#  case "$status" in
-#    "active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
-#    "inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
-#    *)          menu="" ;;
-#  esac
-#
-#  #export icon="$_PROJECT_DIR_RES/icons/settings.png"
-#  #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
-#
-#  # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
-#  # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
-#  menu+="|Restart Suricata service!bash -c 'controlSuricataService restart'"
-#  menu+="||Settings!bash -c 'suriGUISettings'"
-#  menu+="||Exit!quit"
-#
-#  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
-#
-#  d3bug info "Menu updated: $status"
-#  d3bug info "Menu: $menu"
-#
-#  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "icon:$suricataStatus" >&3 &
-#
-#  d3bug info "Icon updated: $status"
-#}
+function updateTrayMenu()
+# Create suriGUI tray menu and tray icon
+# usage: updateTrayMenu active|inactive
+{
+  d3bug
+
+  local status="$1"
+
+  case "$status" in
+    "active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
+    "inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
+    *)          menu="" ;;
+  esac
+
+  #export icon="$_PROJECT_DIR_RES/icons/settings.png"
+  #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
+
+  # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
+  # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
+  menu+="|Restart Suricata service!bash -c 'controlSuricataService restart'"
+  menu+="||Settings!bash -c 'suriGUISettings'"
+  menu+="||Exit!quit"
+
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
+
+  d3bug info "Menu updated: $status"
+  d3bug info "Menu: $menu"
+
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "icon:$suricataStatus" >&3 &
+
+  d3bug info "Icon updated: $status"
+}
 
 
 # todo: Parser must me own file and service, second time rewriting
@@ -1033,7 +1033,7 @@ function checkSuricataStatus()
   fi
 
   d3bug info "Suricata is $suricataStatus"
-  #updateTrayMenu "$suricataStatus"
+  updateTrayMenu "$suricataStatus"
 }
 
 

@@ -29,7 +29,7 @@ suriGUI-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
-IPS-status-link:
+IPS-monitor-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/IPS-status && ln -s /opt/suriGUI/IPS-status /usr/bin/IPS-status"
 
