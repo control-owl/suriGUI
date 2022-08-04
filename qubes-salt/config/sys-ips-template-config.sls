@@ -88,7 +88,6 @@ stop-suricata-service:
         [Unit]
         Description=Suricata IPS daemon
         After=nfqueue.service
-        Before=suriGUI.service
         Requires=network-online.target
         [Service]
         Type=simple
@@ -113,13 +112,15 @@ stop-suricata-service:
     - contents: |
         [Unit]
         Description=suriGUI service
-        After=multi-user.target
+        qubes-gui-agent.service
         [Service]
-        Type=forking
+        Type=simple
+        RemainAfterExit=yes
         User=user
-        ExecStart=sudo /usr/bin/suriGUI &
+        Group=user
+        ExecStart=/usr/bin/suriGUI
         [Install]
-        WantedBy=graphical.target
+        WantedBy=graphical-session.target
 
 #
 #

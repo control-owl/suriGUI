@@ -1,6 +1,6 @@
 %YAML 1.1
 ---
-# 2022-05-29
+# 2022-08-04
 # Suricata configuration file. In addition to the comments describing all
 # options in this file, full documentation can be found at:
 # https://suricata.readthedocs.io/en/latest/configuration/suricata-yaml.html
@@ -988,9 +988,9 @@ asn1-max-frames: 256
 ##
 
 # Run Suricata with a specific user-id and group-id:
-#run-as:
-#  user: suri
-#  group: suri
+run-as:
+  user: user
+  group: user
 
 # Some logging modules will use that name in event as identifier. The default
 # value is the hostname
@@ -1858,7 +1858,7 @@ napatech:
 ##
 # suriGUI
 # Reloading rules is not working when starting suricata with "-S /path/to/file"
-default-rule-path: /usr/share/suriGUI/conf/suricata
+default-rule-path: /opt/suriGUI/conf/suricata
 
 rule-files:
   - suricata.rules
