@@ -1,1 +1,4 @@
 .idea/*
+backup/*
+log/*
+tmp/*
