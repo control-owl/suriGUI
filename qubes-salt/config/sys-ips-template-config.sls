@@ -92,6 +92,8 @@ stop-suricata-service:
         Requires=network-online.target
         [Service]
         Type=simple
+        User=user
+        Group=user
         ExecStartPre=+/bin/bash -c "if [[ ! -e /opt/suriGUI/conf/suricata/suricata.rules ]]; then /bin/suricata-update --output /opt/suriGUI/conf/suricata --data-dir /opt/suriGUI/tmp --no-test ; fi"
         ExecStartPre=+/bin/bash -c "if [[ ! -d /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) ]]; then /bin/mkdir -p /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) ; fi"
         ExecStart=+/bin/bash -c '/usr/bin/suricata -l /opt/suriGUI/log/$$(date +%%Y-%%m-%%d) -c /opt/suriGUI/conf/suricata/suricata.yaml -q 0'
