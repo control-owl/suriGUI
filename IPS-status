@@ -1,13 +1,30 @@
 #!/usr/bin/env bash
 # coder: ro0t
-#clear
+
+
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
+
+trap 'echo "[ERROR] $BASH_COMMAND" failed with error code $?' ERR
+
+
 export defLoc="/opt/suriGUI"
+sudo chown user:user "$defLoc" -R
+
+
+if [[ ! -d "$defLoc" ]]
+then
+  if ! mkdir -p "$defLoc"
+  then
+    echo "[ERROR] Can not create directory: $defLoc"
+    exit 1
+  fi
+fi
+
 pipe="$defLoc/tmp/status.pipe"
+
 
 if [[ -e $pipe ]]
 then
@@ -16,37 +33,32 @@ then
     exit 1
   fi
 fi
-mkfifo $pipe
+
+
+
+mkfifo "$pipe"
 exec 5<> "$pipe"
-
-
-
 
 
 function iconManager()
 {
-  export statusIcon
-
+#  export statusIcon
 
   xdg-icon-resource install --context mimetypes --size 48 "$defLoc/res/icons/suricata/inactive.png" "Suricata-Inactive"
   xdg-icon-resource install --context mimetypes --size 48 "$defLoc/res/icons/suricata/active.png" "Suricata-Active"
-
 }
 
 iconManager
 
 function controlSuricataService()
-# Control Suricata service with systemctl
-# Usage: controlSuricataService start|stop|restart
 {
-  # d3bug
 
   # stop | start
-  local action="$1"
+  local action="${1:-status}"
 
   if ! sudo systemctl "$action" suricata #&>/dev/null
   then
-    echo "Can not control Suricata service. $action is not working"
+    echo "[ERROR] Can not control Suricata service. $action is not working"
   fi
 }
 
@@ -81,18 +93,8 @@ suricataStatus
 
 
 
-function startStatus()
-# Start suriGUI
-# PIPE 3
-# Create yad tray icon
+function startIPSmonitor()
 {
-  # d3bug
-  #
-  # d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
-
-
-
-
   yad \
     --notification\
     --no-middle \
@@ -100,13 +102,13 @@ function startStatus()
     --text="tooltip" \
     --image="$suricataStatus" \
     --separator="|" \
-    --menu="Exit!quit" \
-    --command="bash -c suriGUISettings" \
+    --menu="Hide icon!quit" \
+    --command="xterm -e 'systemctl status suricata'" \
   <&5 & &>/dev/null
 }
 
 
-startStatus
+startIPSmonitor
 
 
 
@@ -118,4 +120,5 @@ do
   sleep 5
 done #&>/dev/null
 
-echo "End of script"
+
+echo "End of script, but not IPS !!!"
