@@ -89,8 +89,8 @@ _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN"
 #
 # ICONs
 export _PROJECT_ICON_MAIN="$_PROJECT_DIR_RES/suriGUI.png"
-export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/inactive.png"
-export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/active.png"
+export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/suriGUI-inactive.png"
+export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/suriGUI-active.png"
 export _PROJECT_ICON_ALERT="$_PROJECT_DIR_RES/icons/notif/alert.png"
 
 _PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
@@ -940,23 +940,18 @@ function controlSuricataService()
 
 function updateTrayMenu()
 # Create suriGUI tray menu and tray icon
-# usage: updateTrayMenu active|inactive
+# usage: updateTrayMenu Suricata-Active|Suricata-Inactive
 {
   d3bug
 
   local status="$1"
 
   case "$status" in
-    "active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
-    "inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
+    "Suricata-Active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
+    "Suricata-Inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
     *)          menu="" ;;
   esac
 
-  #export icon="$_PROJECT_DIR_RES/icons/settings.png"
-  #xdg-icon-resource install --context mimetypes --size 48 "$_PROJECT_DIR_RES/icons/settings.png" "$_PROJECT_NAME-settings"
-
-  # menu+="||Reload suricata rules!bash -c 'sudo suricatasc -c reload-rules'"
-  # menu+="|Update suricata rules!bash -c 'updateSuricataRules'"
   menu+="|Restart Suricata service!bash -c 'controlSuricataService restart'"
   menu+="||Settings!bash -c 'suriGUISettings'"
   menu+="||Exit!quit"

@@ -29,32 +29,9 @@ suriGUI-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
-IPS-monitor-link:
-  cmd.run:
-    - name: "chmod +x /opt/suriGUI/IPS-status && ln -s /opt/suriGUI/IPS-status /usr/bin/IPS-status"
-
 suriGUI-chown-opt-dir:
   cmd.run:
     - name: "chown user:user /opt -R"
-
-#
-# IPS monitor service
-#
-/lib/systemd/system/IPS-monitor.service:
-  file.managed:
-    - makedirs: True
-    - contents: |
-        [Unit]
-        Description=IPS monitor
-        After=systemd-user-sessions.service
-        [Service]
-        Environment=DISPLAY=:0
-        User=user
-        Group=user
-        ExecStart=/usr/bin/IPS-status
-        ExecReload=/bin/kill -HUP $MAINPID
-        [Install]
-        WantedBy=multi-user.target
 
 
 #
@@ -136,10 +113,6 @@ enable-nfqueue-service:
 enable-suricata-service:
   cmd.run:
     - name: "systemctl enable suricata"
-
-enable-IPS-monitor-service:
-  cmd.run:
-    - name: "systemctl enable IPS-monitor"
 
 enable-suriGUI-service:
   cmd.run:
