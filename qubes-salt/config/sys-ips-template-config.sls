@@ -115,15 +115,15 @@ stop-suricata-service:
     - contents: |
         [Unit]
         Description=suriGUI service
-        qubes-gui-agent.service
+        After=systemd-user-sessions.service
         [Service]
-        Type=simple
-        RemainAfterExit=yes
+        Environment=DISPLAY=:0
         User=user
         Group=user
         ExecStart=/usr/bin/suriGUI
+        ExecReload=/bin/kill -HUP $MAINPID
         [Install]
-        WantedBy=graphical-session.target
+        WantedBy=multi-user.target
 
 #
 #
