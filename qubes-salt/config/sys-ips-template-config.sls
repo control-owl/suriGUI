@@ -5,9 +5,9 @@
 
 
 #
-# Dependencies
+# IPS Dependencies
 #
-suricata-install-dependencies:
+IPS-install-dependencies:
   pkg.installed:
     - pkgs:
       - qubes-core-agent-networking
@@ -29,31 +29,32 @@ suriGUI-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI && ln -s /opt/suriGUI/suriGUI /usr/bin/suriGUI"
 
-suriGUI-status-link:
+IPS-status-link:
   cmd.run:
-    - name: "chmod +x /opt/suriGUI/suriGUI-status && ln -s /opt/suriGUI/suriGUI-status /usr/bin/suriGUI-status"
+    - name: "chmod +x /opt/suriGUI/IPS-status && ln -s /opt/suriGUI/IPS-status /usr/bin/IPS-status"
 
 suriGUI-chown-opt-dir:
   cmd.run:
     - name: "chown user:user /opt -R"
 
-
-/etc/xdg/autostart/suriGUI-status.desktop:
+#
+# IPS monitor service
+#
+/lib/systemd/system/IPS-monitor.service:
   file.managed:
     - makedirs: True
     - contents: |
-        [Desktop Entry]
-        Version=1.0
-        Encoding=UTF-8
-        Name=suriGUI-status
-        Exec=/usr/bin/suriGUI/suriGUI-status
-        Terminal=false
-        Type=Application
-
-
-suriGUI-status-startup-file:
-  cmd.run:
-    - name: "chmod +x /etc/xdg/autostart/suriGUI-status.desktop"
+        [Unit]
+        Description=IPS monitor
+        After=systemd-user-sessions.service
+        [Service]
+        Environment=DISPLAY=:0
+        User=user
+        Group=user
+        ExecStart=/usr/bin/IPS-status
+        ExecReload=/bin/kill -HUP $MAINPID
+        [Install]
+        WantedBy=multi-user.target
 
 
 #
@@ -125,11 +126,7 @@ stop-suricata-service:
         [Install]
         WantedBy=multi-user.target
 
-#
-#
-# [Install]
-# WantedBy=graphical.target
-# Restart=always
+
 # Services
 #
 enable-nfqueue-service:
@@ -140,30 +137,10 @@ enable-suricata-service:
   cmd.run:
     - name: "systemctl enable suricata"
 
+enable-IPS-monitor-service:
+  cmd.run:
+    - name: "systemctl enable IPS-monitor"
+
 enable-suriGUI-service:
   cmd.run:
     - name: "systemctl enable suriGUI"
-
-
-
-#after stable version
-#
-# suriGUI service
-#
-# /lib/systemd/system/suriGUI.service:
-#   file.managed:
-#     - makedirs: True
-#     - contents: |
-#     [Unit]
-#     Description=suriGUI service
-#     After=suricata.target
-#     [Service]
-#     Type=oneshot
-#     ExecStart=suriGUI
-#     RemainAfterExit=true
-#     [Install]
-#     WantedBy=multi-user.target
-#
-# enable-suriGUI-service:
-#   cmd.run:
-#     - name: "systemctl enable suricata"
