@@ -1,7 +1,7 @@
 # vim: set syntax=yaml ts=2 sw=2 sts=2 et :
 #
 # coder: ro0t
-# stamp: 2022-08-03
+# stamp: 2022-08-04
 
 
 #
@@ -18,17 +18,12 @@ suricata-install-dependencies:
       - libnetfilter-queue-dev
       - suricata
 
-
 #
 # suriGUI
 #
 suriGUI-install:
   cmd.run:
-    - name: "export https_proxy=127.0.0.1:8082 && git clone -b opt https://github.com/control-owl/suriGUI.git /opt/suriGUI"
-
-suriGUI-chown:
-  cmd.run:
-    - name: "chown user:user /opt/suriGUI -R"
+    - name: "export https_proxy=127.0.0.1:8082 && git clone -b dev https://github.com/control-owl/suriGUI.git /opt/suriGUI"
 
 suriGUI-link:
   cmd.run:
@@ -38,6 +33,11 @@ suriGUI-status-link:
   cmd.run:
     - name: "chmod +x /opt/suriGUI/suriGUI-status && ln -s /opt/suriGUI/suriGUI-status /usr/bin/suriGUI-status"
 
+suriGUI-chown-opt-dir:
+  cmd.run:
+    - name: "chown user:user /opt -R"
+
+
 /etc/xdg/autostart/suriGUI-status.desktop:
   file.managed:
     - makedirs: True
@@ -46,9 +46,10 @@ suriGUI-status-link:
         Version=1.0
         Encoding=UTF-8
         Name=suriGUI-status
-        Exec=/usr/bin/suriGUIsuriGUI-status
+        Exec=/usr/bin/suriGUI/suriGUI-status
         Terminal=false
         Type=Application
+
 
 suriGUI-status-startup-file:
   cmd.run:
