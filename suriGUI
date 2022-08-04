@@ -1450,6 +1450,7 @@ checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
 
+exec 3<>$_PROJECT_PIPE_MAIN echo "visible:blink" >&3 &
 
 d3bug info "Phase 1 - Create settings"
 eval export $(createProjectSettings)
