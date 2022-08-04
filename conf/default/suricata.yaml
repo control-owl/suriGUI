@@ -1,6 +1,6 @@
 %YAML 1.1
 ---
-# 2022-05-29
+# 2022-08-04
 # Suricata configuration file. In addition to the comments describing all
 # options in this file, full documentation can be found at:
 # https://suricata.readthedocs.io/en/latest/configuration/suricata-yaml.html
@@ -85,15 +85,15 @@ outputs:
       enabled: yes
       filetype: regular #regular|syslog|unix_dgram|unix_stream|redis
       filename: eve.json
-      # Enable for multi-threaded eve.json output; output files are amended with
-      # with an identifier, e.g., eve.9.json
-      #threaded: false
-      #prefix: "@cee: " # prefix to prepend to each log entry
-      # the following are valid when type: syslog above
-      #identity: "suricata"
-      #facility: local5
-      #level: Info ## possible levels: Emergency, Alert, Critical,
-                   ## Error, Warning, Notice, Info, Debug
+        # Enable for multi-threaded eve.json output; output files are amended with
+        # with an identifier, e.g., eve.9.json
+        #threaded: false
+        #prefix: "@cee: " # prefix to prepend to each log entry
+        # the following are valid when type: syslog above
+        #identity: "suricata"
+        #facility: local5
+        #level: Info ## possible levels: Emergency, Alert, Critical,
+      ## Error, Warning, Notice, Info, Debug
       #ethernet: no  # log ethernet header in events when available
       #redis:
       #  server: 127.0.0.1
@@ -191,9 +191,9 @@ outputs:
             # Choose one or more types of anomaly logging and whether to enable
             # logging of the packet header for packet anomalies.
             types:
-              # decode: no
-              # stream: no
-              # applayer: yes
+            # decode: no
+            # stream: no
+            # applayer: yes
             #packethdr: no
         - http:
             extended: yes     # enable this for extended logging information
@@ -204,33 +204,33 @@ outputs:
             # to dump all HTTP headers for every HTTP request and/or response
             # dump-all-headers: none
         - dns:
-            # This configuration uses the new DNS logging format,
-            # the old configuration is still available:
-            # https://suricata.readthedocs.io/en/latest/output/eve/eve-json-output.html#dns-v1-format
+          # This configuration uses the new DNS logging format,
+          # the old configuration is still available:
+          # https://suricata.readthedocs.io/en/latest/output/eve/eve-json-output.html#dns-v1-format
 
-            # As of Suricata 5.0, version 2 of the eve dns output
-            # format is the default.
-            #version: 2
+          # As of Suricata 5.0, version 2 of the eve dns output
+          # format is the default.
+          #version: 2
 
-            # Enable/disable this logger. Default: enabled.
-            #enabled: yes
+          # Enable/disable this logger. Default: enabled.
+          #enabled: yes
 
-            # Control logging of requests and responses:
-            # - requests: enable logging of DNS queries
-            # - responses: enable logging of DNS answers
-            # By default both requests and responses are logged.
-            #requests: no
-            #responses: no
+          # Control logging of requests and responses:
+          # - requests: enable logging of DNS queries
+          # - responses: enable logging of DNS answers
+          # By default both requests and responses are logged.
+          #requests: no
+          #responses: no
 
-            # Format of answer logging:
-            # - detailed: array item per answer
-            # - grouped: answers aggregated by type
-            # Default: all
-            #formats: [detailed, grouped]
+          # Format of answer logging:
+          # - detailed: array item per answer
+          # - grouped: answers aggregated by type
+          # Default: all
+          #formats: [detailed, grouped]
 
-            # DNS record types to log, based on the query type.
-            # Default: all.
-            #types: [a, aaaa, cname, mx, ns, ptr, txt]
+          # DNS record types to log, based on the query type.
+          # Default: all.
+          #types: [a, aaaa, cname, mx, ns, ptr, txt]
         - tls:
             extended: yes     # enable this for extended logging information
             # output TLS transaction where the session is resumed using a
@@ -248,17 +248,17 @@ outputs:
         #    flows: all       # start or all: 'start' logs only a single drop
         #                     # per flow direction. All logs each dropped pkt.
         - smtp:
-            #extended: yes # enable this for extended logging information
-            # this includes: bcc, message-id, subject, x_mailer, user-agent
-            # custom fields logging from the list:
-            #  reply-to, bcc, message-id, subject, x-mailer, user-agent, received,
-            #  x-originating-ip, in-reply-to, references, importance, priority,
-            #  sensitivity, organization, content-md5, date
-            #custom: [received, x-mailer, x-originating-ip, relays, reply-to, bcc]
-            # output md5 of fields: body, subject
-            # for the body you need to set app-layer.protocols.smtp.mime.body-md5
-            # to yes
-            #md5: [body, subject]
+          #extended: yes # enable this for extended logging information
+          # this includes: bcc, message-id, subject, x_mailer, user-agent
+          # custom fields logging from the list:
+          #  reply-to, bcc, message-id, subject, x-mailer, user-agent, received,
+          #  x-originating-ip, in-reply-to, references, importance, priority,
+          #  sensitivity, organization, content-md5, date
+          #custom: [received, x-mailer, x-originating-ip, relays, reply-to, bcc]
+          # output md5 of fields: body, subject
+          # for the body you need to set app-layer.protocols.smtp.mime.body-md5
+          # to yes
+          #md5: [body, subject]
 
         #- dnp3
         - ftp
@@ -281,7 +281,7 @@ outputs:
             extended: no
         - ssh
         - mqtt:
-            # passwords: yes           # enable output of passwords
+          # passwords: yes           # enable output of passwords
         # HTTP2 logging. HTTP2 support is currently experimental and
         # disabled by default. To enable, uncomment the following line
         # and be sure to enable http2 in the app-layer section.
@@ -423,8 +423,8 @@ outputs:
       # suricata) will be used.
       #identity: "suricata"
       facility: local5
-      #level: Info ## possible levels: Emergency, Alert, Critical,
-                   ## Error, Warning, Notice, Info, Debug
+        #level: Info ## possible levels: Emergency, Alert, Critical,
+      ## Error, Warning, Notice, Info, Debug
 
   # Output module for storing files on disk. Files are stored in
   # directory names consisting of the first 2 characters of the
@@ -554,19 +554,19 @@ logging:
   # Define your logging outputs.  If none are defined, or they are all
   # disabled you will get the default: console output.
   outputs:
-  - console:
-      enabled: yes
-      # type: json
-  - file:
-      enabled: yes
-      level: info
-      filename: suricata.log
-      # type: json
-  - syslog:
-      enabled: no
-      facility: local5
-      #format: "[%i] <%d> -- "
-      # type: json
+    - console:
+        enabled: yes
+        # type: json
+    - file:
+        enabled: yes
+        level: info
+        filename: suricata.log
+        # type: json
+    - syslog:
+        enabled: no
+        facility: local5
+        #format: "[%i] <%d> -- "
+        # type: json
 
 
 ##
@@ -720,8 +720,8 @@ app-layer:
         dp: 5900, 5901, 5902, 5903, 5904, 5905, 5906, 5907, 5908, 5909
     # MQTT, disabled by default.
     mqtt:
-      # enabled: no
-      # max-msg-length: 1mb
+    # enabled: no
+    # max-msg-length: 1mb
     krb5:
       enabled: yes
     snmp:
@@ -757,7 +757,7 @@ app-layer:
       enabled: yes
       # memcap: 64mb
     rdp:
-      #enabled: yes
+    #enabled: yes
     ssh:
       enabled: yes
       #hassh: yes
@@ -841,86 +841,86 @@ app-layer:
       #   Minimal, Generic, IDS (default), IIS_4_0, IIS_5_0, IIS_5_1, IIS_6_0,
       #   IIS_7_0, IIS_7_5, Apache_2
       libhtp:
-         default-config:
-           personality: IDS
+        default-config:
+          personality: IDS
 
-           # Can be specified in kb, mb, gb.  Just a number indicates
-           # it's in bytes.
-           request-body-limit: 100kb
-           response-body-limit: 100kb
+          # Can be specified in kb, mb, gb.  Just a number indicates
+          # it's in bytes.
+          request-body-limit: 100kb
+          response-body-limit: 100kb
 
-           # inspection limits
-           request-body-minimal-inspect-size: 32kb
-           request-body-inspect-window: 4kb
-           response-body-minimal-inspect-size: 40kb
-           response-body-inspect-window: 16kb
+          # inspection limits
+          request-body-minimal-inspect-size: 32kb
+          request-body-inspect-window: 4kb
+          response-body-minimal-inspect-size: 40kb
+          response-body-inspect-window: 16kb
 
-           # response body decompression (0 disables)
-           response-body-decompress-layer-limit: 2
+          # response body decompression (0 disables)
+          response-body-decompress-layer-limit: 2
 
-           # auto will use http-body-inline mode in IPS mode, yes or no set it statically
-           http-body-inline: auto
+          # auto will use http-body-inline mode in IPS mode, yes or no set it statically
+          http-body-inline: auto
 
-           # Decompress SWF files.
-           # Two types: 'deflate', 'lzma', 'both' will decompress deflate and lzma
-           # compress-depth:
-           # Specifies the maximum amount of data to decompress,
-           # set 0 for unlimited.
-           # decompress-depth:
-           # Specifies the maximum amount of decompressed data to obtain,
-           # set 0 for unlimited.
-           swf-decompression:
-             enabled: yes
-             type: both
-             compress-depth: 0
-             decompress-depth: 0
+          # Decompress SWF files.
+          # Two types: 'deflate', 'lzma', 'both' will decompress deflate and lzma
+          # compress-depth:
+          # Specifies the maximum amount of data to decompress,
+          # set 0 for unlimited.
+          # decompress-depth:
+          # Specifies the maximum amount of decompressed data to obtain,
+          # set 0 for unlimited.
+          swf-decompression:
+            enabled: yes
+            type: both
+            compress-depth: 0
+            decompress-depth: 0
 
-           # Use a random value for inspection sizes around the specified value.
-           # This lowers the risk of some evasion techniques but could lead
-           # to detection change between runs. It is set to 'yes' by default.
-           #randomize-inspection-sizes: yes
-           # If "randomize-inspection-sizes" is active, the value of various
-           # inspection size will be chosen from the [1 - range%, 1 + range%]
-           # range
-           # Default value of "randomize-inspection-range" is 10.
-           #randomize-inspection-range: 10
+          # Use a random value for inspection sizes around the specified value.
+          # This lowers the risk of some evasion techniques but could lead
+          # to detection change between runs. It is set to 'yes' by default.
+          #randomize-inspection-sizes: yes
+          # If "randomize-inspection-sizes" is active, the value of various
+          # inspection size will be chosen from the [1 - range%, 1 + range%]
+          # range
+          # Default value of "randomize-inspection-range" is 10.
+          #randomize-inspection-range: 10
 
-           # decoding
-           double-decode-path: no
-           double-decode-query: no
+          # decoding
+          double-decode-path: no
+          double-decode-query: no
 
-           # Can enable LZMA decompression
-           #lzma-enabled: false
-           # Memory limit usage for LZMA decompression dictionary
-           # Data is decompressed until dictionary reaches this size
-           #lzma-memlimit: 1mb
-           # Maximum decompressed size with a compression ratio
-           # above 2048 (only LZMA can reach this ratio, deflate cannot)
-           #compression-bomb-limit: 1mb
+          # Can enable LZMA decompression
+          #lzma-enabled: false
+          # Memory limit usage for LZMA decompression dictionary
+          # Data is decompressed until dictionary reaches this size
+          #lzma-memlimit: 1mb
+          # Maximum decompressed size with a compression ratio
+          # above 2048 (only LZMA can reach this ratio, deflate cannot)
+          #compression-bomb-limit: 1mb
 
-         server-config:
+        server-config:
 
-           #- apache:
-           #    address: [192.168.1.0/24, 127.0.0.0/8, "::1"]
-           #    personality: Apache_2
-           #    # Can be specified in kb, mb, gb.  Just a number indicates
-           #    # it's in bytes.
-           #    request-body-limit: 4096
-           #    response-body-limit: 4096
-           #    double-decode-path: no
-           #    double-decode-query: no
+        #- apache:
+        #    address: [192.168.1.0/24, 127.0.0.0/8, "::1"]
+        #    personality: Apache_2
+        #    # Can be specified in kb, mb, gb.  Just a number indicates
+        #    # it's in bytes.
+        #    request-body-limit: 4096
+        #    response-body-limit: 4096
+        #    double-decode-path: no
+        #    double-decode-query: no
 
-           #- iis7:
-           #    address:
-           #      - 192.168.0.0/24
-           #      - 192.168.10.0/24
-           #    personality: IIS_7_0
-           #    # Can be specified in kb, mb, gb.  Just a number indicates
-           #    # it's in bytes.
-           #    request-body-limit: 4096
-           #    response-body-limit: 4096
-           #    double-decode-path: no
-           #    double-decode-query: no
+        #- iis7:
+        #    address:
+        #      - 192.168.0.0/24
+        #      - 192.168.10.0/24
+        #    personality: IIS_7_0
+        #    # Can be specified in kb, mb, gb.  Just a number indicates
+        #    # it's in bytes.
+        #    request-body-limit: 4096
+        #    response-body-limit: 4096
+        #    double-decode-path: no
+        #    double-decode-query: no
 
     # Note: Modbus probe parser is minimalist due to the limited usage in the field.
     # Only Modbus message length (greater than Modbus header length)
@@ -964,7 +964,7 @@ app-layer:
       enabled: yes
 
     sip:
-      #enabled: no
+    #enabled: no
 
 # Limit for the maximum number of asn1 frames to decode (default 256)
 asn1-max-frames: 256
@@ -988,9 +988,9 @@ asn1-max-frames: 256
 ##
 
 # Run Suricata with a specific user-id and group-id:
-#run-as:
-#  user: suri
-#  group: suri
+run-as:
+  user: 1000
+  group: 1000
 
 # Some logging modules will use that name in event as identifier. The default
 # value is the hostname
@@ -1405,8 +1405,8 @@ detect:
   # Very common ports will benefit, as well as ports with many expensive
   # rules.
   grouping:
-    #tcp-whitelist: 53, 80, 139, 443, 445, 1433, 3306, 3389, 6666, 6667, 8080
-    #udp-whitelist: 53, 135, 5060
+  #tcp-whitelist: 53, 80, 139, 443, 445, 1433, 3306, 3389, 6666, 6667, 8080
+  #udp-whitelist: 53, 135, 5060
 
   profiling:
     # Log the rules that made it past the prefilter stage, per packet
@@ -1609,9 +1609,9 @@ nfq:
 
 #nflog support
 nflog:
-    # netlink multicast group
-    # (the same as the iptables --nflog-group param)
-    # Group 0 is used by the kernel, so you can't use it
+  # netlink multicast group
+  # (the same as the iptables --nflog-group param)
+  # Group 0 is used by the kernel, so you can't use it
   - group: 2
     # netlink buffer size
     buffer-size: 18432
@@ -1630,13 +1630,13 @@ nflog:
 
 # General settings affecting packet capture
 capture:
-  # disable NIC offloading. It's restored when Suricata exits.
-  # Enabled by default.
-  #disable-offloading: false
-  #
-  # disable checksum validation. Same as setting '-k none' on the
-  # commandline.
-  #checksum-validation: none
+# disable NIC offloading. It's restored when Suricata exits.
+# Enabled by default.
+#disable-offloading: false
+#
+# disable checksum validation. Same as setting '-k none' on the
+# commandline.
+#checksum-validation: none
 
 # Netmap support
 #
@@ -1650,45 +1650,45 @@ capture:
 # You can find more information at https://github.com/luigirizzo/netmap
 #
 netmap:
-   # To specify OS endpoint add plus sign at the end (e.g. "eth0+")
- - interface: eth2
-   # Number of capture threads. "auto" uses number of RSS queues on interface.
-   # Warning: unless the RSS hashing is symmetrical, this will lead to
-   # accuracy issues.
-   #threads: auto
-   # You can use the following variables to activate netmap tap or IPS mode.
-   # If copy-mode is set to ips or tap, the traffic coming to the current
-   # interface will be copied to the copy-iface interface. If 'tap' is set, the
-   # copy is complete. If 'ips' is set, the packet matching a 'drop' action
-   # will not be copied.
-   # To specify the OS as the copy-iface (so the OS can route packets, or forward
-   # to a service running on the same machine) add a plus sign at the end
-   # (e.g. "copy-iface: eth0+"). Don't forget to set up a symmetrical eth0+ -> eth0
-   # for return packets. Hardware checksumming must be *off* on the interface if
-   # using an OS endpoint (e.g. 'ifconfig eth0 -rxcsum -txcsum -rxcsum6 -txcsum6' for FreeBSD
-   # or 'ethtool -K eth0 tx off rx off' for Linux).
-   #copy-mode: tap
-   #copy-iface: eth3
-   # Set to yes to disable promiscuous mode
-   # disable-promisc: no
-   # Choose checksum verification mode for the interface. At the moment
-   # of the capture, some packets may have an invalid checksum due to
-   # the checksum computation being offloaded to the network card.
-   # Possible values are:
-   #  - yes: checksum validation is forced
-   #  - no: checksum validation is disabled
-   #  - auto: Suricata uses a statistical approach to detect when
-   #  checksum off-loading is used.
-   # Warning: 'checksum-validation' must be set to yes to have any validation
-   #checksum-checks: auto
-   # BPF filter to apply to this interface. The pcap filter syntax apply here.
-   #bpf-filter: port 80 or udp
- #- interface: eth3
-   #threads: auto
-   #copy-mode: tap
-   #copy-iface: eth2
-   # Put default values here
- - interface: default
+  # To specify OS endpoint add plus sign at the end (e.g. "eth0+")
+  - interface: eth2
+    # Number of capture threads. "auto" uses number of RSS queues on interface.
+    # Warning: unless the RSS hashing is symmetrical, this will lead to
+    # accuracy issues.
+    #threads: auto
+    # You can use the following variables to activate netmap tap or IPS mode.
+    # If copy-mode is set to ips or tap, the traffic coming to the current
+    # interface will be copied to the copy-iface interface. If 'tap' is set, the
+    # copy is complete. If 'ips' is set, the packet matching a 'drop' action
+    # will not be copied.
+    # To specify the OS as the copy-iface (so the OS can route packets, or forward
+    # to a service running on the same machine) add a plus sign at the end
+    # (e.g. "copy-iface: eth0+"). Don't forget to set up a symmetrical eth0+ -> eth0
+    # for return packets. Hardware checksumming must be *off* on the interface if
+    # using an OS endpoint (e.g. 'ifconfig eth0 -rxcsum -txcsum -rxcsum6 -txcsum6' for FreeBSD
+    # or 'ethtool -K eth0 tx off rx off' for Linux).
+    #copy-mode: tap
+    #copy-iface: eth3
+    # Set to yes to disable promiscuous mode
+    # disable-promisc: no
+    # Choose checksum verification mode for the interface. At the moment
+    # of the capture, some packets may have an invalid checksum due to
+    # the checksum computation being offloaded to the network card.
+    # Possible values are:
+    #  - yes: checksum validation is forced
+    #  - no: checksum validation is disabled
+    #  - auto: Suricata uses a statistical approach to detect when
+    #  checksum off-loading is used.
+    # Warning: 'checksum-validation' must be set to yes to have any validation
+    #checksum-checks: auto
+    # BPF filter to apply to this interface. The pcap filter syntax apply here.
+    #bpf-filter: port 80 or udp
+    #- interface: eth3
+    #threads: auto
+    #copy-mode: tap
+    #copy-iface: eth2
+    # Put default values here
+  - interface: default
 
 # PF_RING configuration: for use with native PF_RING support
 # for more info see http://www.ntop.org/products/pf_ring/
@@ -1748,117 +1748,117 @@ pfring:
 #
 ipfw:
 
-  # Reinject packets at the specified ipfw rule number.  This config
-  # option is the ipfw rule number AT WHICH rule processing continues
-  # in the ipfw processing system after the engine has finished
-  # inspecting the packet for acceptance.  If no rule number is specified,
-  # accepted packets are reinjected at the divert rule which they entered
-  # and IPFW rule processing continues.  No check is done to verify
-  # this will rule makes sense so care must be taken to avoid loops in ipfw.
-  #
-  ## The following example tells the engine to reinject packets
-  # back into the ipfw firewall AT rule number 5500:
-  #
-  # ipfw-reinjection-rule-number: 5500
+# Reinject packets at the specified ipfw rule number.  This config
+# option is the ipfw rule number AT WHICH rule processing continues
+# in the ipfw processing system after the engine has finished
+# inspecting the packet for acceptance.  If no rule number is specified,
+# accepted packets are reinjected at the divert rule which they entered
+# and IPFW rule processing continues.  No check is done to verify
+# this will rule makes sense so care must be taken to avoid loops in ipfw.
+#
+## The following example tells the engine to reinject packets
+# back into the ipfw firewall AT rule number 5500:
+#
+# ipfw-reinjection-rule-number: 5500
 
 
 napatech:
-    # When use_all_streams is set to "yes" the initialization code will query
-    # the Napatech service for all configured streams and listen on all of them.
-    # When set to "no" the streams config array will be used.
-    #
-    # This option necessitates running the appropriate NTPL commands to create
-    # the desired streams prior to running Suricata.
-    #use-all-streams: no
+  # When use_all_streams is set to "yes" the initialization code will query
+  # the Napatech service for all configured streams and listen on all of them.
+  # When set to "no" the streams config array will be used.
+  #
+  # This option necessitates running the appropriate NTPL commands to create
+  # the desired streams prior to running Suricata.
+  #use-all-streams: no
 
-    # The streams to listen on when auto-config is disabled or when and threading
-    # cpu-affinity is disabled.  This can be either:
-    #   an individual stream (e.g. streams: [0])
-    # or
-    #   a range of streams (e.g. streams: ["0-3"])
-    #
-    streams: ["0-3"]
+  # The streams to listen on when auto-config is disabled or when and threading
+  # cpu-affinity is disabled.  This can be either:
+  #   an individual stream (e.g. streams: [0])
+  # or
+  #   a range of streams (e.g. streams: ["0-3"])
+  #
+  streams: ["0-3"]
 
-    # Stream stats can be enabled to provide fine grain packet and byte counters
-    # for each thread/stream that is configured.
-    #
-    enable-stream-stats: no
+  # Stream stats can be enabled to provide fine grain packet and byte counters
+  # for each thread/stream that is configured.
+  #
+  enable-stream-stats: no
 
-    # When auto-config is enabled the streams will be created and assigned
-    # automatically to the NUMA node where the thread resides.  If cpu-affinity
-    # is enabled in the threading section.  Then the streams will be created
-    # according to the number of worker threads specified in the worker-cpu-set.
-    # Otherwise, the streams array is used to define the streams.
-    #
-    # This option is intended primarily to support legacy configurations.
-    #
-    # This option cannot be used simultaneously with either "use-all-streams"
-    # or "hardware-bypass".
-    #
-    auto-config: yes
+  # When auto-config is enabled the streams will be created and assigned
+  # automatically to the NUMA node where the thread resides.  If cpu-affinity
+  # is enabled in the threading section.  Then the streams will be created
+  # according to the number of worker threads specified in the worker-cpu-set.
+  # Otherwise, the streams array is used to define the streams.
+  #
+  # This option is intended primarily to support legacy configurations.
+  #
+  # This option cannot be used simultaneously with either "use-all-streams"
+  # or "hardware-bypass".
+  #
+  auto-config: yes
 
-    # Enable hardware level flow bypass.
-    #
-    hardware-bypass: yes
+  # Enable hardware level flow bypass.
+  #
+  hardware-bypass: yes
 
-    # Enable inline operation.  When enabled traffic arriving on a given port is
-    # automatically forwarded out its peer port after analysis by Suricata.
-    #
-    inline: no
+  # Enable inline operation.  When enabled traffic arriving on a given port is
+  # automatically forwarded out its peer port after analysis by Suricata.
+  #
+  inline: no
 
-    # Ports indicates which Napatech ports are to be used in auto-config mode.
-    # these are the port IDs of the ports that will be merged prior to the
-    # traffic being distributed to the streams.
-    #
-    # When hardware-bypass is enabled the ports must be configured as a segment.
-    # specify the port(s) on which upstream and downstream traffic will arrive.
-    # This information is necessary for the hardware to properly process flows.
-    #
-    # When using a tap configuration one of the ports will receive inbound traffic
-    # for the network and the other will receive outbound traffic. The two ports on a
-    # given segment must reside on the same network adapter.
-    #
-    # When using a SPAN-port configuration the upstream and downstream traffic
-    # arrives on a single port. This is configured by setting the two sides of the
-    # segment to reference the same port.  (e.g. 0-0 to configure a SPAN port on
-    # port 0).
-    #
-    # port segments are specified in the form:
-    #    ports: [0-1,2-3,4-5,6-6,7-7]
-    #
-    # For legacy systems when hardware-bypass is disabled this can be specified in any
-    # of the following ways:
-    #
-    #   a list of individual ports (e.g. ports: [0,1,2,3])
-    #
-    #   a range of ports (e.g. ports: [0-3])
-    #
-    #   "all" to indicate that all ports are to be merged together
-    #   (e.g. ports: [all])
-    #
-    # This parameter has no effect if auto-config is disabled.
-    #
-    ports: [0-1,2-3]
+  # Ports indicates which Napatech ports are to be used in auto-config mode.
+  # these are the port IDs of the ports that will be merged prior to the
+  # traffic being distributed to the streams.
+  #
+  # When hardware-bypass is enabled the ports must be configured as a segment.
+  # specify the port(s) on which upstream and downstream traffic will arrive.
+  # This information is necessary for the hardware to properly process flows.
+  #
+  # When using a tap configuration one of the ports will receive inbound traffic
+  # for the network and the other will receive outbound traffic. The two ports on a
+  # given segment must reside on the same network adapter.
+  #
+  # When using a SPAN-port configuration the upstream and downstream traffic
+  # arrives on a single port. This is configured by setting the two sides of the
+  # segment to reference the same port.  (e.g. 0-0 to configure a SPAN port on
+  # port 0).
+  #
+  # port segments are specified in the form:
+  #    ports: [0-1,2-3,4-5,6-6,7-7]
+  #
+  # For legacy systems when hardware-bypass is disabled this can be specified in any
+  # of the following ways:
+  #
+  #   a list of individual ports (e.g. ports: [0,1,2,3])
+  #
+  #   a range of ports (e.g. ports: [0-3])
+  #
+  #   "all" to indicate that all ports are to be merged together
+  #   (e.g. ports: [all])
+  #
+  # This parameter has no effect if auto-config is disabled.
+  #
+  ports: [0-1,2-3]
 
-    # When auto-config is enabled the hashmode specifies the algorithm for
-    # determining to which stream a given packet is to be delivered.
-    # This can be any valid Napatech NTPL hashmode command.
-    #
-    # The most common hashmode commands are:  hash2tuple, hash2tuplesorted,
-    # hash5tuple, hash5tuplesorted and roundrobin.
-    #
-    # See Napatech NTPL documentation other hashmodes and details on their use.
-    #
-    # This parameter has no effect if auto-config is disabled.
-    #
-    hashmode: hash5tuplesorted
+  # When auto-config is enabled the hashmode specifies the algorithm for
+  # determining to which stream a given packet is to be delivered.
+  # This can be any valid Napatech NTPL hashmode command.
+  #
+  # The most common hashmode commands are:  hash2tuple, hash2tuplesorted,
+  # hash5tuple, hash5tuplesorted and roundrobin.
+  #
+  # See Napatech NTPL documentation other hashmodes and details on their use.
+  #
+  # This parameter has no effect if auto-config is disabled.
+  #
+  hashmode: hash5tuplesorted
 
 ##
 ## Configure Suricata to load Suricata-Update managed rules.
 ##
 # suriGUI
 # Reloading rules is not working when starting suricata with "-S /path/to/file"
-default-rule-path: /usr/share/suriGUI/conf/suricata
+default-rule-path: /opt/suriGUI/conf/suricata
 
 rule-files:
   - suricata.rules
