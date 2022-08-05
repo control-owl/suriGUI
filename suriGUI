@@ -5,7 +5,7 @@ set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
 
-trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
+trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
@@ -27,14 +27,14 @@ echo -e \
 #
 # DIRs
 export _PROJECT_DIR_MAIN="/opt/suriGUI"
-export _PROJECT_DIR_BACKUP="_PROJECT_DIR_MAIN/backup"
-export _PROJECT_DIR_CONF="_PROJECT_DIR_MAIN/conf"
-export _PROJECT_DIR_LOG="_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
-export _PROJECT_DIR_RES="_PROJECT_DIR_MAIN/res"
-export _PROJECT_DIR_TMP="_PROJECT_DIR_MAIN/tmp"
-export _PROJECT_DIR_SURICATA="_PROJECT_DIR_CONF/suricata"
+export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
+export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
+export _PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
+export _PROJECT_DIR_RES="$_PROJECT_DIR_MAIN/res"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR_MAIN/tmp"
+export _PROJECT_DIR_SURICATA="$_PROJECT_DIR_CONF/suricata"
 
-_PROJECT_DB_DIRS=( "_PROJECT_DIR_MAIN"
+_PROJECT_DB_DIRS=( "$_PROJECT_DIR_MAIN"
                    "$_PROJECT_DIR_CONF"
                    "$_PROJECT_DIR_RES"
                    "$_PROJECT_DIR_LOG"
@@ -46,12 +46,12 @@ _PROJECT_DB_DIRS=( "_PROJECT_DIR_MAIN"
 # FILEs
 export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"             # suriGUI config file
 export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"                      # suriGUI log file
-export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"   # Suricata config file
-export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"   # Default suricata rules
 export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"          # Custom suricata rules
-export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"   # Update timestamp
 export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"            # Ignored SID list
 export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"                        # suriGUI-notify spam list
+export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"   # Suricata config file
+export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"   # Default suricata rules
+export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"   # Update timestamp
 
 _PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
                     "$_PROJECT_FILE_CUSTOM_RULES"
@@ -117,6 +117,7 @@ function exitSuriGUI()
     *) echo "[ERROR] Log not touched.."  ;;
   esac
 
+  echo "Exit 0"
   exit 0
 }
 
@@ -124,14 +125,15 @@ function exitSuriGUI()
 function d3bug()
 # Print output messages, function names, errors
 # Usage: d3bug info|error "Lorem ipsum dolor sit amet"
+# todo: do better log output
 # todo: add verbosity and no output, error only
 {
-  local type="${1:-*}"
+  local type="${1:-}"
   local msg="${2:-}"
+  local timeStamp="$(date +'%Y-%m-%d-%H:%M:%S')"
 
   if [[ ! -e "$_PROJECT_FILE_LOG" ]]
   then
-    #if ! mkdir -p "${_PROJECT_FILE_LOG%/*}" && touch "$_PROJECT_FILE_LOG"
     if ! mkdir -p "${_PROJECT_FILE_LOG%/*}" && touch "$_PROJECT_FILE_LOG"
     then
       echo "error"
@@ -139,19 +141,27 @@ function d3bug()
   fi
 
   case "$type" in
-    "ok" )      echo    "$(date +"%H:%M:%S") [OK] $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "error" )   echo -e "$(date +"%H:%M:%S") [ERROR] $msg"  | tee -a "$_PROJECT_FILE_LOG" ;;
-    "info" )    echo    "$(date +"%H:%M:%S") $msg"          | tee -a "$_PROJECT_FILE_LOG" ;;
-    *)          echo    "$(date +"%H:%M:%S") function: ${FUNCNAME[1]}" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "fatal")    echo -e "$timeStamp  [FATAL]    function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "error")    echo -e "$timeStamp  [ERROR]    function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "warning")  echo -e "$timeStamp  [WARNING]  function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "info")     echo -e "$timeStamp  [INFO]     function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    "ok")       echo -e "$timeStamp  [OK]       function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
+    *)          echo -e "$timeStamp ${FUNCNAME[1]}"     | tee -a "$_PROJECT_FILE_LOG" ;;
   esac
+#TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
+#DEBUG level: log at this level about anything that happens in the program. This is mostly used during debugging, and I’d advocate trimming down the number of debug statement before entering the production stage, so that only the most meaningful entries are left, and can be activated during troubleshooting.
+#INFO level: log at this level all actions that are user-driven, or system specific (ie regularly scheduled operations…)
+#NOTICE level: this will certainly be the level at which the program will run when in production. Log at this level all the notable events that are not considered an error.
+#WARN level: log at this level all events that could potentially become an error. For instance if one database call took more than a predefined time, or if an in-memory cache is near capacity. This will allow proper automated alerting, and during troubleshooting will allow to better understand how the system was behaving before the failure.
+#ERROR level: log every error condition at this level. That can be API calls that return errors or internal error conditions.
+#FATAL level: too bad, it’s doomsday. Use this very scarcely, this shouldn't happen a lot in a real program. Usually logging at this level signifies the end of the program. For instance, if a network daemon can’t bind a network socket, log at this level and exit is the only sensible thing to do.
 }
-
 
 function cleanLog()
 # Clean old log files
 # Usage: cleanLog all|old
 {
-  d3bug
+  d3bug info
 
   local reason=${1:-*}
   local interval="${CONF_suricata_log_old_interval:-}"
