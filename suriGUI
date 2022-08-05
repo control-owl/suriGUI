@@ -9,19 +9,12 @@ trap 'echo "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
-# todo: show icon at start to show if program at least run
-# todo: make new app for showing that suricata/IPS is starting
-#       make service and kill it as soon as suriGUI started
-
-#intelij idea
-#oddo
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # GLOBAL VARIABLES
 # INFO
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
-export _PROJECT_VER="0.2.220804"
+export _PROJECT_VER="0.2.220805"
 
 echo -e \
 "####################
@@ -39,7 +32,7 @@ export _PROJECT_DIR_CONF="_PROJECT_DIR_MAIN/conf"
 export _PROJECT_DIR_LOG="_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
 export _PROJECT_DIR_RES="_PROJECT_DIR_MAIN/res"
 export _PROJECT_DIR_TMP="_PROJECT_DIR_MAIN/tmp"
-export _PROJECT_DIR_SURICATA="_PROJECT_DIR_MAIN/suricata"
+export _PROJECT_DIR_SURICATA="_PROJECT_DIR_CONF/suricata"
 
 _PROJECT_DB_DIRS=( "_PROJECT_DIR_MAIN"
                    "$_PROJECT_DIR_CONF"
@@ -1468,7 +1461,7 @@ startSuriGUI &
 while ( ! systemctl is-active --quiet suricata )
 do
   ( systemctl is-active --quiet suricata ) && break
-  d3bug info "Waiting for Suricata"
+  d3bug info "Waiting for Suricata service"
   sleep 5
 done #&>/dev/null
 d3bug info "Suricata is active"
