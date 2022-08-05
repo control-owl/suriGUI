@@ -2,7 +2,7 @@
 
 ### Still in development
 
-This is stil a Beta.
+This is still a Beta.
 
 Focus is to bring this thing to stable.
 GUI will be not focus.
