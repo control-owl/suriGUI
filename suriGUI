@@ -14,6 +14,7 @@ trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 #       make service and kill it as soon as suriGUI started
 
 #intelij idea
+#oddo
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # GLOBAL VARIABLES
