@@ -4,40 +4,35 @@
 
 This is still a Beta.
 
-Focus is to bring this thing to stable.
-
-GUI will be not focus.
-
-Only stability!
-
-Then I will add all to GUI Settings.
-
-Good.
-
 -------------
 
 ### Intro
 
-- Basic concept is to create GUI Interface for Suricata IPS in Qubes OS
-- Option to show Desktop notifications on every alert
-- Option to edit Suricata rules with GUI
+- Basic concept is to create GUI Interface for Suricata IPS
+- Made for Qubes 4.1
+- Show desktop notifications on every suspicious packet
+- TODO Option to edit Suricata rules with GUI
 
 -------------
 
 ### QUBES draw.io
 
-![](https://github.com/control-owl/suriGUI/blob/main/res/sys-ips.jpg)
+<!-- ![](https://github.com/control-owl/suriGUI/blob/main/res/sys-ips.jpg) -->
+
+-------------
 
 
 #### System Tray statuses: Active and Inactive icon
 ![](https://github.com/control-owl/suriGUI/blob/main/res/preview/status.png)
+
 -------------
 
 #### Settings
-![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-1.png)
+<!-- ![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-1.png)
 ![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-2.png)
 ![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-3.png)
-![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-4.png)
+![](https://github.com/control-owl/suriGUI/blob/main/res/preview/settings-4.png) -->
+
 -------------
 
 ### Installation for Qubes 4.1
@@ -83,4 +78,3 @@ Donation are welcome.
 Motivation even more.
 
 BTC 1JDYtxVvisQxFX1KrZ8yhYYQiqnfS4sFaa
-
