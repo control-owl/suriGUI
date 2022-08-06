@@ -4,8 +4,6 @@
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
-exec 6<&0
-
 
 trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
@@ -16,7 +14,7 @@ trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 # INFO
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
-export _PROJECT_VER="0.2.220805"
+export _PROJECT_VER="0.2.220806"
 
 echo -e \
 "####################
@@ -153,18 +151,11 @@ function d3bug()
   local message="function: ${FUNCNAME[1]}  $msg"
 
   case "$type" in
-    "ok" )      echo "$timeStamp [NOTICE] $message" ;;
-    "error" )   echo "$timeStamp [ERROR]  $message" ;;
-    "info" )    echo "$timeStamp [INFO]   $message" ;;
-    "*" )       echo "$timeStamp [INFO]   $message" ;;
+    ok)      echo "$timeStamp [NOTICE] $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    error)   echo "$timeStamp [ERROR]  $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    info)    echo "$timeStamp [INFO]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    *)       echo "$timeStamp [INFO]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
   esac
-
-
-
-
-#  echo "$header"  | tee -a "$_PROJECT_FILE_LOG"
-
-
 
   #TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
   #DEBUG level: log at this level about anything that happens in the program. This is mostly used during debugging, and I’d advocate trimming down the number of debug statement before entering the production stage, so that only the most meaningful entries are left, and can be activated during troubleshooting.
@@ -1006,7 +997,7 @@ function startSuriGUI()
   d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
 
   yad \
-    --notification\
+    --notification \
     --no-middle \
     --listen \
     --text="$_PROJECT_NAME v$_PROJECT_VER" \
@@ -1435,6 +1426,7 @@ export -f send_notify
 
 
 # verbosity = silent file normal high debug
+# todo: make help function
 while getopts "v:b:c:" opt
 do
    case "$opt" in
