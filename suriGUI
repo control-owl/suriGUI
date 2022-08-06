@@ -4,6 +4,8 @@
 set -o nounset      # Exit on undefined variable
 set -o errexit      # Exit on non-zero status
 set -o pipefail     # Pipe return exit status
+exec 6<&0
+
 
 trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
@@ -26,7 +28,7 @@ echo -e \
 
 #
 # DIRs
-export _PROJECT_DIR_MAIN="/opt/suriGUI"
+export _PROJECT_DIR_MAIN="/opt/suriGUI"     && sudo chown user:user "$_PROJECT_DIR_MAIN" -R
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
 export _PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
@@ -45,7 +47,6 @@ _PROJECT_DB_DIRS=( "$_PROJECT_DIR_MAIN"
 #
 # FILEs
 export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"             # suriGUI config file
-export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"                      # suriGUI log file
 export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"          # Custom suricata rules
 export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"            # Ignored SID list
 export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"                        # suriGUI-notify spam list
@@ -53,9 +54,14 @@ export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"   # 
 export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"   # Default suricata rules
 export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"   # Update timestamp
 
+export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"                      # suriGUI log file
+export _SURICATA_FILE_LOG="$_PROJECT_DIR_LOG/eve.json"                        # Suricata log file
+
+
 _PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
                     "$_PROJECT_FILE_CUSTOM_RULES"
                     "$_PROJECT_FILE_LOG"
+                    "$_SURICATA_FILE_LOG"
                     "$_PROJECT_FILE_SURICATA_RULES"
                     "$_PROJECT_FILE_IGNORED_SIDS"
                     "$_PROJECT_FILE_SPAM"
@@ -76,12 +82,13 @@ _PROJECT_DB_PIPES=( "$_PROJECT_PIPE_MAIN"
 #
 # ICONs
 export _PROJECT_ICON_MAIN="$_PROJECT_DIR_RES/suriGUI.png"
-export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/suriGUI-inactive.png"
-export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/suriGUI/suriGUI-active.png"
-export _PROJECT_ICON_ALERT="$_PROJECT_DIR_RES/icons/notify/alert.png"
+export _PROJECT_ICON_INACTIVE="$_PROJECT_DIR_RES/icons/inactive.png"
+export _PROJECT_ICON_ACTIVE="$_PROJECT_DIR_RES/icons/active.png"
+export _PROJECT_ICON_ALERT="$_PROJECT_DIR_RES/icons/alert.png"
 
 _PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
                     "$_PROJECT_ICON_INACTIVE"
+                    "$_PROJECT_ICON_ALERT"
                     "$_PROJECT_ICON_ACTIVE" )
 
 
@@ -130,39 +137,50 @@ function d3bug()
 {
   local type="${1:-}"
   local msg="${2:-}"
-  local timeStamp="$(date +'%Y-%m-%d-%H:%M:%S')"
+  local timeStamp="$(date +'%Y-%m-%d %H:%M:%S')"
+  local verbosity="${CONF_global_log_verbosity:-normal}"
+
 
   if [[ ! -e "$_PROJECT_FILE_LOG" ]]
   then
     if ! mkdir -p "${_PROJECT_FILE_LOG%/*}" && touch "$_PROJECT_FILE_LOG"
     then
-      echo "error"
+      echo "[FATAL] Can not write to log file. Exit 1"
+      exit 1
     fi
   fi
 
+  local message="function: ${FUNCNAME[1]}  $msg"
+
   case "$type" in
-    "fatal")    echo -e "$timeStamp  [FATAL]    function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "error")    echo -e "$timeStamp  [ERROR]    function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "warning")  echo -e "$timeStamp  [WARNING]  function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "info")     echo -e "$timeStamp  [INFO]     function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    "ok")       echo -e "$timeStamp  [OK]       function:${FUNCNAME[1]}  $msg" | tee -a "$_PROJECT_FILE_LOG" ;;
-    *)          echo -e "$timeStamp ${FUNCNAME[1]}"     | tee -a "$_PROJECT_FILE_LOG" ;;
+    "ok" )      echo "$timeStamp [NOTICE] $message" ;;
+    "error" )   echo "$timeStamp [ERROR]  $message" ;;
+    "info" )    echo "$timeStamp [INFO]   $message" ;;
+    "*" )       echo "$timeStamp [INFO]   $message" ;;
   esac
-#TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
-#DEBUG level: log at this level about anything that happens in the program. This is mostly used during debugging, and I’d advocate trimming down the number of debug statement before entering the production stage, so that only the most meaningful entries are left, and can be activated during troubleshooting.
-#INFO level: log at this level all actions that are user-driven, or system specific (ie regularly scheduled operations…)
-#NOTICE level: this will certainly be the level at which the program will run when in production. Log at this level all the notable events that are not considered an error.
-#WARN level: log at this level all events that could potentially become an error. For instance if one database call took more than a predefined time, or if an in-memory cache is near capacity. This will allow proper automated alerting, and during troubleshooting will allow to better understand how the system was behaving before the failure.
-#ERROR level: log every error condition at this level. That can be API calls that return errors or internal error conditions.
-#FATAL level: too bad, it’s doomsday. Use this very scarcely, this shouldn't happen a lot in a real program. Usually logging at this level signifies the end of the program. For instance, if a network daemon can’t bind a network socket, log at this level and exit is the only sensible thing to do.
+
+
+
+
+#  echo "$header"  | tee -a "$_PROJECT_FILE_LOG"
+
+
+
+  #TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
+  #DEBUG level: log at this level about anything that happens in the program. This is mostly used during debugging, and I’d advocate trimming down the number of debug statement before entering the production stage, so that only the most meaningful entries are left, and can be activated during troubleshooting.
+  #INFO level: log at this level all actions that are user-driven, or system specific (ie regularly scheduled operations…)
+  #NOTICE level: this will certainly be the level at which the program will run when in production. Log at this level all the notable events that are not considered an error.
+  #WARN level: log at this level all events that could potentially become an error. For instance if one database call took more than a predefined time, or if an in-memory cache is near capacity. This will allow proper automated alerting, and during troubleshooting will allow to better understand how the system was behaving before the failure.
+  #ERROR level: log every error condition at this level. That can be API calls that return errors or internal error conditions.
+  #FATAL level: too bad, it’s doomsday. Use this very scarcely, this shouldn't happen a lot in a real program. Usually logging at this level signifies the end of the program. For instance, if a network daemon can’t bind a network socket, log at this level and exit is the only sensible thing to do.
 }
+
 
 function cleanLog()
 # Clean old log files
 # Usage: cleanLog all|old
+# todo: detect old directory based on variable, remove old directories
 {
-  d3bug info
-
   local reason=${1:-*}
   local interval="${CONF_suricata_log_old_interval:-}"
 
@@ -172,13 +190,14 @@ function cleanLog()
 #      sudo rm "$_PROJECT_DIR_LOG" -R
     ;;
     "old")
-      for dir in "$_PROJECT_DIR_LOG"/*/
-      do
-        if ! test find . -type d -mtime +"$interval"
-        then
-          echo "old dir: $dir"
-        fi
-      done
+#      for dir in $_PROJECT_DIR_LOG/
+#      do
+#        if ! find . -type d -mtime +"$interval"
+#        then
+#          echo "old dir: $dir"
+#        fi
+#      done
+      :
     ;;
     *) echo "Log not touched"      ;;
   esac
@@ -197,9 +216,9 @@ function cleanLog()
 #
 #  case "$config" in
 ##    "actionMenu")
-##      defaultActions="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
+##      actionMode="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
 ##      makeDefault="^"
-##      export configActionMenu=$(echo "$defaultActions" | sed "s/$action/$makeDefault$action/g")
+##      export setAction=$(echo "$actionMode" | sed "s/$action/$makeDefault$action/g")
 ##    ;;
 #    "update")
 #      export configUpdate="$update"
@@ -456,7 +475,7 @@ function preventSuricataSpam()
 
   if grep -q "$currentLog" "$_PROJECT_FILE_SPAM"
   then
-    d3bug info "Spam message"
+    d3bug error "Spam message"
     stopSpam="TRUE"
   else
     d3bug info "Not found in log"
@@ -656,28 +675,28 @@ function deleteIgnoredSID()
 }
 
 
-# Replace it with yad writer
 function saveSettings()
 # Save suriGUI settings to config file
 # will be removed and replaced with new function
+# todo: replace with new yaml writer
 {
   d3bug
 
-  readarray -d '|' -t tab1 <<< "$(cat $_PROJECT_DIR_TMP/suriGUI.tab)"
-  sed -i "s/^\(notifications\s*=\s*\).*\$/\1${tab1[0]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(timeout\s*=\s*\).*\$/\1${tab1[3]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(position\s*=\s*\).*\$/\1${tab1[6]}/" "$_PROJECT_CONFIG_FILE"
-
-  readarray -d '|' -t tab2 <<< "$(cat $_PROJECT_DIR_TMP/suricata.tab)"
-  sed -i "s/^\(IPS\s*=\s*\).*\$/\1${tab2[2]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(rules\s*=\s*\).*\$/\1${tab2[3]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(keep\s*=\s*\).*\$/\1${tab2[6]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(log\s*=\s*\).*\$/\1${tab2[7]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(duration\s*=\s*\).*\$/\1${tab2[8]}/" "$_PROJECT_CONFIG_FILE"
-
-  readarray -d '|' -t tab3 <<< "$(cat $_PROJECT_DIR_TMP/rules.tab)"
-  sed -i "s/^\(action\s*=\s*\).*\$/\1${tab3[0]}/" "$_PROJECT_CONFIG_FILE"
-  sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
+#  readarray -d '|' -t tab1 <<< "$(cat $_PROJECT_DIR_TMP/suriGUI.tab)"
+#  sed -i "s/^\(notifications\s*=\s*\).*\$/\1${tab1[0]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(timeout\s*=\s*\).*\$/\1${tab1[3]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(position\s*=\s*\).*\$/\1${tab1[6]}/" "$_PROJECT_CONFIG_FILE"
+#
+#  readarray -d '|' -t tab2 <<< "$(cat $_PROJECT_DIR_TMP/suricata.tab)"
+#  sed -i "s/^\(IPS\s*=\s*\).*\$/\1${tab2[2]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(rules\s*=\s*\).*\$/\1${tab2[3]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(keep\s*=\s*\).*\$/\1${tab2[6]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(log\s*=\s*\).*\$/\1${tab2[7]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(duration\s*=\s*\).*\$/\1${tab2[8]}/" "$_PROJECT_CONFIG_FILE"
+#
+#  readarray -d '|' -t tab3 <<< "$(cat $_PROJECT_DIR_TMP/rules.tab)"
+#  sed -i "s/^\(action\s*=\s*\).*\$/\1${tab3[0]}/" "$_PROJECT_CONFIG_FILE"
+#  sed -i "s/^\(update\s*=\s*\).*\$/\1${tab3[10]}/" "$_PROJECT_CONFIG_FILE"
 }
 
 
@@ -696,171 +715,184 @@ function suriGUISettings()
 {
   d3bug
 
+  createProjectSettings
+  eval export $(createProjectSettings)
   local KEY="$RANDOM"
 
-#  readConfigFile keep
-#  readConfigFile duration
-#  readConfigFile actionMenu
-#  readConfigFile update
-#  readConfigFile action
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+
+  local descriptionSettings="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
+  local descriptionSettings+="  OS: $(lsb_release -ds) on $(hostname)\\n"
+  local descriptionSettings+="  Kernel: $(uname -sr)\\n\\n"
+  local descriptionSettings+="  <i>$(uptime)</i>"
+
+  local descriptionIgnoreList="List of SIDs not shown with suriGUI-notify\\n"
+  local descriptionIgnoreList+="Double-click on SID to remove it."
+
+  local positionMode="Top left\!Top right\!Bottom left\!Bottom right\!Center\!Under mouse"
+  local verbosityMode="debug\!normal\!silent"
+  local actionMode="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
+  local makeDefault="^"
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local notificationPositionMenu="Top left\!Top right\!Bottom left\!Bottom right\!Center\!Under mouse"
-  local makeDefault="^"
-  local notificationPositionMenu=$(echo "$notificationPositionMenu" \
+  local setPosition=$(echo "$positionMode" \
           | sed "s/$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position/g")
 
-  yad \
-    --plug="$KEY" \
-    --tabnum=1 \
-    --form \
-    --field="<b>Notifications</b>":LBL "" \
-    --field="Enable pop-up messages when something is blocked":chk "${CONF_global_notifications_enable:-}" \
-    --field="Notification duration in seconds":NUM "$CONF_global_notifications_duration\!1..60\!1\!0" \
-    --field="Notification pop-up position":CB "$notificationPositionMenu" \
-    --field="":LBL "" \
-    --field="<b>Update</b>":LBL "" \
-    --field="Auto update suricata rules":chk "${CONF_global_autoupdate_rules_enable:-}" \
-    --field="Interval in days":NUM "${CONF_global_autoupdate_rules_interval:-}\!1..120\!1\!0" \
-    --field="Auto update suriGUI":chk "${CONF_global_autoupdate_suriGUI_enable:-}" \
-    --field="Interval in days":NUM "${CONF_global_autoupdate_suriGUI_interval:-}\!1..120\!1\!0" \
-    --field="":LBL "" \
-    --field="<b>Debugging</b>":LBL "" \
-    --field="Enable debug":chk "${CONF_global_debugging_enable:-}" \
-    --field="Show only errors":chk "${CONF_global_debugging_erroronly:-}" \
-    --field="Output to file":chk "${CONF_global_debugging_file:-}" \
-    > "$_PROJECT_DIR_TMP/suriGUI.tab" &
+  local setVerbosity=$(echo "$verbosityMode" \
+          | sed "s/${CONF_global_log_verbosity:-}/$makeDefault${CONF_global_log_verbosity:-}/g")
+
+  local setAction=$(echo "$actionMode" \
+          | sed "s/${CONF_suricata_action:-}/$makeDefault${CONF_suricata_action:-}/g")
+
+  case "${CONF_suricata_action:-unknown}" in
+    rejectboth) export setMode="IPS" ;;
+    *)          export setMode="IDS" ;;
+  esac
+
+  declare -a ignoredSIDS="$(cat "$_PROJECT_FILE_IGNORED_SIDS")"
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+# SURIGUI SETTINGS - TAB 1
+# todo: auto update suriGUI
 
   yad \
     --plug="$KEY" \
-    --tabnum=2 \
     --form \
-    --field="":LBL "" \
-    --field="<b>Config files</b>":LBL "" \
-    --field="Suricata config:":FL "$_PROJECT_FILE_SURICATA_CONFIG" \
-    --field="Suricata rules:":FL "$_PROJECT_FILE_SURICATA_RULES" \
-    --field="":LBL "" \
-    --field="<b>Log</b>":LBL "" \
-    --field="Keep log":chk "$CONF_suricata_log_enable" \
-    --field="Log directory:":dir "${CONF_suricata_log_location:-}" \
-    --field="Log history (days):NUM" "${CONF_suricata_log_old_keep:-7}\!1..60\!1\!0" \
+    --scroll \
+    --tabnum=1 \
+    --columns=2 \
+      --field=" ":NUM         "${CONF_global_notifications_duration:-30}\!1..60\!1\!0" \
+      --field=" ":CB          "${setPosition:-Center}" \
+      --field="":LBL "" \
+      --field=" ":NUM         "${CONF_global_update_interval:-7}\!1..120\!1\!0" \
+      --field="":LBL "" \
+      --field=" ":CB          "${setVerbosity:-normal}" \
+      --field="Reduce output to error only":chk     "${CONF_global_log_erroronly:-FALSE}" \
+      \
+      --field="Show notifications (seconds)":chk    "${CONF_global_notifications_enable:-TRUE}" \
+      --field="Notification position on screen":LBL "" \
+      --field="":LBL "" \
+      --field="Auto update suriGUI (days)":chk      "${CONF_global_update_enable:-FALSE}" \
+      --field="":LBL "" \
+      --field="Enable log":chk                      "${CONF_global_log_enable:-FALSE}" \
+      --field="Write standard output to file":chk   "${CONF_global_file_file:-TRUE}" \
+  > "$_PROJECT_DIR_TMP/suriGUI.tab" &
+
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+# SURICATA SETTINGS - TAB 2
+# todo: make help file
+# todo: manual in terminal
+
+  yad \
+    --plug="$KEY" \
+    --form \
+    --scroll \
+    --tabnum=2 \
+    --columns=2 \
+      --field=" ":RO                            "$setMode" \
+      --field=" ":CB                            "$setAction" \
+      --field="":LBL "" \
+      --field=" ":FL                            "${CONF_suricata_config:-}" \
+      --field=" ":FL                            "${CONF_suricata_rules:-}" \
+      --field="":LBL "" \
+      --field=" ":NUM                           "${CONF_suricata_update_interval:-7}\!1..365\!1\!0" \
+      --field=" ":dir                           "${CONF_suricata_log_location:-}" \
+      --field=" ":NUM                           "${CONF_suricata_log_interval:-30}\!1..60\!1\!0" \
+      --field="":LBL "" \
+      --field="Update":fbtn "bash -c updateSuricataRules" \
+      \
+      --field="Suricata active mode":LBL "" \
+      --field="Active rule action":LBL "" \
+      --field="":LBL "" \
+      --field="Suricata configuration file":LBL "" \
+      --field="Suricata rule file":LBL "" \
+      --field="":LBL "" \
+      --field="Auto update suricata rules (days)":chk   "${CONF_suricata_update_enable:-TRUE}" \
+      --field="Enable Suricata log":chk                 "${CONF_suricata_log_enable:-TRUE}" \
+      --field="Remove old log (days)":chk               "${CONF_suricata_log_keep:-TRUE}" \
+      --field="":LBL "" \
+      --field="Download latest suricata rules":LBL "" \
     --file-filter="Yaml files (*.yaml)| *.yaml" \
     --file-filter="Config Files (*.cfg *.conf)| *.cfg *.conf" \
     --file-filter="All Files | *.*" \
-    > "$_PROJECT_DIR_TMP/suricata.tab" &
+  > "$_PROJECT_DIR_TMP/suricata.tab" &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+# IGNORED SIDS SETTINGS - TAB 3
 
-  defaultActions="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
-  makeDefault="^"
-  export configActionMenu=$(echo "$defaultActions" | sed "s/${CONF_global_action:-}/$makeDefault${CONF_global_action:-}/g")
-
-
+  exec 4<> "$_PROJECT_PIPE_SID_IGNORE"
   yad \
     --plug="$KEY" \
     --tabnum=3 \
-    --form \
-    --field="Default rule action":CB "$configActionMenu" \
-    --field="<b>alert</b> - generate an alert":LBL "" \
-    --field="<b>pass</b> - stop further inspection of the packet":LBL "" \
-    --field="<b>drop</b> - drop packet and generate alert":LBL "" \
-    --field="<b>reject</b> - send RST/ICMP unreach error to the sender of the matching packet.":LBL "" \
-    --field="<b>rejectsrc</b> - same as just reject":LBL "" \
-    --field="<b>rejectdst</b> - send RST/ICMP error packet to receiver of the matching packet.":LBL "" \
-    --field="<b>rejectboth</b> - send RST/ICMP error packets to both sides of the conversation.":LBL "" \
-    --field="":LBL "" \
-    --field="<b>Update</b>":LBL "" \
-    --field="Update rules (days)":NUM "${CONF_global_autoupdate_rules_interval:-7}\!1..365\!1\!0" \
-    --field="":LBL "" \
-    --field="Update rules now":fbtn "bash -c updateSuricataRules" \
-    > "$_PROJECT_DIR_TMP/rules.tab" &
-
-#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
-
-  declare -a ignoredSIDS="$(cat "$_PROJECT_FILE_IGNORED_SIDS")"
-  descIgnore="List of SIDs not shown with suriGUI-notify\\n"
-  descIgnore+="Double-click on SID to remove it."
-
-  exec 4<> "$_PROJECT_PIPE_SID_IGNORE"
-
-  yad \
-    --plug="$KEY" \
-    --tabnum=4 \
     --list \
     --listen \
     --cycle-read \
-    --text="$descIgnore" \
+    --text="$descriptionIgnoreList" \
     --dclick-action="bash -c 'deleteIgnoredSID %s'" \
-    --column="SID" "${ignoredSIDS[@]}" \
+    --column="SID" ${ignoredSIDS[@]} \
     <&4 &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
-
+# CUSTOM RULES - TAB 4
 #  local customRules="$(cat $_SURICATA_CUSTOM_RULES)"
-  descCustom="List of custom Rules"
-  readarray arrayaa <<< "$(cat "$_SURICATA_CUSTOM_RULES")"
+#  descCustom="List of custom Rules"
+#  readarray arrayaa <<< "$(cat "$_SURICATA_CUSTOM_RULES")"
+#
+#  exec 5<> "$_PROJECT_PIPE_SID_CUSTOM"
+#
+#  yad \
+#    --plug="$KEY" \
+#    --tabnum=4 \
+#    --list \
+#    --listen \
+#    --cycle-read \
+#    --separator="|" \
+#    --text="$descCustom" \
+#    --dclick-action="bash -c 'deleteCustomRule %s'" \
+#    --column="SID" --column="Status" --column="IPs" "${arrayaa[@]}" \
+#    <&5 &
+#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
+#  yad \
+#    --plug="$KEY" \
+#    --tabnum=5 \
+#    --form \
+#    --field="":LBL "" \
+#    --field="Backup":fbtn "bash -c backupSuriGUI" \
+#    &
 
-  exec 5<> "$_PROJECT_PIPE_SID_CUSTOM"
 
-  yad \
-    --plug="$KEY" \
-    --tabnum=5 \
-    --list \
-    --listen \
-    --cycle-read \
-    --separator="|" \
-    --text="$descCustom" \
-    --dclick-action="bash -c 'deleteCustomRule %s'" \
-    --column="SID" --column="Status" --column="IPs" "${arrayaa[@]}" \
-    <&5 &
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
-
-  yad \
-    --plug="$KEY" \
-    --tabnum=6 \
-    --form \
-    --field="":LBL "" \
-    --field="Backup":fbtn "bash -c backupSuriGUI" \
-    &
-
-#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
-
-  TXT="  <b>NOT WORKING JET ;)</b>\\n\\n"
-  TXT+="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
-  TXT+="  OS: $(lsb_release -ds) on $(hostname)\\n"
-  TXT+="  Kernel: $(uname -sr)\\n\\n"
-  TXT+="  <i>$(uptime)</i>"
+# MAIN WINDOW - suriGUI
 
   yad \
     --notebook \
-    --width=600 \
+    --key="$KEY" \
     --center  \
     --title="suriGUI Settings" \
-    --text="$TXT" \
+    --text="$descriptionSettings" \
     --auto-kill \
     --auto-close \
     --window-icon="$_PROJECT_ICON_MAIN" \
     --image="$_PROJECT_ICON_MAIN" \
     --image-on-top \
-    --key="$KEY" \
-    --tab="suriGUI" --tab="Suricata" --tab="Rules" --tab="Ignored SIDs" --tab="Custom Rules" --tab="Backup/Restore" \
+    --tab="suriGUI" --tab="Suricata" --tab="Ignored SIDs"  \
     --button="Close":1 --button="Save":0
-  ret=$?
 
+  ret=$?
   case "$ret" in
-    0 ) saveSettings  ;;
+    0 ) :
+        #saveSettings
+    ;;
     1 ) : ;;
     * ) exit 0  ;;
   esac
 
-  for tab in "$_PROJECT_DIR_TMP"/*.tab
-  do
-    rm "$tab"
-  done
+#  for tab in "$_PROJECT_DIR_TMP"/*.tab
+#  do
+#    rm "$tab"
+#  done
 }
 
 
@@ -923,7 +955,7 @@ function controlSuricataService()
 
   if sudo systemctl "$action" suricata &>/dev/null
   then
-    d3bug ok "$action Suricata service"
+    d3bug info "$action Suricata service"
   else
     d3bug error "Can not control Suricata service. $action is not working"
   fi
@@ -932,15 +964,15 @@ function controlSuricataService()
 
 function updateTrayMenu()
 # Create suriGUI tray menu and tray icon
-# usage: updateTrayMenu Suricata-Active|Suricata-Inactive
+# usage: updateTrayMenu active|inactive
 {
   d3bug
 
   local status="$1"
 
   case "$status" in
-    "Suricata-Active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
-    "Suricata-Inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
+    "active")   menu="Stop Suricata service!bash -c 'controlSuricataService stop'" ;;
+    "inactive") menu="Start Suricata service!bash -c 'controlSuricataService start'" ;;
     *)          menu="" ;;
   esac
 
@@ -999,7 +1031,7 @@ function createProjectIcons()
 
     if xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
     then
-      d3bug ok "$iconName"
+      d3bug info "registered $iconName"
     else
       d3bug error "Can not register icon: $iconName"
     fi
@@ -1014,9 +1046,9 @@ function checkSuricataStatus()
 
   if systemctl is-active --quiet suricata
   then
-    export suricataStatus="Suricata-Active"
+    export suricataStatus="active"
   else
-    export suricataStatus="Suricata-Inactive"
+    export suricataStatus="inactive"
   fi
 
   d3bug info "Suricata is $suricataStatus"
@@ -1036,7 +1068,7 @@ function readCustomRules()
   sed -ne "s|^\($s\):|\1|" \
       -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
       -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
-  awk -F"$fs" '{
+  awk -F$fs '{
     indent = length($1)/2;
     vname[indent] = $2;
     for (i in vname) {if (i > indent) {delete vname[i]}}
@@ -1096,7 +1128,7 @@ function reloadSuricataRules()
 
   if sudo suricatasc -c reload-rules #&>/dev/null
   then
-    d3bug ok "Rules reloaded @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
+    d3bug info "Rules reloaded @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
   else
     d3bug error "Can't reload rules!"
   fi
@@ -1119,7 +1151,7 @@ function updateSuricataRules()
     then
       sudo chown user:user "$_PROJECT_DIR_SURICATA" -R
       date +'%Y-%m-%d' > "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP"
-      d3bug ok "Update done @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
+      d3bug info "Update done @ $(date +'%Y-%m-%d %H:%M:%S')"
 
       reloadSuricataRules
     else
@@ -1142,11 +1174,11 @@ function checkSuricataRules()
 
   if [[ -f "$_PROJECT_FILE_SURICATA_RULES" ]]
   then
-    d3bug ok "$_PROJECT_FILE_SURICATA_RULES"
+    d3bug info "$_PROJECT_FILE_SURICATA_RULES"
 
-    if [[ "$CONF_global_autoupdate_rules_enable" == "TRUE" ]]
+    if [[ "$CONF_suricata_update_enable" == "TRUE" ]]
     then
-      d3bug ok "Auto-Update enabled"
+      d3bug info "Auto-Update enabled"
 
       if [[ ! -f "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP" ]]
       then
@@ -1156,12 +1188,12 @@ function checkSuricataRules()
         if [[ $(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
         then
           export lastUpdate="$((($(date +%s)-$(date +%s --date "$(cat $_PROJECT_FILE_SURICATA_RULES_TIMESTAMP)"))/(3600*24)))"
-          if [[ "$lastUpdate" -gt "$CONF_global_autoupdate_rules_interval" ]]
+          if [[ "$lastUpdate" -gt "$CONF_suricata_update_interval" ]]
           then
             d3bug error "Rules to old. Updating..."
             updateSuricataRules
           else
-            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_global_autoupdate_rules_interval day interval)"
+            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_suricata_update_interval day interval)"
           fi
         else
           d3bug error "Rules never updated. Updating..."
@@ -1199,7 +1231,7 @@ function createProjectPipes()
         d3bug error "Can't create pipe: $pipe"
         exit 1
       else
-        d3bug ok "$pipe"
+        d3bug info "$pipe"
       fi
     fi
 
@@ -1207,7 +1239,7 @@ function createProjectPipes()
 
   if exec 3<> "$_PROJECT_PIPE_MAIN"
   then
-    d3bug ok "Project pipe started"
+    d3bug info "Project pipe started"
   else
     d3bug error "Can not start Project pipe. Exit 1"
     exit 1
@@ -1226,7 +1258,7 @@ function createProjectSettings()
   sed -ne "s|^\($s\):|\1|" \
       -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
       -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
-  awk -F"$fs" '{
+  awk -F$fs '{
     indent = length($1)/2;
     vname[indent] = $2;
     for (i in vname) {if (i > indent) {delete vname[i]}}
@@ -1247,7 +1279,7 @@ function checkInternetConnection()
 
   if ($pingComm)
   then
-    d3bug ok "Internet connection is active"
+    d3bug info "Internet connection is active"
   else
     d3bug error "No internet connection. Trying with Qubes proxy"
 
@@ -1258,7 +1290,7 @@ function checkInternetConnection()
       d3bug error "Internet connection not active. Exit 1"
       exit 1
     else
-      d3bug ok "Internet found behind Qubes Proxy"
+      d3bug info "Internet found behind Qubes Proxy"
     fi
   fi
 }
@@ -1297,7 +1329,7 @@ function checkProjectFiles()
         else
           if touch "$file"
           then
-            d3bug ok "File created: $file"
+            d3bug info "File created: $file"
           else
             d3bug error "Can't create config file: \"$fileName\" in directory: \"$destination\""
             # todo: try to inspect if dir is there
@@ -1305,12 +1337,12 @@ function checkProjectFiles()
             exit 1
           fi
         fi
-      #else
+      else
+        d3bug info "$file"
       fi
 
   done
 
-  d3bug ok "$file"
 }
 
 
@@ -1325,7 +1357,7 @@ function checkProjectDirectories()
     then
       if mkdir -p "$dir"
       then
-        d3bug ok "Directory created: $dir"
+        d3bug info "Directory created: $dir"
       else
         d3bug error "Can not create directory: $dir"
         exit 1
@@ -1333,7 +1365,7 @@ function checkProjectDirectories()
     else
       if [[ -w "$dir" ]]
       then
-        d3bug ok "$dir"
+        d3bug info "$dir"
       else
         d3bug error "Directory: $dir is not writable."
         if sudo chown user:user "$dir" -R
@@ -1356,9 +1388,10 @@ function checkProjectDependencies()
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
-    if dpkg -s "$app" &>/dev/null
+#    if dpkg -s "$app"
+    if dpkg -s "$app"
     then
-      d3bug ok "$app"
+      d3bug info "$app"
     else
       d3bug error "$app not installed"
 
@@ -1373,7 +1406,7 @@ function checkProjectDependencies()
         d3bug info "Installing $app ..."
         if sudo apt-get install "$app" -y &>/dev/null
         then
-          d3bug ok "$app was successfully installed"
+          d3bug info "$app was successfully installed"
         else
           d3bug error "Can't install: $app"
           exit 1
@@ -1385,6 +1418,7 @@ function checkProjectDependencies()
     fi
   done
 }
+
 
 
 # Export functions for yad
@@ -1400,13 +1434,28 @@ export -f updateSuriGUI
 export -f send_notify
 
 
+# verbosity = silent file normal high debug
+while getopts "v:b:c:" opt
+do
+   case "$opt" in
+      v )
+        export CONF_global_log_verbosity="$OPTARG" ;;
+      b ) parameterB="$OPTARG" ;;
+      c ) parameterC="$OPTARG" ;;
+      ? ) helpFunction ;; # Print helpFunction in case parameter is non-existent
+   esac
+done
+
+
+
 # S T A R T   S U R I G U I
 checkProjectDependencies
 checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
 
-eval export "$(createProjectSettings)"
+createProjectSettings
+eval export $(createProjectSettings)
 createProjectPipes
 createProjectIcons
 
@@ -1421,7 +1470,7 @@ startSuriGUI &
 while ( ! systemctl is-active --quiet suricata )
 do
   ( systemctl is-active --quiet suricata ) && break
-  d3bug info "Waiting for Suricata service"
+  d3bug info "Waiting for Suricata service to start"
   sleep 5
 done #&>/dev/null
 d3bug info "Suricata is active"
@@ -1430,7 +1479,7 @@ exec 3<>$_PROJECT_PIPE_MAIN echo "visible:blink" >&3 &
 while [[ ! -f "$_PROJECT_DIR_LOG/eve.json" ]]
 do
   [[ -f "$_PROJECT_DIR_LOG/eve.json" ]] && break
-  d3bug info "Suricata is not writing to log file"
+  d3bug info "Suricata service is active but no output is generated."
   sleep 5
 done #&>/dev/null
 d3bug info "Log output found"
