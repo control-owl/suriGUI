@@ -23,7 +23,7 @@ IPS-install-dependencies:
 #
 suriGUI-install:
   cmd.run:
-    - name: "export https_proxy=127.0.0.1:8082 && git clone -b dev https://github.com/control-owl/suriGUI.git /opt/suriGUI"
+    - name: "export https_proxy=127.0.0.1:8082 && git clone https://github.com/control-owl/suriGUI.git /opt/suriGUI"
 
 suriGUI-link:
   cmd.run:
