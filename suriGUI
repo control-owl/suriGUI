@@ -52,10 +52,8 @@ export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"                        # 
 export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"   # Suricata config file
 export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"   # Default suricata rules
 export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"   # Update timestamp
-
 export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"                      # suriGUI log file
 export _SURICATA_FILE_LOG="$_PROJECT_DIR_LOG/eve.json"                        # Suricata log file
-
 
 _PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
                     "$_PROJECT_FILE_CUSTOM_RULES"
@@ -131,8 +129,8 @@ function exitSuriGUI()
 function d3bug()
 # Print output messages, function names, errors
 # Usage: d3bug info|error "Lorem ipsum dolor sit amet"
-# todo: do better log output
-# todo: add verbosity and no output, error only
+# TODO: do better log output
+# TODO: add verbosity and no output, error only
 {
   local type="${1:-}"
   local msg="${2:-}"
@@ -171,7 +169,7 @@ function d3bug()
 function cleanLog()
 # Clean old log files
 # Usage: cleanLog all|old
-# todo: detect old directory based on variable, remove old directories
+# TODO: detect old directory based on variable, remove old directories
 {
   local reason=${1:-*}
   local interval="${CONF_suricata_log_old_interval:-}"
@@ -199,7 +197,7 @@ function cleanLog()
 #function readConfigFile()
 ## Read suriGUI.conf and export all variables to yad
 ## Yad is not working if export is not done
-## todo: remove and replace with suriGUI.yaml
+## TODO: remove and replace with suriGUI.yaml
 #{
 #  d3bug
 #  local config="${1:-*}"
@@ -543,7 +541,7 @@ function send_notify()
           TXT+="$(date +'%Y-%m-%d') at  $(date +'%H:%M:%S') \n"
           TXT+="<i>$sig</i>"
 
-          actionControl="Continue blocking!Don't show again!Allow (not working yet)"
+          actionControl="Continue blocking (default)!Don't show again (ignore)!Allow (not working yet)"
 
           set +o errexit # yad problem, error exit must be disabled
           yadOutput="$( yad \
@@ -551,7 +549,7 @@ function send_notify()
             --form \
             --on-top \
             --width=500 \
-            --timeout="${CONF_global_notifications_duration:-}" \
+            --timeout="${CONF_global_notifications_duration:-30}" \
             --timeout-indicator="top" \
             --window-icon="$_PROJECT_ICON_ALERT" \
             --image="$_PROJECT_ICON_ALERT" \
@@ -670,7 +668,7 @@ function deleteIgnoredSID()
 function saveSettings()
 # Save suriGUI settings to config file
 # will be removed and replaced with new function
-# todo: replace with new yaml writer
+# TODO: replace with new yaml writer
 {
   d3bug
 
@@ -702,8 +700,8 @@ function suriGUISettings()
 # Ignored SID List
 # Custom Rules List - will be replaced
 # Backup/Restore - Not done yet
-# todo: preview log in tab, create new tab: log
-# todo: keep log forever
+# TODO: preview log in tab, create new tab: log
+# TODO: keep log forever
 {
   d3bug
 
@@ -746,7 +744,7 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 # SURIGUI SETTINGS - TAB 1
-# todo: auto update suriGUI
+# TODO: auto update suriGUI
 
   yad \
     --plug="$KEY" \
@@ -773,8 +771,8 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 # SURICATA SETTINGS - TAB 2
-# todo: make help file
-# todo: manual in terminal
+# TODO: make help file
+# TODO: manual in terminal
 
   yad \
     --plug="$KEY" \
@@ -983,7 +981,7 @@ function updateTrayMenu()
 }
 
 
-# todo: Parser must me own file and service, second time rewriting
+# TODO: Parser must me own file and service, second time rewriting
 #idiot
 
 
@@ -1152,7 +1150,7 @@ function updateSuricataRules()
     fi
   else
     d3bug error "suricata-update not installed. Exit 1"
-    # todo: maybe not exit if default file is there
+    # TODO: maybe not exit if default file is there
     exit 1
   fi
 }
@@ -1324,7 +1322,7 @@ function checkProjectFiles()
             d3bug info "File created: $file"
           else
             d3bug error "Can't create config file: \"$fileName\" in directory: \"$destination\""
-            # todo: try to inspect if dir is there
+            # TODO: try to inspect if dir is there
             # chown
             exit 1
           fi
@@ -1427,7 +1425,7 @@ export -f send_notify
 
 
 # verbosity = silent file normal high debug
-# todo: make help function
+# TODO: make help function
 while getopts "v:b:c:" opt
 do
    case "$opt" in
