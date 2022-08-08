@@ -16,6 +16,8 @@ export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
 export _PROJECT_VER="0.2.220808"
 # timestamp: 19.59
+# manjaro version
+
 
 echo -e \
 "####################
@@ -27,10 +29,10 @@ echo -e \
 
 #
 # DIRs
-export _PROJECT_DIR_MAIN="/opt/suriGUI"     && sudo chown user:user "$_PROJECT_DIR_MAIN" -R
+export _PROJECT_DIR_MAIN="$HOME/Projects/suriGUI"     #&& sudo chown user:user "$_PROJECT_DIR_MAIN" -R
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
-export _PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
+_PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')" && export _PROJECT_DIR_LOG
 export _PROJECT_DIR_RES="$_PROJECT_DIR_MAIN/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR_MAIN/tmp"
 export _PROJECT_DIR_SURICATA="$_PROJECT_DIR_CONF/suricata"
@@ -134,8 +136,8 @@ function d3bug()
 {
   local type="${1:-}"
   local msg="${2:-}"
-  local timeStamp="$(date +'%Y-%m-%d %H:%M:%S')"
-  local verbosity="${CONF_global_log_verbosity:-normal}"
+  timeStamp="$(date +'%Y-%m-%d %H:%M:%S')"
+  #local verbosity="${CONF_global_log_verbosity:-normal}"
 
 
   if [[ ! -e "$_PROJECT_FILE_LOG" ]]
@@ -460,8 +462,8 @@ function preventSuricataSpam()
   local SRC="$2"
   local DST="$3"
 
-  local timeStamp="$(date +'%Y-%m-%d-%H:%M')"
-  local currentLog="$timeStamp|$SID|$SRC|$DST"
+  timeStamp="$(date +'%Y-%m-%d-%H:%M')"
+  currentLog="$timeStamp|$SID|$SRC|$DST"
 
   if grep -q "$currentLog" "$_PROJECT_FILE_SPAM"
   then
@@ -580,7 +582,7 @@ function send_notify()
                   if ! grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
                   then
                     d3bug info "Writing SID: $sid to ignore list"
-                    echo "$sid" >> $_PROJECT_FILE_IGNORED_SIDS
+                    echo "$sid" >> "$_PROJECT_FILE_IGNORED_SIDS"
                   else
                     d3bug info "SID: $sid is already in ignore list"
                   fi
@@ -711,10 +713,10 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local descriptionSettings="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
-  local descriptionSettings+="  OS: $(lsb_release -ds) on $(hostname)\\n"
-  local descriptionSettings+="  Kernel: $(uname -sr)\\n\\n"
-  local descriptionSettings+="  <i>$(uptime)</i>"
+  descriptionSettings="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
+  descriptionSettings+="  OS: $(lsb_release -ds) on $(hostname)\\n"
+  descriptionSettings+="  Kernel: $(uname -sr)\\n\\n"
+  descriptionSettings+="  <i>$(uptime)</i>"
 
   local descriptionIgnoreList="List of SIDs not shown with suriGUI-notify\\n"
   local descriptionIgnoreList+="Double-click on SID to remove it."
@@ -726,13 +728,21 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local setPosition=$(echo "$positionMode" \
+
+#Problematic code:
+#string="stirng" ; echo "$string" | sed -e "s/ir/ri/"
+#Correct code:
+#string="stirng" ; echo "${string//ir/ri}"
+#  setPosition="${$verbosityMode//"${CONF_global_log_verbosity:-}"/"$makeDefault${CONF_global_log_verbosity:-}"}"
+
+
+  setPosition=$(echo "$positionMode" \
           | sed "s/$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position/g")
 
-  local setVerbosity=$(echo "$verbosityMode" \
+  setVerbosity=$(echo "$verbosityMode" \
           | sed "s/${CONF_global_log_verbosity:-}/$makeDefault${CONF_global_log_verbosity:-}/g")
 
-  local setAction=$(echo "$actionMode" \
+  setAction=$(echo "$actionMode" \
           | sed "s/${CONF_suricata_action:-}/$makeDefault${CONF_suricata_action:-}/g")
 
   case "${CONF_suricata_action:-unknown}" in
@@ -740,7 +750,7 @@ function suriGUISettings()
     *)          export setMode="IDS" ;;
   esac
 
-  declare -a ignoredSIDS="$(cat "$_PROJECT_FILE_IGNORED_SIDS")"
+  ignoredSIDS="$(cat "$_PROJECT_FILE_IGNORED_SIDS")" && declare -a ignoredSIDS
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 # SURIGUI SETTINGS - TAB 1
@@ -811,7 +821,9 @@ function suriGUISettings()
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 # IGNORED SIDS SETTINGS - TAB 3
 
+  # start pipe
   exec 4<> "$_PROJECT_PIPE_SID_IGNORE"
+
   yad \
     --plug="$KEY" \
     --tabnum=3 \
@@ -893,7 +905,7 @@ function stopNotifyDaemon()
 
   if [[ -f "$PROJECT_PID_NOTIFY" ]]
   then
-    if ps -p "$(cat $PROJECT_PID_NOTIFY)"
+    if ps -p "$(cat "$PROJECT_PID_NOTIFY")"
     then
       d3bug info "Notifications are active. PID: $(cat $PROJECT_PID_NOTIFY)"
       if sudo kill -9 "$(cat $PROJECT_PID_NOTIFY)" #&>/dev/null
@@ -1003,8 +1015,8 @@ function startSuriGUI()
     --image="$suricataStatus" \
     --separator="|" \
     --menu="Exit!quit" \
-    --command="bash -c suriGUISettings" \
-    <&3 &>/dev/null
+    --command="bash -c suriGUISettings" #\
+    #<&3 &>/dev/null
 
   [[ -f "$_PROJECT_PID_MAIN" ]] && rm "$_PROJECT_PID_MAIN"
 }
@@ -1017,7 +1029,7 @@ function createProjectIcons()
 
   for icon in "${_PROJECT_DB_ICONS[@]}"
   do
-    local iconName=$(basename "$icon" | sed "s/\..*//")
+    iconName=$(basename "$icon" | sed "s/\..*//")
 
     if xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
     then
@@ -1151,7 +1163,7 @@ function updateSuricataRules()
   else
     d3bug error "suricata-update not installed. Exit 1"
     # TODO: maybe not exit if default file is there
-    exit 1
+    #exit 1
   fi
 }
 
@@ -1242,6 +1254,9 @@ function createProjectSettings()
 # Read suriGui.yaml and convert it to variables
 # Print: createProjectSettings "$_PROJECT_DIR_CONF/settings.yaml"
 # Set variables: eval $(createProjectSettings "$_PROJECT_DIR_CONF/settings.yaml")
+# found on internet
+# but there is no yaml writer, only reader
+# TODO : again new config file
 {
   local file="$_PROJECT_FILE_CONFIG_NEW"
   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
@@ -1265,7 +1280,7 @@ function checkInternetConnection()
 {
   d3bug
 
-  local pingComm="$(ping -q -c 1 -W 1 1.1.1.1 >/dev/null)"
+  pingComm="$(ping -q -c 1 -W 1 1.1.1.1 >/dev/null)"
 
   if ($pingComm)
   then
@@ -1373,8 +1388,12 @@ function checkProjectDirectories()
 
 function checkProjectDependencies()
 # Install project dependencies
+# TODO : get distribution name
+# TODO : multi distribution project
 {
   d3bug
+
+
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
@@ -1388,7 +1407,8 @@ function checkProjectDependencies()
       yad --image="$_PROJECT_ICON_MAIN" --image-on-top \
           --title="$_PROJECT_NAME" \
           --button="Yes" --button="No" \
-          --text="$app is not installed.\nDo you want to install it now?" &>/dev/null
+          --text="$app is not installed.\nDo you want to install it now?" \
+      &>/dev/null
 
       ret=$?
       if [[ $ret = 0 ]]
@@ -1440,12 +1460,12 @@ done
 
 
 # S T A R T   S U R I G U I
-checkProjectDependencies
+#checkProjectDependencies
 checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
 
-createProjectSettings
+#createProjectSettings
 eval export $(createProjectSettings)
 createProjectPipes
 createProjectIcons
