@@ -16,6 +16,7 @@ export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
 export _PROJECT_VER="0.2.220808"
 # timestamp: 19.59
+#oddo
 
 echo -e \
 "####################
