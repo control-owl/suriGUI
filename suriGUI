@@ -26,6 +26,7 @@ echo -e \
 
 #
 # DIRs
+# todo: check if chown is not more needed since there is chown in suricata service (log directory was problem)
 export _PROJECT_DIR_MAIN="/opt/suriGUI"     && sudo chown user:user "$_PROJECT_DIR_MAIN" -R
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
@@ -115,6 +116,8 @@ function exitSuriGUI()
   find "$_PROJECT_DIR_TMP" -type f -name "*.pipe" -delete &>/dev/null
   find "$_PROJECT_DIR_TMP" -type f -name "*.tmp" -delete &>/dev/null
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
+
+  # close pipes just to be sure
 
   case "${CONF_suricata_log_enable:-}" in
     "TRUE")  cleanLog old  ;;
@@ -915,7 +918,8 @@ function stopNotifyDaemon()
   fi
 }
 
-
+# todo: bug found: prsing is not working if file is empty
+# make delay until new line is detected
 function startNotifyDaemon()
 # Start suriGUI notifications
 # Tail Suricata eve.json file
