@@ -14,9 +14,7 @@ trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 # INFO
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
-export _PROJECT_VER="0.2.220808"
-# timestamp: 19.59
-#oddo
+export _PROJECT_VER="0.2.220822"
 
 echo -e \
 "####################
