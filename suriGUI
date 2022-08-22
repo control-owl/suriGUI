@@ -103,7 +103,9 @@ _PROJECT_DB_REQS=( "libnetfilter-queue-dev"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
+# todo: bug found: menu is displayed on every second start ???
+# maybe not closing pipes causes this
+# try to investigate
 function exitSuriGUI()
 # Trap any exit signal and execute this function
 # Remove unnecessary files
