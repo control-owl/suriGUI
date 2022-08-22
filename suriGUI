@@ -8,7 +8,8 @@ set -o pipefail     # Pipe return exit status
 trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
-
+# too many bug
+# let's find them all
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # GLOBAL VARIABLES
 # INFO
