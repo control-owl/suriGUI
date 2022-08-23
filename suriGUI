@@ -95,6 +95,9 @@ _PROJECT_DB_ICONS=( "$_PROJECT_ICON_MAIN"
 export _PROJECT_PID_MAIN="$_PROJECT_DIR_TMP/suriGUI.pid"
 export PROJECT_PID_NOTIFY="$_PROJECT_DIR_TMP/suriGUI-notify.pid"
 
+
+#
+# REQs
 _PROJECT_DB_REQS=( "libnetfilter-queue-dev"
                    "suricata"
                    "jq"
@@ -119,6 +122,15 @@ function exitSuriGUI()
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
 
   # close pipes just to be sure
+#  exec 3<&-
+#  exec 4<&-
+#  exec 5<&-
+
+#  exec 3<>/tmp/some-file
+#  [[ -e /dev/fd/3 ]] && echo 'FD is open' || echo 'FD is closed'
+#  exec 3<&- ; exec 3>&-
+#  [[ -e /dev/fd/3 ]] && echo 'FD is open' || echo 'FD is closed'
+#https://catonmat.net/bash-one-liners-explained-part-three
 
   case "${CONF_suricata_log_enable:-}" in
     "TRUE")  cleanLog old  ;;
@@ -152,13 +164,16 @@ function d3bug()
     fi
   fi
 
-  local message="function: ${FUNCNAME[1]}  $msg"
+  local message="$timeStamp  [$type]  function: ${FUNCNAME[1]}  $msg"
+
+
 
   case "$type" in
-    ok)      echo "$timeStamp [NOTICE] $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    error)   echo "$timeStamp [ERROR]  $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    info)    echo "$timeStamp [INFO]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    *)       echo "$timeStamp [INFO]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    ok)      echo "$timeStamp [NOTICE]  $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    error)   echo "$timeStamp [ERROR]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    info)    echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    warning) echo "$timeStamp [WARNING] $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+    *)       echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
   esac
 
   #TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
@@ -1379,19 +1394,20 @@ function checkProjectDirectories()
 
 function checkProjectDependencies()
 # Install project dependencies
+# todo: make multi-distro
 {
   d3bug
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
-#    if dpkg -s "$app"
     if dpkg -s "$app"
     then
-      d3bug info "$app"
+      d3bug ok "$app installed"
     else
-      d3bug error "$app not installed"
+      d3bug warning "$app not installed"
 
-      yad --image="$_PROJECT_ICON_MAIN" --image-on-top \
+      yad --image="$_PROJECT_ICON_MAIN" \
+          --image-on-top \
           --title="$_PROJECT_NAME" \
           --button="Yes" --button="No" \
           --text="$app is not installed.\nDo you want to install it now?" &>/dev/null
@@ -1402,7 +1418,7 @@ function checkProjectDependencies()
         d3bug info "Installing $app ..."
         if sudo apt-get install "$app" -y &>/dev/null
         then
-          d3bug info "$app was successfully installed"
+          d3bug ok "$app was successfully installed"
         else
           d3bug error "Can't install: $app"
           exit 1
@@ -1437,8 +1453,8 @@ do
    case "$opt" in
       v )
         export CONF_global_log_verbosity="$OPTARG" ;;
-      b ) parameterB="$OPTARG" ;;
-      c ) parameterC="$OPTARG" ;;
+#      b ) parameterB="$OPTARG" ;;
+#      c ) parameterC="$OPTARG" ;;
       ? ) helpFunction ;; # Print helpFunction in case parameter is non-existent
    esac
 done
