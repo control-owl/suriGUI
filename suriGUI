@@ -8,14 +8,13 @@ set -o pipefail     # Pipe return exit status
 trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
-# too many bug
-# let's find them all
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # GLOBAL VARIABLES
 # INFO
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
-export _PROJECT_VER="0.2.220822"
+export _PROJECT_VER="0.2.220824"
 
 echo -e \
 "####################
@@ -28,10 +27,10 @@ echo -e \
 #
 # DIRs
 # todo: check if chown is not more needed since there is chown in suricata service (log directory was problem)
-export _PROJECT_DIR_MAIN="/opt/suriGUI"     && sudo chown user:user "$_PROJECT_DIR_MAIN" -R
+export _PROJECT_DIR_MAIN="/opt/suriGUI"     #&& sudo chown user:user "$_PROJECT_DIR_MAIN" -R
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
-export _PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
+_PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')" ; export _PROJECT_DIR_LOG
 export _PROJECT_DIR_RES="$_PROJECT_DIR_MAIN/res"
 export _PROJECT_DIR_TMP="$_PROJECT_DIR_MAIN/tmp"
 export _PROJECT_DIR_SURICATA="$_PROJECT_DIR_CONF/suricata"
@@ -151,8 +150,25 @@ function d3bug()
 {
   local type="${1:-}"
   local msg="${2:-}"
-  local timeStamp="$(date +'%Y-%m-%d %H:%M:%S')"
-  local verbosity="${CONF_global_log_verbosity:-normal}"
+  local timeStamp ; timeStamp="$(date +'%Y-%m-%d %H:%M:%S')"
+  local verbosity="${CONF_global_log_verbosity:-normal}"  # incognito file normal debug
+  local output
+
+  case "$verbosity" in
+    incognito)
+      output="&> /dev/null"
+    ;;
+    file)
+      output="2> $_PROJECT_FILE_LOG | tee $_PROJECT_FILE_LOG"
+    ;;
+    normal)
+      output="2> >(tee $_PROJECT_FILE_LOG) | tee $_PROJECT_FILE_LOG"
+    ;;
+    debug)
+      echo "show me everything"
+    ;;
+    *) : ;;
+  esac
 
 
   if [[ ! -e "$_PROJECT_FILE_LOG" ]]
@@ -164,25 +180,28 @@ function d3bug()
     fi
   fi
 
-  local message="$timeStamp  [$type]  function: ${FUNCNAME[1]}  $msg"
+  local message="$timeStamp  [$type]  function: ${FUNCNAME[1]}  $msg  $output"
+
+  echo "$message"
+#  case "$type" in
+#    debug)  : ;;
+#    info)  : ;;
+#    notice)  : ;;
+#    warn)  : ;;
+#    error)  : ;;
+#    fatal)  : ;;
+#  esac
+#
+#
+#  case "$type" in
+#    ok)      echo "$timeStamp [NOTICE]  $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+#    error)   echo "$timeStamp [ERROR]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+#    info)    echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+#    warning) echo "$timeStamp [WARNING] $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+#    *)       echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
+#  esac
 
 
-
-  case "$type" in
-    ok)      echo "$timeStamp [NOTICE]  $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    error)   echo "$timeStamp [ERROR]   $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    info)    echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    warning) echo "$timeStamp [WARNING] $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-    *)       echo "$timeStamp [INFO]    $message" | tee -a "$_PROJECT_FILE_LOG" ;;
-  esac
-
-  #TRACE level: this is a code smell if used in production. This should be used during development to track bugs, but never committed to your VCS.
-  #DEBUG level: log at this level about anything that happens in the program. This is mostly used during debugging, and I’d advocate trimming down the number of debug statement before entering the production stage, so that only the most meaningful entries are left, and can be activated during troubleshooting.
-  #INFO level: log at this level all actions that are user-driven, or system specific (ie regularly scheduled operations…)
-  #NOTICE level: this will certainly be the level at which the program will run when in production. Log at this level all the notable events that are not considered an error.
-  #WARN level: log at this level all events that could potentially become an error. For instance if one database call took more than a predefined time, or if an in-memory cache is near capacity. This will allow proper automated alerting, and during troubleshooting will allow to better understand how the system was behaving before the failure.
-  #ERROR level: log every error condition at this level. That can be API calls that return errors or internal error conditions.
-  #FATAL level: too bad, it’s doomsday. Use this very scarcely, this shouldn't happen a lot in a real program. Usually logging at this level signifies the end of the program. For instance, if a network daemon can’t bind a network socket, log at this level and exit is the only sensible thing to do.
 }
 
 
@@ -326,8 +345,8 @@ function changeSID()
   local location="$3"
   local IP="$4"
 
-
   oldRule=$(grep -F "sid:$SID" $_PROJECT_FILE_SURICATA_RULES)
+
   if [[ -z "$oldRule" ]]
   then
     echo "Rule with SID: $SID is NOT found in file: $_PROJECT_FILE_SURICATA_RULES"
@@ -480,7 +499,7 @@ function preventSuricataSpam()
   local SRC="$2"
   local DST="$3"
 
-  local timeStamp="$(date +'%Y-%m-%d-%H:%M')"
+  local timeStamp ; timeStamp="$(date +'%Y-%m-%d-%H:%M')"
   local currentLog="$timeStamp|$SID|$SRC|$DST"
 
   if grep -q "$currentLog" "$_PROJECT_FILE_SPAM"
@@ -731,28 +750,33 @@ function suriGUISettings()
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local descriptionSettings="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
-  local descriptionSettings+="  OS: $(lsb_release -ds) on $(hostname)\\n"
-  local descriptionSettings+="  Kernel: $(uname -sr)\\n\\n"
-  local descriptionSettings+="  <i>$(uptime)</i>"
+  local descriptionSettings
+  descriptionSettings="  <b>$_PROJECT_NAME</b>   Version: <b>$_PROJECT_VER</b>\\n\\n"
+  descriptionSettings+="  OS: $(lsb_release -ds) on $(hostname)\\n"
+  descriptionSettings+="  Kernel: $(uname -sr)\\n\\n"
+  descriptionSettings+="  <i>$(uptime)</i>"
 
   local descriptionIgnoreList="List of SIDs not shown with suriGUI-notify\\n"
   local descriptionIgnoreList+="Double-click on SID to remove it."
 
   local positionMode="Top left\!Top right\!Bottom left\!Bottom right\!Center\!Under mouse"
-  local verbosityMode="debug\!normal\!silent"
+  local verbosityMode="incognito\!file\!normal\!debug"
   local actionMode="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
   local makeDefault="^"
 
 #--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#--#
 
-  local setPosition=$(echo "$positionMode" \
-          | sed "s/$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position/g")
+#  local setPosition ; setPosition=$(echo "$positionMode" \
+#          | sed "s/$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position/g")
 
-  local setVerbosity=$(echo "$verbosityMode" \
+  local setPosition="${positionMode//$CONF_global_notifications_position/$makeDefault$CONF_global_notifications_position}"
+
+
+
+  local setVerbosity ; setVerbosity=$(echo "$verbosityMode" \
           | sed "s/${CONF_global_log_verbosity:-}/$makeDefault${CONF_global_log_verbosity:-}/g")
 
-  local setAction=$(echo "$actionMode" \
+  local setAction ; setAction=$(echo "$actionMode" \
           | sed "s/${CONF_suricata_action:-}/$makeDefault${CONF_suricata_action:-}/g")
 
   case "${CONF_suricata_action:-unknown}" in
@@ -1432,6 +1456,24 @@ function checkProjectDependencies()
 }
 
 
+function checkDistroVersion()
+{
+  d3bug
+
+  local distro ; distro="$(uname -o)"
+
+  d3bug NOTICE "Detected distro: $distro"
+
+  case "$distro" in
+    Debian)   :  ;;
+    Fedora)   :  ;;
+    Arch)     :  ;;
+    Msys)     :  ;;
+    *)        :  ;;
+  esac
+
+}
+
 
 # Export functions for yad
 export -f d3bug
@@ -1462,6 +1504,7 @@ done
 
 
 # S T A R T   S U R I G U I
+checkDistroVersion
 checkProjectDependencies
 checkProjectDirectories
 checkProjectFiles

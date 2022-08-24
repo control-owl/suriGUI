@@ -16,7 +16,7 @@ global:
     interval: 7
   log:
     enable: TRUE
-    verbosity: normal
+    verbosity: normal   # incognito file normal debug
     erroronly: FALSE
     file: TRUE
 
