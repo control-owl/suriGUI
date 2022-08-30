@@ -225,97 +225,6 @@ function cleanLog()
 }
 
 
-#function readConfigFile()
-## Read suriGUI.conf and export all variables to yad
-## Yad is not working if export is not done
-## TODO: remove and replace with suriGUI.yaml
-#{
-#  d3bug
-#  local config="${1:-*}"
-#
-#  source "$_PROJECT_CONFIG_FILE"
-#
-#  case "$config" in
-##    "actionMenu")
-##      actionMode="alert\!pass\!drop\!reject\!rejectsrc\!rejectdst\!rejectboth"
-##      makeDefault="^"
-##      export setAction=$(echo "$actionMode" | sed "s/$action/$makeDefault$action/g")
-##    ;;
-#    "update")
-#      export configUpdate="$update"
-#    ;;
-##    "timeout")
-##      export configTimeout="$timeout"
-##    ;;
-##    "duration")
-##      export configDuration="$duration"
-##    ;;
-##    "notifications")
-##      export configNotifications="$notifications"
-##    ;;
-##    "keep")
-##      export configKeep="$keep"
-##      ;;
-##    "action")
-##      export configAction="$action"
-##      ;;
-##    "notificationPositionMenu")
-##      defaultPositions="Top_left\!Top_right\!Bottom_left\!Bottom_right"
-##      makeDefault="^"
-##      export configNotificationPositionMenu=$(echo "$defaultPositions" | sed "s/$position/$makeDefault$position/g")
-##    ;;
-##    "notificationPosition")
-##      export configNotificationPosition="$position"
-##      ;;
-#    *)
-#      d3bug error "wrong config lookup"
-#    ;;
-#  esac
-#
-#  d3bug info "Get config: $config"
-#}
-
-#function updateConfigFile()
-## Write to suriGUI.conf and reload suricata if rule settings were changed
-## NEED TO REWRITE
-## will be removed and replaced with new function
-#{
-#  d3bug
-#
-#  #updateConfigFile rules "$new" "$old"
-#  local component="$1"
-#  local newStatus="$2"
-#  local oldStatus="${3:-}"
-#
-#  case "$component" in
-#    "rules")
-#      d3bug info "Updating $component: $oldStatus -> $newStatus"
-#
-#      sed -i "s/\<$oldStatus\>/$newStatus/" "$_PROJECT_FILE_SURICATA_RULES"
-#      # checkSuricataStatus &>/dev/null
-#      #
-#      # if [[ "$suricataStatus" == "active" ]]
-#      # then
-#      #   d3bug info "Starting Suricata reload..."
-#      #   if sudo suricatasc -c reload-rules
-#      #   then
-#      #     #sudo systemctl reload suricata #&>/dev/null
-#      #     d3bug info "Rules updated & reloaded"
-#      #   else
-#      #     d3bug error "Can't reload rules??"
-#      #   fi
-#      # else
-#      #   d3bug info "Rules updated"
-#      # fi
-#    ;;
-#    "action")
-#      sed -i "s/^\(action\s*=\s*\).*\$/\1$newStatus/" "$_PROJECT_CONFIG_FILE"
-#      d3bug info "Rule action: $newStatus"
-#    ;;
-#  esac
-#}
-
-
 function restartSuriGUI()
 # Restart suriGUI
 # Suricata should not be killed
@@ -337,7 +246,7 @@ function changeSID()
   local location="$3"
   local IP="$4"
 
-  oldRule=$(grep -F "sid:$SID" $_PROJECT_FILE_SURICATA_RULES)
+  oldRule=$(grep -F "sid:$SID" "$_PROJECT_FILE_SURICATA_RULES")
 
   if [[ -z "$oldRule" ]]
   then
@@ -346,7 +255,7 @@ function changeSID()
     exit 1
   fi
 
-  ruleLineNum="$(grep -n "$SID" $_PROJECT_FILE_SURICATA_RULES | head -n 1 | cut -d: -f1)"
+  ruleLineNum="$(grep -n "$SID" "$_PROJECT_FILE_SURICATA_RULES" | head -n 1 | cut -d: -f1)"
 
   # get rule status
   if [[ "$oldRule" =~ ^[[:space:]]*#.* ]]
@@ -427,7 +336,7 @@ function changeSID()
         echo "new location: $newRule"
 
         # execute change
-        sed -i -e "${ruleLineNum} c\\" -e "${newRule}" ${_PROJECT_FILE_SURICATA_RULES}
+        sed -i -e "${ruleLineNum} c\\" -e "${newRule}" "${_PROJECT_FILE_SURICATA_RULES}"
 
       fi
     ;;
@@ -611,7 +520,7 @@ function send_notify()
                   if ! grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
                   then
                     d3bug info "Writing SID: $sid to ignore list"
-                    echo "$sid" >> $_PROJECT_FILE_IGNORED_SIDS
+                    echo "$sid" >> "$_PROJECT_FILE_IGNORED_SIDS"
                   else
                     d3bug info "SID: $sid is already in ignore list"
                   fi
@@ -688,8 +597,8 @@ function deleteIgnoredSID()
   then
     sed -i "/$sid/d" "$_PROJECT_FILE_IGNORED_SIDS"
     d3bug info "SID: $sid removed"
-    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "\f" >&4 &
-    exec 4<>$_PROJECT_PIPE_SID_IGNORE echo -e "$(cat $_PROJECT_FILE_IGNORED_SIDS)" >&4 &
+    exec 4<>"$_PROJECT_PIPE_SID_IGNORE" echo -e "\f" >&4 &
+    exec 4<>"$_PROJECT_PIPE_SID_IGNORE" echo -e "$(cat "$_PROJECT_FILE_IGNORED_SIDS")" >&4 &
   else
     d3bug info "Nothing done"
   fi
@@ -904,10 +813,10 @@ function stopNotifyDaemon()
 
   if [[ -f "$PROJECT_PID_NOTIFY" ]]
   then
-    if ps -p "$(cat $PROJECT_PID_NOTIFY)"
+    if ps -p "$(cat "$PROJECT_PID_NOTIFY")"
     then
-      d3bug NOTICE "Notifications are active. PID: $(cat $PROJECT_PID_NOTIFY)"
-      if sudo kill -9 "$(cat $PROJECT_PID_NOTIFY)" #&>/dev/null
+      d3bug NOTICE "Notifications are active. PID: $(cat "$PROJECT_PID_NOTIFY")"
+      if sudo kill -9 "$(cat "$PROJECT_PID_NOTIFY")" #&>/dev/null
       then
         d3bug NOTICE "suriGUI-notify stopped"
         if ! rm "$PROJECT_PID_NOTIFY"
@@ -918,7 +827,7 @@ function stopNotifyDaemon()
         d3bug ERROR "Can not stop Notifications "
       fi
     else
-      d3bug ERROR "suriGUI-notify file found, but process with PID $(cat $PROJECT_PID_NOTIFY) was not"
+      d3bug ERROR "suriGUI-notify file found, but process with PID $(cat "$PROJECT_PID_NOTIFY") was not"
     fi
   else
     d3bug WARN "suriGUI-notify PID file not found! Nothing to kill."
@@ -931,7 +840,7 @@ function startNotifyDaemon()
 # todo: bug found: parsing is not working if file is empty
 # make delay until new line is detected
 {
-  d3bug
+  d3bug DEBUG start
 
   tail -f "$_PROJECT_DIR_LOG/eve.json" > >( \
     jq --unbuffered -r -c 'select(.event_type=="alert")' \
@@ -943,7 +852,9 @@ function startNotifyDaemon()
 
   echo "$!" > "$PROJECT_PID_NOTIFY"
 
-  d3bug NOTICE "Notifications started with PID: $(cat $PROJECT_PID_NOTIFY)"
+  d3bug NOTICE "Notifications started with PID: $(cat "$PROJECT_PID_NOTIFY")"
+
+  d3bug DEBUG end
 }
 
 
@@ -982,12 +893,12 @@ function updateTrayMenu()
   menu+="||Settings!bash -c 'suriGUISettings'"
   menu+="||Exit!quit"
 
-  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "menu:$menu" >&3 &
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>"$_PROJECT_PIPE_MAIN" echo "menu:$menu" >&3 &
 
   d3bug info "Menu updated: $status"
   d3bug info "Menu: $menu"
 
-  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>$_PROJECT_PIPE_MAIN echo "icon:$suricataStatus" >&3 &
+  [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>"$_PROJECT_PIPE_MAIN" echo "icon:$suricataStatus" >&3 &
 
   d3bug info "Icon updated: $status"
 }
@@ -1190,7 +1101,7 @@ function checkSuricataRules()
       else
         if [[ $(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
         then
-          export lastUpdate="$((($(date +%s)-$(date +%s --date "$(cat $_PROJECT_FILE_SURICATA_RULES_TIMESTAMP)"))/(3600*24)))"
+          export lastUpdate="$((($(date +%s)-$(date +%s --date "$(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP")"))/(3600*24)))"
           if [[ "$lastUpdate" -gt "$CONF_suricata_update_interval" ]]
           then
             d3bug error "Rules to old. Updating..."
@@ -1251,11 +1162,15 @@ function createProjectPipes()
 
 
 function createProjectSettings()
-# Read suriGui.yaml and convert it to variables
-# Print: createProjectSettings "$_PROJECT_DIR_CONF/settings.yaml"
-# Set variables: eval $(createProjectSettings "$_PROJECT_DIR_CONF/settings.yaml")
+# Read suriGUI.yaml and convert it to variables
+# Usage:
+# List variables: createProjectSettings
+# Set variables: eval $(createProjectSettings)
+# Set as global: eval export $(createProjectSettings)
 {
-  local file="$_PROJECT_FILE_CONFIG_NEW"
+  local file="${1:-$_PROJECT_FILE_CONFIG_NEW}"
+
+
   local s w fs
   s='[[:space:]]*'
   w='[a-zA-Z0-9_]*'
@@ -1263,7 +1178,7 @@ function createProjectSettings()
 
   sed -ne "s|^\($s\):|\1|" \
       -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $file |
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p" "$file" |
   awk -F"$fs" '{
     indent = length($1)/2;
     vname[indent] = $2;
@@ -1279,27 +1194,29 @@ function createProjectSettings()
 function checkInternetConnection()
 # Check if internet connection is present
 {
-  d3bug
+  d3bug DEBUG start
 
   local pingComm
-  pingComm="$(ping -q -c 1 -W 1 1.1.1.1 >/dev/null)"
+  pingComm="$(ping -q -c 1 -W 1 1.1.1.1)"
 
   if ($pingComm)
   then
-    d3bug info "Internet connection is active"
+    d3bug NOTICE "Internet connection is active"
   else
-    d3bug error "No internet connection. Trying with Qubes proxy"
+    d3bug ERROR "No internet connection. Trying with Qubes proxy"
 
     export https_proxy="127.0.0.1:8082"
 
     if ($pingComm)
     then
-      d3bug error "Internet connection not active. Exit 1"
+      d3bug FATAL "Internet connection not active. Exit 1"
       exit 1
     else
-      d3bug info "Internet found behind Qubes Proxy"
+      d3bug NOTICE "Internet found behind Qubes Proxy"
     fi
   fi
+
+  d3bug DEBUG end
 }
 
 
@@ -1391,16 +1308,23 @@ function checkProjectDirectories()
 function checkProjectDependencies()
 # Install project dependencies
 # todo: make multi-distro
+# check how to
 {
-  d3bug
+  d3bug DEBUG start
+
+  local query_command=("$_QUERY_COMM" "app")
+  local install_command=(sudo "$_INSTALL_COMM" "$app")
+
+  d3bug DEBUG "Query command: $query_command"
+  d3bug DEBUG "Install command: $install_command"
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
-    if dpkg -s "$app"
+    if "${query_command[@]}"
     then
-      d3bug ok "$app installed"
+      d3bug NOTICE "$app is installed"
     else
-      d3bug warning "$app not installed"
+      d3bug WARNING "$app is not installed"
 
       yad --image="$_PROJECT_ICON_MAIN" \
           --image-on-top \
@@ -1411,45 +1335,65 @@ function checkProjectDependencies()
       ret=$?
       if [[ $ret = 0 ]]
       then
-        d3bug info "Installing $app ..."
-        if sudo apt-get install "$app" -y &>/dev/null
+        d3bug DEBUG "Start installing $app ..."
+        if "${install_command[@]}"
         then
-          d3bug ok "$app was successfully installed"
+          d3bug NOTICE "$app was successfully installed"
         else
-          d3bug error "Can't install: $app"
+          d3bug FATAL "Can't install: $app"
           exit 1
         fi
       else
-        d3bug error "If you do not want to install $app \n then you can not use Suricata nor suriGUI."
+        d3bug FATAL "If you do not want to install $app\n,then you can not use Suricata nor suriGUI."
         exit 1
       fi
     fi
   done
+
+  d3bug DEBUG end
 }
 
 
 function checkDistroVersion()
+# Check which distro is running
+# Select package manager accordingly
 {
-  d3bug DEBUG
+  d3bug DEBUG start
 
   local distro
   distro="$(uname -o)"
 
 
   case "$distro" in
-    Debian)   :  ;;
-    Fedora)   :  ;;
-    Arch)     :  ;;
-    Msys)     :  ;;
-    *)        :  ;;
+    Debian)
+      export _INSTALL_COMM="apt-get install"
+      export _QUERY_COMM="dpkg -s"
+    ;;
+    Fedora)
+      export _INSTALL_COMM="dnf install"
+      export _QUERY_COMM="rpm -q"
+    ;;
+    Arch)
+      export _INSTALL_COMM="pacman -S"
+      export _QUERY_COMM="pacman -Qi"
+    ;;
+    Msys)
+      d3bug FATAL "Microsoft is not supported"
+      exit 1
+    ;;
+    *)
+      d3bug FATAL "$distro is not supported."
+      exit 1
+    ;;
   esac
 
   d3bug NOTICE "Detected distro: $distro"
+
+  d3bug DEBUG end
 }
 
-checkDistroVersion
-exit 0
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Export functions for yad
 export -f d3bug
 export -f exitSuriGUI
@@ -1462,20 +1406,35 @@ export -f updateSuriGUI
 export -f send_notify
 
 
-# verbosity = silent file normal high debug
-# TODO: make help function
-while getopts "v:b:c:" opt
+if [[ -f "$_PROJECT_FILE_CONFIG_NEW" ]]
+then
+  # List all global variables
+  #createProjectSettings "$_PROJECT_FILE_CONFIG_NEW"
+
+  # Create global variables
+  eval export $(createProjectSettings "$_PROJECT_FILE_CONFIG_NEW")
+#else
+#  local file="$_PROJECT_FILE_CONFIG_NEW"
+fi
+
+
+
+# Overwrite global variables with GETOPS
+while getopts "v:" opt
 do
    case "$opt" in
-      v )
-        export CONF_global_log_verbosity="$OPTARG" ;;
-#      b ) parameterB="$OPTARG" ;;
-#      c ) parameterC="$OPTARG" ;;
+      v)
+        case "$OPTARG" in
+          incognito|file|normal|debug) export CONF_global_log_verbosity="$OPTARG" ;;
+          *)                           export CONF_global_log_verbosity="normal"  ;;
+        esac
+      ;;
       ? ) helpFunction ;;
    esac
 done
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # S T A R T   S U R I G U I
 checkDistroVersion
@@ -1484,8 +1443,7 @@ checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
 
-createProjectSettings
-eval export $(createProjectSettings)
++
 createProjectPipes
 createProjectIcons
 
@@ -1496,38 +1454,39 @@ checkSuricataStatus
 startSuriGUI &
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 while ( ! systemctl is-active --quiet suricata )
 do
   ( systemctl is-active --quiet suricata ) && break
-  d3bug info "Waiting for Suricata service to start"
+  d3bug NOTICE "Waiting for Suricata service to start"
   sleep 5
 done #&>/dev/null
-d3bug info "Suricata is active"
+d3bug NOTICE "Suricata is active"
+
 
 # todo: check if blinking icon is working
 #exec 3<>$_PROJECT_PIPE_MAIN echo "visible:blink" >&3 &
 
+
 while [[ ! -f "$_PROJECT_DIR_LOG/eve.json" ]]
 do
   [[ -f "$_PROJECT_DIR_LOG/eve.json" ]] && break
-  d3bug info "Suricata service is active but no output is generated."
+  d3bug WARNING "Waiting for log output (eve.json)"
   sleep 5
 done #&>/dev/null
-d3bug info "Log output found"
-
-
-[[ "${CONF_global_notifications_enable:-}" == "TRUE" ]] && startNotifyDaemon
+d3bug NOTICE "Log output found"
 
 
 echo "$$" > "$_PROJECT_PID_MAIN"
+d3bug NOTICE "$_PROJECT_NAME started with PID: $(cat "$_PROJECT_PID_MAIN")"
+[[ "${CONF_global_notifications_enable:-}" == "TRUE" ]] && startNotifyDaemon
+
 
 while :
 do
   [[ ! -f "$_PROJECT_PID_MAIN" ]] && break
   ( checkSuricataStatus ) #&>/dev/null
   sleep 5
-done &>/dev/null
-
-
-echo "End of script, but not IPS !!!"
+done #&>/dev/null
