@@ -1084,7 +1084,7 @@ function checkSuricataRules()
 # Check for last update timestamp
 # If rules are too old, update them
 {
-  d3bug
+  d3bug DEBUG start
 
   if [[ -f "$_PROJECT_FILE_SURICATA_RULES" ]]
   then
@@ -1121,43 +1121,48 @@ function checkSuricataRules()
     d3bug error "Suricata rules not found. Updating..."
     updateSuricataRules
   fi
+
+  d3bug DEBUG end
 }
 
 
 function createProjectPipes()
 # Create suriGUI pipes
-# Pipes 3,4,5
+# Pipes 3,4
 {
-  d3bug
+  d3bug DEBUG start
 
+  d3bug DEBUG "Starting to create pipes"
   for pipe in "${_PROJECT_DB_PIPES[@]}"
   do
     if [[ -e $pipe ]]
     then
+      d3bug DEBUG "Old pipe found: $pipe"
       if ! rm "$pipe"
       then
-        d3bug error "Can't remove old pipe"
+        d3bug FATAL "Can't remove pipe: $pipe"
         exit 1
       fi
     else
       if ! mkfifo "$pipe"
       then
-        d3bug error "Can't create pipe: $pipe"
+        d3bug FATAL "Can't create pipe: $pipe"
         exit 1
       else
-        d3bug info "$pipe"
+        d3bug NOTICE "New pipe created: $pipe"
       fi
     fi
   done
 
   if exec 3<> "$_PROJECT_PIPE_MAIN"
   then
-    d3bug info "Project pipe started"
+    d3bug NOTICE "$_PROJECT_NAME pipe started: $_PROJECT_PIPE_MAIN"
   else
-    d3bug error "Can not start Project pipe. Exit 1"
+    d3bug FATAL "Can not start $_PROJECT_NAME pipe: $_PROJECT_PIPE_MAIN"
     exit 1
   fi
 
+  d3bug DEBUG end
 }
 
 
@@ -1169,7 +1174,6 @@ function createProjectSettings()
 # Set as global: eval export $(createProjectSettings)
 {
   local file="${1:-$_PROJECT_FILE_CONFIG_NEW}"
-
 
   local s w fs
   s='[[:space:]]*'
@@ -1199,20 +1203,22 @@ function checkInternetConnection()
   local pingComm
   pingComm="$(ping -q -c 1 -W 1 1.1.1.1)"
 
+  d3bug DEBUG "Trying to find internet connection"
+
   if ($pingComm)
   then
     d3bug NOTICE "Internet connection is active"
   else
-    d3bug ERROR "No internet connection. Trying with Qubes proxy"
-
     export https_proxy="127.0.0.1:8082"
+
+    d3bug WARNING "No internet connection. Trying with Qubes proxy: $https_proxy"
 
     if ($pingComm)
     then
-      d3bug FATAL "Internet connection not active. Exit 1"
+      d3bug FATAL "Internet connection not found"
       exit 1
     else
-      d3bug NOTICE "Internet found behind Qubes Proxy"
+      d3bug NOTICE "Internet found behind Qubes Proxy: $https_proxy"
     fi
   fi
 
@@ -1222,86 +1228,90 @@ function checkInternetConnection()
 
 function checkProjectFiles()
 # Make sure that the config files are present
-# If not, copy default config
-# clean default file if not necessary
-#only if touch is needed
+# If not, restore them from defaults
 {
-  d3bug
+  d3bug DEBUG start
 
   local defStorage="$_PROJECT_DIR_CONF/default"
+  d3bug DEBUG "defStorage: $defStorage"
 
   for file in "${_PROJECT_DB_FILES[@]}"
   do
+      local fileName
+      local destination
       fileName="$(basename "$file")"
       destination="$(dirname "${file}")"
-      backupFile="$defStorage/$fileName"
+      local backupFile="$defStorage/$fileName"
+
+      d3bug DEBUG "Searching for config: $file"
 
       if [[ ! -e "$file"  ]]
       then
-        d3bug error "File not found: $file"
+        d3bug WARNING "Config not found: $file"
 
         if [[ -e "$backupFile" ]]
         then
-          d3bug info "Backup file found"
+          d3bug NOTICE "Backup config found"
           if cp "$backupFile" "$destination"
           then
-            d3bug info "File restored: $fileName"
+            d3bug NOTICE "Config restored: $file"
           else
-            d3bug error "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
+            d3bug FATAL "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
             exit 1
           fi
         else
           if touch "$file"
           then
-            d3bug info "File created: $file"
+            d3bug NOTICE "Config created: $file"
           else
-            d3bug error "Can't create config file: \"$fileName\" in directory: \"$destination\""
-            # TODO: try to inspect if dir is there
-            # chown
+            d3bug FATAL "Can't create config file: \"$fileName\" in directory: \"$destination\""
             exit 1
           fi
         fi
       else
-        d3bug info "$file"
+        d3bug NOTICE "Config found: $file"
       fi
-
   done
 
+  d3bug DEBUG end
 }
 
 
 function checkProjectDirectories()
 # Create project directories and set permissions to user:user
 {
-  d3bug
+  d3bug DEBUG start
 
   for dir in "${_PROJECT_DB_DIRS[@]}"
   do
+    d3bug DEBUG "Searching for directory: $dir"
     if [[ ! -d "$dir" ]]
     then
       if mkdir -p "$dir"
       then
-        d3bug info "Directory created: $dir"
+        d3bug NOTICE "Directory created: $dir"
       else
-        d3bug error "Can not create directory: $dir"
+        d3bug FATAL "Can not create directory: $dir"
         exit 1
       fi
     else
       if [[ -w "$dir" ]]
       then
-        d3bug info "$dir"
+        d3bug NOTICE "Project dir: $dir"
       else
-        d3bug error "Directory: $dir is not writable."
+        d3bug ERROR "Directory is not writable: $dir"
         if sudo chown user:user "$dir" -R
         then
-          d3bug info "Directory: $dir owned"
+          d3bug NOTICE "Directory is writable now: $dir"
         else
-          d3bug error "Something is wrong with folder/permission"
+          d3bug FATAL "Can not chown directory: $dir"
           exit 1
         fi
       fi
     fi
   done
+
+  d3bug DEBUG end
 }
 
 
@@ -1312,15 +1322,15 @@ function checkProjectDependencies()
 {
   d3bug DEBUG start
 
-  local query_command=("$_QUERY_COMM" "app")
-  local install_command=(sudo "$_INSTALL_COMM" "$app")
+  local query_application=("$_QUERY_COMM" "app")
+  local install_application=(sudo "$_INSTALL_COMM" "$app")
 
-  d3bug DEBUG "Query command: $query_command"
-  d3bug DEBUG "Install command: $install_command"
+  d3bug DEBUG "Query application: $query_application"
+  d3bug DEBUG "Install application: $install_application"
 
   for app in "${_PROJECT_DB_REQS[@]}"
   do
-    if "${query_command[@]}"
+    if "${query_application[@]}"
     then
       d3bug NOTICE "$app is installed"
     else
@@ -1336,7 +1346,7 @@ function checkProjectDependencies()
       if [[ $ret = 0 ]]
       then
         d3bug DEBUG "Start installing $app ..."
-        if "${install_command[@]}"
+        if "${install_application[@]}"
         then
           d3bug NOTICE "$app was successfully installed"
         else
@@ -1366,16 +1376,16 @@ function checkDistroVersion()
 
   case "$distro" in
     Debian)
-      export _INSTALL_COMM="apt-get install"
       export _QUERY_COMM="dpkg -s"
+      export _INSTALL_COMM="apt-get install"
     ;;
     Fedora)
-      export _INSTALL_COMM="dnf install"
       export _QUERY_COMM="rpm -q"
+      export _INSTALL_COMM="dnf install"
     ;;
     Arch)
-      export _INSTALL_COMM="pacman -S"
       export _QUERY_COMM="pacman -Qi"
+      export _INSTALL_COMM="pacman -S"
     ;;
     Msys)
       d3bug FATAL "Microsoft is not supported"
@@ -1388,6 +1398,8 @@ function checkDistroVersion()
   esac
 
   d3bug NOTICE "Detected distro: $distro"
+  d3bug DEBUG "_QUERY_COMMo: $_QUERY_COMM"
+  d3bug DEBUG "_INSTALL_COMM: $_INSTALL_COMM"
 
   d3bug DEBUG end
 }
@@ -1443,7 +1455,7 @@ checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
 
-+
+
 createProjectPipes
 createProjectIcons
 
