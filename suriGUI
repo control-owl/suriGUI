@@ -25,7 +25,6 @@ echo -e \
 
 ### DIRECTORIES
 export _PROJECT_DIR_MAIN="/opt/suriGUI"
-export _PROJECT_DIR_MAIN="/c/Users/B96839/OneDrive - ODDO BHF/GitHub/suriGUI"
 export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
 _PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
@@ -1371,6 +1370,9 @@ function checkDistroVersion()
   d3bug DEBUG start
 
   local distro
+
+  # bug: not working on manjaro
+#  distro="$(uname -o)"
   distro="$(uname -o)"
 
 
@@ -1403,7 +1405,8 @@ function checkDistroVersion()
 
   d3bug DEBUG end
 }
-
+checkDistroVersion
+exit 1
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Export functions for yad
