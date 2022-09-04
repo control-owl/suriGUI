@@ -9,8 +9,15 @@ trap 'echo [FATAL] "$BASH_COMMAND" failed with error code $?' ERR
 trap exitSuriGUI EXIT SIGUSR1 SIGUSR2
 
 
+SOURCE=${BASH_SOURCE[0]}
+while [ -L "$SOURCE" ]
+do
+  _PROJECT_DIR_MAIN=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+  SOURCE=$(readlink "$SOURCE")
+  [[ $SOURCE != /* ]] && SOURCE=$_PROJECT_DIR_MAIN/$SOURCE
+done
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-### GLOBAL VARIABLES
 export _PROJECT_NAME="suriGUI"
 export _PROJECT_DESCRIPTION="GUI for Suricata"
 export _PROJECT_VER="0.2.220829"
@@ -21,45 +28,50 @@ echo -e \
 # $_PROJECT_DESCRIPTION #
 # build $_PROJECT_VER #
 ####################"
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
-### DIRECTORIES
-export _PROJECT_DIR_MAIN="/opt/suriGUI"
-export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_MAIN/backup"
+### MAIN DIRECTORIES
+export _PROJECT_DIR_MAIN=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 export _PROJECT_DIR_CONF="$_PROJECT_DIR_MAIN/conf"
-_PROJECT_DIR_LOG="$_PROJECT_DIR_MAIN/log/$(date +'%Y-%m-%d')"
-export _PROJECT_DIR_LOG
 export _PROJECT_DIR_RES="$_PROJECT_DIR_MAIN/res"
-export _PROJECT_DIR_TMP="$_PROJECT_DIR_MAIN/tmp"
-export _PROJECT_DIR_SURICATA="$_PROJECT_DIR_CONF/suricata"
 
-_PROJECT_DB_DIRS=( "$_PROJECT_DIR_MAIN"
-                   "$_PROJECT_DIR_CONF"
-                   "$_PROJECT_DIR_RES"
-                   "$_PROJECT_DIR_LOG"
+
+### LOCAL DIRECTORIES
+export _PROJECT_DIR_LOCAL_MAIN="$HOME/suriGUI"
+export _PROJECT_DIR_LOCAL_CONF="$_PROJECT_DIR_LOCAL_MAIN/conf"
+export _PROJECT_DIR_LOCAL_SURICATA="$_PROJECT_DIR_LOCAL_CONF/suricata"
+export _PROJECT_DIR_BACKUP="$_PROJECT_DIR_LOCAL_MAIN/backup"
+export _PROJECT_DIR_TMP="$_PROJECT_DIR_LOCAL_MAIN/tmp"
+_PROJECT_DIR_LOG="$_PROJECT_DIR_LOCAL_MAIN/log/$(date +'%Y-%m-%d')"
+export _PROJECT_DIR_LOG
+
+_PROJECT_DB_DIRS=( "$_PROJECT_DIR_LOCAL_MAIN"
+                   "$_PROJECT_DIR_LOCAL_CONF"
+                   "$_PROJECT_DIR_LOCAL_SURICATA"
+                   "$_PROJECT_DIR_BACKUP"
                    "$_PROJECT_DIR_TMP"
-                   "$_PROJECT_DIR_SURICATA" )
+                   "$_PROJECT_DIR_LOG" )
 
 
 ### FILES
-export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_CONF/suriGUI.yaml"             # suriGUI config file
-export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_CONF/suriGUI.rules"          # Custom suricata rules
-export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_CONF/ignore.list"            # Ignored SID list
-export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"                        # suriGUI-notify spam list
-export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_SURICATA/suricata.yaml"   # Suricata config file
-export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_SURICATA/suricata.rules"   # Default suricata rules
-export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_SURICATA/suricata.rules.timestamp"   # Update timestamp
+export _PROJECT_FILE_CONFIG_NEW="$_PROJECT_DIR_LOCAL_CONF/suriGUI.yaml"             # suriGUI config file
+export _PROJECT_FILE_CUSTOM_RULES="$_PROJECT_DIR_LOCAL_CONF/suriGUI.rules"          # Custom suricata rules
+export _PROJECT_FILE_IGNORED_SIDS="$_PROJECT_DIR_LOCAL_CONF/ignore.list"            # Ignored SID list
 export _PROJECT_FILE_LOG="$_PROJECT_DIR_LOG/suriGUI.log"                      # suriGUI log file
-export _SURICATA_FILE_LOG="$_PROJECT_DIR_LOG/eve.json"                        # Suricata log file
+
+export _PROJECT_FILE_SURICATA_CONFIG="$_PROJECT_DIR_LOCAL_SURICATA/suricata.yaml"   # Suricata config file
+export _PROJECT_FILE_SURICATA_RULES="$_PROJECT_DIR_LOCAL_SURICATA/suricata.rules"   # Default suricata rules
+export _PROJECT_FILE_SURICATA_RULES_TIMESTAMP="$_PROJECT_DIR_LOCAL_SURICATA/suricata.rules.timestamp"   # Update timestamp
+export _SURICATA_FILE_LOG="/var/log/suricata/eve.json"                        # Suricata log file
+
+export _PROJECT_FILE_SPAM="$_PROJECT_DIR_TMP/spam.tmp"                        # suriGUI-notify spam list
 
 _PROJECT_DB_FILES=( "$_PROJECT_FILE_CONFIG_NEW"
                     "$_PROJECT_FILE_CUSTOM_RULES"
-                    "$_PROJECT_FILE_LOG"
-                    "$_SURICATA_FILE_LOG"
-                    "$_PROJECT_FILE_SURICATA_RULES"
                     "$_PROJECT_FILE_IGNORED_SIDS"
-                    "$_PROJECT_FILE_SPAM"
-                    "$_PROJECT_FILE_SURICATA_CONFIG" )
+                    "$_PROJECT_FILE_LOG"
+                    "$_PROJECT_FILE_SURICATA_CONFIG"
+                    "$_PROJECT_FILE_SURICATA_RULES" )
 
 
 ### PIPES
@@ -88,10 +100,10 @@ export PROJECT_PID_NOTIFY="$_PROJECT_DIR_TMP/suriGUI-notify.pid"
 
 
 # REQS
-_PROJECT_DB_REQS=( "libnetfilter-queue-dev"
-                   "suricata"
-                   "jq"
-                   "yad" )
+#_PROJECT_DB_REQS=( "libnetfilter-queue*"
+#                   "suricata"
+#                   "jq"
+#                   "yad" )
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -125,11 +137,12 @@ function exitSuriGUI()
   find "$_PROJECT_DIR_TMP" -type f -name "*.tmp" -delete &>/dev/null
   find "$_PROJECT_DIR_TMP" -type f -name "*.tab" -delete &>/dev/null
 
-  case "${CONF_suricata_log_enable:-}" in
-    "TRUE")  cleanLog old  ;;
-    "FALSE") cleanLog all  ;;
-    *) echo "[ERROR] Log not touched.."  ;;
-  esac
+# todo: make this working
+#  case "${CONF_suricata_log_enable:-}" in
+#    "TRUE")  cleanLog old  ;;
+#    "FALSE") cleanLog all  ;;
+#    *) echo "[ERROR] Log not touched.."  ;;
+#  esac
 
   echo "Exit 0"
   exit 0
@@ -137,14 +150,20 @@ function exitSuriGUI()
 
 
 function d3bug()
-# Print output messages, function names, errors
-# Usage: d3bug info|error "Lorem ipsum dolor sit amet"
-# TODO: do better log output
-# TODO: add verbosity and no output, error only
+# Debugging and printing to terminal and file
+# Usage:
+#   d3bug FATAL|ERROR|WARNING|NOTICE|DEBUG "Lorem ipsum"
+#   command |& d3bug COMM
+# Verbosity:
+#   incognito - show no output
+#   file - print to file only
+#   normal - print to terminal and file
+#   debug - show all messages in terminal and file
+#   terminal - print to terminal only
 {
   local type="${1:-}" # FATAL, ERROR, WARN, NOTICE, DEBUG, COMM
   local msg="${2:-}"  # "Lorem ipsum dolor sit amet"
-  local verbosity="${CONF_global_log_verbosity:-debug}"  # incognito, file, normal, debug
+  local verbosity="${CONF_global_log_verbosity:-normal}"
   local timeStamp
   timeStamp="$(date +'%Y-%m-%d_%H:%M:%S')"
 
@@ -159,16 +178,16 @@ function d3bug()
 
   case "$type" in
     COMM)
-      if [[ "$verbosity" == "debug" ]]
-      then
+#      if [[ "$verbosity" == "debug" ]]
+#      then
         read -r
-        local message="output: $REPLY"
-      else
-        :
-      fi
+        local message="output: --[[ $REPLY ]]--"
+#      else
+#        local message=""
+#      fi
     ;;
-    FATAL|ERROR|WARN|NOTICE|DEBUG)
-      local message="$timeStamp  [$type]  function: ${FUNCNAME[1]}  $msg"
+    FATAL|ERROR|WARNING|NOTICE|DEBUG)
+      local message="$timeStamp [$type] ${FUNCNAME[1]}: $msg"
     ;;
   esac
 
@@ -184,12 +203,15 @@ function d3bug()
     ;;
     normal)
       case "$type" in
-        DEBUG) : ;;
+        COMM|DEBUG) : ;;
         *) echo "$message" | tee -a "$_PROJECT_FILE_LOG"
       esac
     ;;
     debug)
      echo "$message" | tee -a "$_PROJECT_FILE_LOG"
+    ;;
+    terminal)
+     echo "$message"
     ;;
     *) : ;;
   esac
@@ -228,9 +250,9 @@ function restartSuriGUI()
 # Restart suriGUI
 # Suricata should not be killed
 {
-  d3bug
+  d3bug DEBUG start
 
-  d3bug info "Restarting $_PROJECT_NAME"
+  d3bug NOTICE "Restarting $_PROJECT_NAME"
   pkill -f "$_PROJECT_NAME" && exec "$_PROJECT_NAME"
 }
 
@@ -404,12 +426,12 @@ function preventSuricataSpam()
 
   if grep -q "$currentLog" "$_PROJECT_FILE_SPAM"
   then
-    d3bug error "Spam message"
+    d3bug ERROR "Spam message"
     stopSpam="TRUE"
   else
-    d3bug info "Not found in log"
+    d3bug NOTICE "Not found in log"
     echo "$currentLog" >> "$_PROJECT_FILE_SPAM"
-    d3bug info "Output written"
+    d3bug NOTICE "Output written"
     stopSpam="FALSE"
   fi
 }
@@ -424,10 +446,10 @@ function checkIgnoreSidList()
 
   if grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
   then
-    d3bug error "SID: $sid is on ignore list"
+    d3bug ERROR "SID: $sid is on ignore list"
     ignoreSID="TRUE"
   else
-    d3bug info "SID: $sid is not on ignore list"
+    d3bug NOTICE "SID: $sid is not on ignore list"
     ignoreSID="FALSE"
   fi
 }
@@ -502,12 +524,12 @@ function send_notify()
 
           ret=${?:-70}
           set -o errexit
-          d3bug info "Return: $ret"
+          d3bug NOTICE "Return: $ret"
 
           case "$ret" in
             10 )
               readarray -d '|' -t array <<< "$yadOutput"
-              d3bug info "Selected action: ${array[3]}"
+              d3bug NOTICE "Selected action: ${array[3]}"
 
               case "${array[3]}" in
                 "Continue blocking")
@@ -518,10 +540,10 @@ function send_notify()
                 "Don't show again")
                   if ! grep -q "$sid" "$_PROJECT_FILE_IGNORED_SIDS"
                   then
-                    d3bug info "Writing SID: $sid to ignore list"
+                    d3bug NOTICE "Writing SID: $sid to ignore list"
                     echo "$sid" >> "$_PROJECT_FILE_IGNORED_SIDS"
                   else
-                    d3bug info "SID: $sid is already in ignore list"
+                    d3bug NOTICE "SID: $sid is already in ignore list"
                   fi
                 ;;
 
@@ -529,12 +551,12 @@ function send_notify()
                   #editSID "$sid" "$cat" "$src" "$dest" #"$action"
                   :
                 ;;
-                *) d3bug error "Can't read action" ;;
+                *) d3bug ERROR "Can't read action" ;;
               esac
             ;;
             # 20 )  editSID "$sid" "$cat" "$src" "$dest" "$action" ;;
-            70 )  d3bug info "Timeout for notification: $sid"   ;;
-            252 ) d3bug info "Escape key pressed"   ;;
+            70 )  d3bug NOTICE "Timeout for notification: $sid"   ;;
+            252 ) d3bug NOTICE "Escape key pressed"   ;;
             * )   echo "error"    ;;
           esac
         fi
@@ -550,17 +572,17 @@ function updateSuriGUI()
 {
   d3bug
 
-  d3bug info "Starting update"
+  d3bug NOTICE "Starting update"
   if [[ -d "_PROJECT_DIR_MAIN" ]]
   then
     cd "_PROJECT_DIR_MAIN"
     if git fetch
     then
-      d3bug info "Update done"
+      d3bug NOTICE "Update done"
       send_notify "info" "Update done. Restarting..."
       restartSuriGUI
     else
-      d3bug info "No update found"
+      d3bug NOTICE "No update found"
       send_notify "info" "No update found"
     fi
   fi
@@ -595,11 +617,11 @@ function deleteIgnoredSID()
   if [ $ret = 0 ]
   then
     sed -i "/$sid/d" "$_PROJECT_FILE_IGNORED_SIDS"
-    d3bug info "SID: $sid removed"
+    d3bug NOTICE "SID: $sid removed"
     exec 4<>"$_PROJECT_PIPE_SID_IGNORE" echo -e "\f" >&4 &
     exec 4<>"$_PROJECT_PIPE_SID_IGNORE" echo -e "$(cat "$_PROJECT_FILE_IGNORED_SIDS")" >&4 &
   else
-    d3bug info "Nothing done"
+    d3bug NOTICE "Nothing done"
   fi
 }
 
@@ -808,7 +830,7 @@ function suriGUISettings()
 function stopNotifyDaemon()
 # Stop showing suriGUI notifications
 {
-  d3bug DEBUG
+  d3bug DEBUG start
 
   if [[ -f "$PROJECT_PID_NOTIFY" ]]
   then
@@ -829,8 +851,10 @@ function stopNotifyDaemon()
       d3bug ERROR "suriGUI-notify file found, but process with PID $(cat "$PROJECT_PID_NOTIFY") was not"
     fi
   else
-    d3bug WARN "suriGUI-notify PID file not found! Nothing to kill."
+    d3bug WARNING "suriGUI-notify PID file not found! Nothing to kill."
   fi
+
+  d3bug DEBUG end
 }
 
 function startNotifyDaemon()
@@ -878,7 +902,7 @@ function updateTrayMenu()
 # Create suriGUI tray menu and tray icon
 # usage: updateTrayMenu active|inactive
 {
-  d3bug
+  d3bug DEBUG start
 
   local status="$1"
 
@@ -894,12 +918,13 @@ function updateTrayMenu()
 
   [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>"$_PROJECT_PIPE_MAIN" echo "menu:$menu" >&3 &
 
-  d3bug info "Menu updated: $status"
-  d3bug info "Menu: $menu"
+  d3bug NOTICE "Menu updated: $status"
+  d3bug NOTICE "Menu: $menu"
 
   [[ -p $_PROJECT_PIPE_MAIN ]] && exec 3<>"$_PROJECT_PIPE_MAIN" echo "icon:$suricataStatus" >&3 &
 
-  d3bug info "Icon updated: $status"
+  d3bug NOTICE "Icon updated: $status"
+  d3bug DEBUG end
 }
 
 
@@ -913,9 +938,11 @@ function startSuriGUI()
 # PIPE 3
 # Create yad tray icon
 {
-  d3bug
+  d3bug DEBUG start
 
-  d3bug info "Starting $_PROJECT_NAME $_PROJECT_VER"
+  d3bug NOTICE "Starting $_PROJECT_NAME $_PROJECT_VER"
+
+  local suricataStatus="${suricataStatus:-inactive}"
 
   yad \
     --notification \
@@ -932,30 +959,13 @@ function startSuriGUI()
 }
 
 
-function createProjectIcons()
-# Register suriGUI icon files
-{
-  d3bug
 
-  for icon in "${_PROJECT_DB_ICONS[@]}"
-  do
-    local iconName
-    iconName=$(basename "$icon" | sed "s/\..*//")
-
-    if xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
-    then
-      d3bug info "registered $iconName"
-    else
-      d3bug error "Can not register icon: $iconName"
-    fi
-  done
-}
 
 
 function checkSuricataStatus()
 # Check Suricata's service status
 {
-  d3bug
+  d3bug DEBUG start
 
   if systemctl is-active --quiet suricata
   then
@@ -964,8 +974,10 @@ function checkSuricataStatus()
     export suricataStatus="inactive"
   fi
 
-  d3bug info "Suricata is $suricataStatus"
+  d3bug NOTICE "Suricata is $suricataStatus"
   updateTrayMenu "$suricataStatus"
+
+  d3bug DEBUG end
 }
 
 
@@ -1017,16 +1029,16 @@ function checkCustomRules()
 
 
   # local old=$(awk '{print $1; exit}' "$_PROJECT_FILE_SURICATA_RULES")
-  # d3bug info "Suricata rule action: $old"
+  # d3bug NOTICE "Suricata rule action: $old"
   # readConfigFile action
   # local new="$configAction"
-  # d3bug info "suriGUI rule action: $new"
+  # d3bug NOTICE "suriGUI rule action: $new"
   #
   # if [[ "$old" == "$new" ]]
   # then
-  #   d3bug info "Rule action match"
+  #   d3bug NOTICE "Rule action match"
   # else
-  #   d3bug error "Rule action mismatch"
+  #   d3bug ERROR "Rule action mismatch"
   #   updateConfigFile rules "$new" "$old"
   # fi
 }
@@ -1037,13 +1049,13 @@ function reloadSuricataRules()
 {
   d3bug
 
-  d3bug info "Starting suricata rule reload"
+  d3bug NOTICE "Starting suricata rule reload"
 
   if sudo suricatasc -c reload-rules #&>/dev/null
   then
-    d3bug info "Rules reloaded @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
+    d3bug NOTICE "Rules reloaded @ $(date +'%Y-%m-%d') $(date +'%H:%M:%S')"
   else
-    d3bug error "Can't reload rules!"
+    d3bug ERROR "Can't reload rules!"
   fi
 }
 
@@ -1056,23 +1068,23 @@ function updateSuricataRules()
 
   if command -v suricata-update #&>/dev/null
   then
-    d3bug info "Starting update ..."
+    d3bug NOTICE "Starting update ..."
 
-    if sudo suricata-update  --output "$_PROJECT_DIR_SURICATA" \
+    if sudo suricata-update  --output "$_PROJECT_DIR_LOCAL_SURICATA" \
                         --data-dir "$_PROJECT_DIR_TMP" \
                         --no-test #&>/dev/null
     then
-      sudo chown user:user "$_PROJECT_DIR_SURICATA" -R
+      sudo chown user:user "$_PROJECT_DIR_LOCAL_SURICATA" -R
       date +'%Y-%m-%d' > "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP"
-      d3bug info "Update done @ $(date +'%Y-%m-%d %H:%M:%S')"
+      d3bug NOTICE "Update done @ $(date +'%Y-%m-%d %H:%M:%S')"
 
       reloadSuricataRules
     else
-      d3bug error "Error updating Suricata rules. Exit 1"
+      d3bug ERROR "Error updating Suricata rules. Exit 1"
       exit 1
     fi
   else
-    d3bug error "suricata-update not installed. Exit 1"
+    d3bug ERROR "suricata-update not installed. Exit 1"
     # TODO: maybe not exit if default file is there
     exit 1
   fi
@@ -1087,15 +1099,15 @@ function checkSuricataRules()
 
   if [[ -f "$_PROJECT_FILE_SURICATA_RULES" ]]
   then
-    d3bug info "$_PROJECT_FILE_SURICATA_RULES"
+    d3bug NOTICE "$_PROJECT_FILE_SURICATA_RULES"
 
     if [[ "$CONF_suricata_update_enable" == "TRUE" ]]
     then
-      d3bug info "Auto-Update enabled"
+      d3bug NOTICE "Auto-Update enabled"
 
       if [[ ! -f "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP" ]]
       then
-        d3bug error "Timestamp not found. Updating..."
+        d3bug ERROR "Timestamp not found. Updating..."
         updateSuricataRules
       else
         if [[ $(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP") =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
@@ -1103,27 +1115,53 @@ function checkSuricataRules()
           export lastUpdate="$((($(date +%s)-$(date +%s --date "$(cat "$_PROJECT_FILE_SURICATA_RULES_TIMESTAMP")"))/(3600*24)))"
           if [[ "$lastUpdate" -gt "$CONF_suricata_update_interval" ]]
           then
-            d3bug error "Rules to old. Updating..."
+            d3bug ERROR "Rules to old. Updating..."
             updateSuricataRules
           else
-            d3bug info "Rules old $lastUpdate days. No need to update. ($CONF_suricata_update_interval day interval)"
+            d3bug NOTICE "Rules old $lastUpdate days. No need to update. ($CONF_suricata_update_interval day interval)"
           fi
         else
-          d3bug error "Rules never updated. Updating..."
+          d3bug ERROR "Rules never updated. Updating..."
           updateSuricataRules
         fi
       fi
     else
-      d3bug info "Auto-Update disabled"
+      d3bug NOTICE "Auto-Update disabled"
     fi
   else
-    d3bug error "Suricata rules not found. Updating..."
+    d3bug ERROR "Suricata rules not found. Updating..."
     updateSuricataRules
   fi
 
   d3bug DEBUG end
 }
 
+
+function createProjectIcons()
+# Register project icons
+{
+  d3bug DEBUG start
+
+  d3bug DEBUG "Starting icon registering"
+
+  for icon in "${_PROJECT_DB_ICONS[@]}"
+  do
+    local iconName
+    iconName=$(basename "$icon" | sed "s/\..*//")
+
+    d3bug DEBUG "Icon: $iconName"
+
+
+    if xdg-icon-resource install --context mimetypes --size 48 "$icon" "$iconName"
+    then
+      d3bug NOTICE "$iconName"
+    else
+      d3bug ERROR "Can not register icon: $iconName"
+    fi
+  done
+
+  d3bug DEBUG end
+}
 
 function createProjectPipes()
 # Create suriGUI pipes
@@ -1132,24 +1170,25 @@ function createProjectPipes()
   d3bug DEBUG start
 
   d3bug DEBUG "Starting to create pipes"
+
   for pipe in "${_PROJECT_DB_PIPES[@]}"
   do
     if [[ -e $pipe ]]
     then
-      d3bug DEBUG "Old pipe found: $pipe"
+      d3bug WARNING "Old pipe found: $pipe"
       if ! rm "$pipe"
       then
         d3bug FATAL "Can't remove pipe: $pipe"
         exit 1
       fi
+    fi
+
+    if ! mkfifo "$pipe"
+    then
+      d3bug FATAL "Can't create pipe: $pipe"
+      exit 1
     else
-      if ! mkfifo "$pipe"
-      then
-        d3bug FATAL "Can't create pipe: $pipe"
-        exit 1
-      else
-        d3bug NOTICE "New pipe created: $pipe"
-      fi
+      d3bug NOTICE "$pipe"
     fi
   done
 
@@ -1160,6 +1199,240 @@ function createProjectPipes()
     d3bug FATAL "Can not start $_PROJECT_NAME pipe: $_PROJECT_PIPE_MAIN"
     exit 1
   fi
+
+  d3bug DEBUG end
+}
+
+
+function checkInternetConnection()
+# Check if internet connection is present
+{
+  d3bug DEBUG start
+
+  local pingComm
+  pingComm="ping -q -c 1 -W 1 1.1.1.1"
+
+  d3bug DEBUG "Trying to find internet connection"
+
+  if ($pingComm) |& d3bug COMM
+  then
+    d3bug NOTICE "OK"
+  else
+    export https_proxy="127.0.0.1:8082"
+
+    d3bug WARNING "No internet connection. Trying with Qubes proxy: $https_proxy"
+
+    if ($pingComm)
+    then
+      d3bug FATAL "Internet connection not found"
+      exit 1
+    else
+      d3bug NOTICE "Internet found behind Qubes Proxy: $https_proxy"
+    fi
+  fi
+
+  d3bug DEBUG end
+}
+
+
+function checkProjectFiles()
+# Make sure that the config files are present
+# If not, restore them from defaults
+{
+  d3bug DEBUG start
+
+  local defStorage="$_PROJECT_DIR_CONF"
+  d3bug DEBUG "defStorage: $defStorage"
+
+  for file in "${_PROJECT_DB_FILES[@]}"
+  do
+      local fileName
+      local destination
+      fileName="$(basename "$file")"
+      destination="$(dirname "${file}")"
+      local backupFile="$defStorage/$fileName"
+
+      d3bug DEBUG "Searching for config: $file"
+
+      if [[ ! -e "$file"  ]]
+      then
+        d3bug WARNING "Config not found: $file"
+
+        if [[ -e "$backupFile" ]]
+        then
+          d3bug NOTICE "Backup config found; $backupFile"
+          if cp "$backupFile" "$destination"
+          then
+            d3bug NOTICE "Config restored: $file"
+          else
+            d3bug FATAL "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
+            exit 1
+          fi
+        else
+          if touch "$file"
+          then
+            d3bug NOTICE "Config created: $file"
+          else
+            d3bug FATAL "Can't create config file: \"$fileName\" in directory: \"$destination\""
+            exit 1
+          fi
+        fi
+      else
+        d3bug NOTICE "$file"
+      fi
+  done
+
+  d3bug DEBUG end
+}
+
+
+function checkProjectDirectories()
+# Create project directories and set permissions to user:user
+{
+  d3bug DEBUG start
+
+  local user
+  local group
+
+  user=$(id -u)
+  group=$(id -g)
+
+  d3bug DEBUG "User ID: $user"
+  d3bug DEBUG "Group ID: $group"
+
+  for dir in "${_PROJECT_DB_DIRS[@]}"
+  do
+    d3bug DEBUG "Searching for directory: $dir"
+    if [[ ! -d "$dir" ]]
+    then
+      if mkdir -p "$dir"
+      then
+        d3bug NOTICE "$dir"
+      else
+        d3bug FATAL "Can not create directory: $dir"
+        exit 1
+      fi
+    else
+      if [[ -w "$dir" ]]
+      then
+        d3bug NOTICE "$dir"
+      else
+        d3bug ERROR "Directory is not writable: $dir"
+#        if sudo chown user:user "$dir" -R
+        if sudo chown "$user":"$group" "$dir" -R
+        then
+          d3bug NOTICE "Directory is writable now: $dir"
+        else
+          d3bug FATAL "Can not chown directory: $dir"
+          exit 1
+        fi
+      fi
+    fi
+  done
+
+  d3bug DEBUG end
+}
+
+
+function checkProjectDependencies()
+# Install project dependencies
+# todo: make multi-distro
+# check how to
+{
+  d3bug DEBUG start
+
+
+
+  for app in "${_PROJECT_DB_REQS[@]}"
+  do
+    query_application="$_QUERY_COMM $app"
+    install_application="$_INSTALL_COMM $app"
+
+    if $query_application |& d3bug COMM
+    then
+      d3bug NOTICE "$app is installed"
+    else
+      d3bug WARNING "$app is not installed"
+
+      yad --image="$_PROJECT_ICON_MAIN" \
+          --image-on-top \
+          --on-top \
+          --title="$_PROJECT_NAME" \
+          --button="Yes" \
+          --button="No" \
+          --text="$app is not installed.\nDo you want to install it now?" #&>/dev/null
+
+      ret=$?
+      if [[ $ret = 0 ]]
+      then
+        d3bug DEBUG "Start installing $app ..."
+        if "$install_application"
+        then
+          d3bug NOTICE "$app was successfully installed"
+        else
+          d3bug FATAL "Can't install: $app"
+          exit 1
+        fi
+      else
+        d3bug FATAL "If you do not want to install $app\n,then you can not use Suricata nor suriGUI."
+        exit 1
+      fi
+    fi
+  done
+
+  d3bug DEBUG end
+}
+
+
+function checkDistroVersion()
+# Check which distro is running
+# Select package manager accordingly
+{
+  d3bug DEBUG start
+
+  local lsb
+  local distro
+
+  # bug: not working on manjaro
+#  distro="$(uname -o)"
+  lsb=$(lsb_release -i)
+  distro="${lsb//Distributor ID:$'\t'/}"
+
+
+  case "$distro" in
+    Debian)
+      export _QUERY_COMM="dpkg -s"
+      export _INSTALL_COMM="sudo apt-get install"
+      _PROJECT_DB_REQS=( "libnetfilter-queue-dev"
+                         "suricata"
+                         "jq"
+                         "yad" )
+    ;;
+    ManjaroLinux)
+      export _QUERY_COMM="pacman -Qi"
+      export _INSTALL_COMM="sudo pacman -S"
+      _PROJECT_DB_REQS=( "libnetfilter_queue"
+                         "suricata"
+                         "jq"
+                         "yad" )
+    ;;
+#    Fedora)
+#      export _QUERY_COMM="rpm -q"
+#      export _INSTALL_COMM="dnf install"
+#    ;;
+    Msys)
+      d3bug FATAL "Microsoft is not supported"
+      exit 1
+    ;;
+    *)
+      d3bug FATAL "$distro is not supported."
+      exit 1
+    ;;
+  esac
+
+  d3bug NOTICE "$distro"
+  d3bug DEBUG "_QUERY_COMM: $_QUERY_COMM"
+  d3bug DEBUG "_INSTALL_COMM: $_INSTALL_COMM"
 
   d3bug DEBUG end
 }
@@ -1193,222 +1466,8 @@ function createProjectSettings()
   }'
 }
 
-
-function checkInternetConnection()
-# Check if internet connection is present
-{
-  d3bug DEBUG start
-
-  local pingComm
-  pingComm="$(ping -q -c 1 -W 1 1.1.1.1)"
-
-  d3bug DEBUG "Trying to find internet connection"
-
-  if ($pingComm)
-  then
-    d3bug NOTICE "Internet connection is active"
-  else
-    export https_proxy="127.0.0.1:8082"
-
-    d3bug WARNING "No internet connection. Trying with Qubes proxy: $https_proxy"
-
-    if ($pingComm)
-    then
-      d3bug FATAL "Internet connection not found"
-      exit 1
-    else
-      d3bug NOTICE "Internet found behind Qubes Proxy: $https_proxy"
-    fi
-  fi
-
-  d3bug DEBUG end
-}
-
-
-function checkProjectFiles()
-# Make sure that the config files are present
-# If not, restore them from defaults
-{
-  d3bug DEBUG start
-
-  local defStorage="$_PROJECT_DIR_CONF/default"
-  d3bug DEBUG "defStorage: $defStorage"
-
-  for file in "${_PROJECT_DB_FILES[@]}"
-  do
-      local fileName
-      local destination
-      fileName="$(basename "$file")"
-      destination="$(dirname "${file}")"
-      local backupFile="$defStorage/$fileName"
-
-      d3bug DEBUG "Searching for config: $file"
-
-      if [[ ! -e "$file"  ]]
-      then
-        d3bug WARNING "Config not found: $file"
-
-        if [[ -e "$backupFile" ]]
-        then
-          d3bug NOTICE "Backup config found"
-          if cp "$backupFile" "$destination"
-          then
-            d3bug NOTICE "Config restored: $file"
-          else
-            d3bug FATAL "Can't copy default config file: \"$fileName\" to directory: \"$destination\""
-            exit 1
-          fi
-        else
-          if touch "$file"
-          then
-            d3bug NOTICE "Config created: $file"
-          else
-            d3bug FATAL "Can't create config file: \"$fileName\" in directory: \"$destination\""
-            exit 1
-          fi
-        fi
-      else
-        d3bug NOTICE "Config found: $file"
-      fi
-  done
-
-  d3bug DEBUG end
-}
-
-
-function checkProjectDirectories()
-# Create project directories and set permissions to user:user
-{
-  d3bug DEBUG start
-
-  for dir in "${_PROJECT_DB_DIRS[@]}"
-  do
-    d3bug DEBUG "Searching for directory: $dir"
-    if [[ ! -d "$dir" ]]
-    then
-      if mkdir -p "$dir"
-      then
-        d3bug NOTICE "Directory created: $dir"
-      else
-        d3bug FATAL "Can not create directory: $dir"
-        exit 1
-      fi
-    else
-      if [[ -w "$dir" ]]
-      then
-        d3bug NOTICE "Project dir: $dir"
-      else
-        d3bug ERROR "Directory is not writable: $dir"
-        if sudo chown user:user "$dir" -R
-        then
-          d3bug NOTICE "Directory is writable now: $dir"
-        else
-          d3bug FATAL "Can not chown directory: $dir"
-          exit 1
-        fi
-      fi
-    fi
-  done
-
-  d3bug DEBUG end
-}
-
-
-function checkProjectDependencies()
-# Install project dependencies
-# todo: make multi-distro
-# check how to
-{
-  d3bug DEBUG start
-
-  local query_application=("$_QUERY_COMM" "app")
-  local install_application=(sudo "$_INSTALL_COMM" "$app")
-
-  d3bug DEBUG "Query application: $query_application"
-  d3bug DEBUG "Install application: $install_application"
-
-  for app in "${_PROJECT_DB_REQS[@]}"
-  do
-    if "${query_application[@]}"
-    then
-      d3bug NOTICE "$app is installed"
-    else
-      d3bug WARNING "$app is not installed"
-
-      yad --image="$_PROJECT_ICON_MAIN" \
-          --image-on-top \
-          --title="$_PROJECT_NAME" \
-          --button="Yes" --button="No" \
-          --text="$app is not installed.\nDo you want to install it now?" &>/dev/null
-
-      ret=$?
-      if [[ $ret = 0 ]]
-      then
-        d3bug DEBUG "Start installing $app ..."
-        if "${install_application[@]}"
-        then
-          d3bug NOTICE "$app was successfully installed"
-        else
-          d3bug FATAL "Can't install: $app"
-          exit 1
-        fi
-      else
-        d3bug FATAL "If you do not want to install $app\n,then you can not use Suricata nor suriGUI."
-        exit 1
-      fi
-    fi
-  done
-
-  d3bug DEBUG end
-}
-
-
-function checkDistroVersion()
-# Check which distro is running
-# Select package manager accordingly
-{
-  d3bug DEBUG start
-
-  local distro
-
-  # bug: not working on manjaro
-#  distro="$(uname -o)"
-  distro="$(uname -o)"
-
-
-  case "$distro" in
-    Debian)
-      export _QUERY_COMM="dpkg -s"
-      export _INSTALL_COMM="apt-get install"
-    ;;
-    Fedora)
-      export _QUERY_COMM="rpm -q"
-      export _INSTALL_COMM="dnf install"
-    ;;
-    Arch)
-      export _QUERY_COMM="pacman -Qi"
-      export _INSTALL_COMM="pacman -S"
-    ;;
-    Msys)
-      d3bug FATAL "Microsoft is not supported"
-      exit 1
-    ;;
-    *)
-      d3bug FATAL "$distro is not supported."
-      exit 1
-    ;;
-  esac
-
-  d3bug NOTICE "Detected distro: $distro"
-  d3bug DEBUG "_QUERY_COMMo: $_QUERY_COMM"
-  d3bug DEBUG "_INSTALL_COMM: $_INSTALL_COMM"
-
-  d3bug DEBUG end
-}
-checkDistroVersion
-exit 1
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # Export functions for yad
 export -f d3bug
 export -f exitSuriGUI
@@ -1421,18 +1480,10 @@ export -f updateSuriGUI
 export -f send_notify
 
 
-if [[ -f "$_PROJECT_FILE_CONFIG_NEW" ]]
-then
-  # List all global variables
-  #createProjectSettings "$_PROJECT_FILE_CONFIG_NEW"
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-  # Create global variables
-  eval export $(createProjectSettings "$_PROJECT_FILE_CONFIG_NEW")
-#else
-#  local file="$_PROJECT_FILE_CONFIG_NEW"
-fi
-
-
+# Local settings
+[[ -f "$_PROJECT_FILE_CONFIG_NEW" ]] && eval export $(createProjectSettings "$_PROJECT_FILE_CONFIG_NEW")
 
 # Overwrite global variables with GETOPS
 while getopts "v:" opt
@@ -1448,12 +1499,11 @@ do
    esac
 done
 
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # S T A R T   S U R I G U I
 checkDistroVersion
-checkProjectDependencies
+#checkProjectDependencies
 checkProjectDirectories
 checkProjectFiles
 checkInternetConnection
@@ -1462,27 +1512,26 @@ checkInternetConnection
 createProjectPipes
 createProjectIcons
 
-checkSuricataRules
-checkCustomRules
+#checkSuricataRules
+#checkCustomRules
 checkSuricataStatus
-
+#
 startSuriGUI &
+echo "$$" > "$_PROJECT_PID_MAIN"
+d3bug NOTICE "$_PROJECT_NAME started with PID: $(cat "$_PROJECT_PID_MAIN")"
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-while ( ! systemctl is-active --quiet suricata )
+# todo: make blinking icon
+( while ( ! systemctl is-active --quiet suricata )
 do
   ( systemctl is-active --quiet suricata ) && break
-  d3bug NOTICE "Waiting for Suricata service to start"
+  echo "Waiting for Suricata service to start" |& d3bug COMM
   sleep 5
-done #&>/dev/null
+done )
 d3bug NOTICE "Suricata is active"
-
-
-# todo: check if blinking icon is working
-#exec 3<>$_PROJECT_PIPE_MAIN echo "visible:blink" >&3 &
 
 
 while [[ ! -f "$_PROJECT_DIR_LOG/eve.json" ]]
@@ -1490,12 +1539,10 @@ do
   [[ -f "$_PROJECT_DIR_LOG/eve.json" ]] && break
   d3bug WARNING "Waiting for log output (eve.json)"
   sleep 5
-done #&>/dev/null
+done
 d3bug NOTICE "Log output found"
 
 
-echo "$$" > "$_PROJECT_PID_MAIN"
-d3bug NOTICE "$_PROJECT_NAME started with PID: $(cat "$_PROJECT_PID_MAIN")"
 [[ "${CONF_global_notifications_enable:-}" == "TRUE" ]] && startNotifyDaemon
 
 
