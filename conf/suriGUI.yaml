@@ -1,0 +1,35 @@
+%YAML 1.1
+---
+
+# suriGUI default config file
+# 2022-09-04
+
+global:
+  home: "/opt/suriGUI"
+  notifications:
+    enable: TRUE
+    duration: 30
+    position: "Center"
+  update:
+    enable: FALSE
+    interval: 7
+  log:
+    enable: TRUE
+    verbosity: normal
+    erroronly: FALSE
+    file: TRUE
+
+suricata:
+  mode: ips
+  action: rejectboth
+  config: "/opt/suriGUI/conf/suricata/suricata.yaml"
+  rules: "/opt/suriGUI/conf/suricata/suricata.rules"
+  update:
+    enable: TRUE
+    interval: 7
+  log:
+    enable: TRUE
+    location: "/opt/suriGUI/log"
+    keep: TRUE
+    interval: 30
+
